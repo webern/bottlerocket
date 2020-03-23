@@ -1,5 +1,4 @@
-use snafu::{ResultExt, Snafu};
-use std::path::PathBuf;
+use snafu::{Snafu, Backtrace};
 use std::io;
 
 #[derive(Debug, Snafu)]
@@ -18,6 +17,12 @@ pub enum Error {
     FileError {
         source: io::Error,
         path: String,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("IO error: {}", source))]
+    IoError {
+        source: io::Error,
+        backtrace: Backtrace,
     },
 }
 
