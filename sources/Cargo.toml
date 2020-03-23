@@ -25,6 +25,7 @@ members = [
     "models",
 
     "preinit/laika",
+    "support-logs",
 
     "updater/block-party",
     "updater/signpost",
