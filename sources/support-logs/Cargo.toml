@@ -8,6 +8,7 @@ publish = false
 
 [dependencies]
 snafu = "0.6"
+structopt = "0.3"
 
 [build-dependencies]
 cargo-readme = "3.1"

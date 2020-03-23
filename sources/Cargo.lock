@@ -2322,6 +2322,7 @@ version = "0.0.0"
 dependencies = [
  "cargo-readme 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "snafu 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
