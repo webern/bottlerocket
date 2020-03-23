@@ -5,6 +5,7 @@
 
 mod error;
 mod exec_to_file;
+mod create_tarball;
 
 use crate::error::Result;
 use snafu::ErrorCompat;
@@ -42,13 +43,16 @@ fn main() -> ! {
     })
 }
 
-fn run_program(args: &ProgramArgs) -> Result<()> { crate::exec_to_file::exec_to_file(make_fake_command(args)) }
+fn run_program(args: &ProgramArgs) -> Result<()> {
+    crate::exec_to_file::exec_to_file(make_fake_command(&args.tempdir))?;
+    crate::create_tarball::create_tarball(&args.tempdir, &args.output)
+}
 
-fn make_fake_command(args: &ProgramArgs) -> crate::exec_to_file::ExecToFile<'static> {
+fn make_fake_command(tempdir: &PathBuf) -> crate::exec_to_file::ExecToFile<'static> {
     crate::exec_to_file::ExecToFile {
         command: "echo",
         args: vec!("arg1", "arg2"),
         output_filename: "fake-stuff.log",
-        output_dir: args.tempdir.clone(),
+        output_dir: tempdir.clone(),
     }
 }
