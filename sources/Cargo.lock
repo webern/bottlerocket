@@ -1302,6 +1302,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "logdog"
+version = "0.0.0"
+dependencies = [
+ "cargo-readme 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "snafu 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "structopt 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
 name = "loopdev"
 version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2314,15 +2323,6 @@ dependencies = [
  "serde_json 1.0.48 (registry+https://github.com/rust-lang/crates.io-index)",
  "simplelog 0.7.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "snafu 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
-]
-
-[[package]]
-name = "support-logs"
-version = "0.0.0"
-dependencies = [
- "cargo-readme 3.1.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "snafu 0.6.2 (registry+https://github.com/rust-lang/crates.io-index)",
- "structopt 0.3.9 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]
