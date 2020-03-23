@@ -28,9 +28,16 @@ struct CommandInfo<'a> {
 
 fn run(command_info: CommandInfo<'_>) -> Result<()> {
     let opath = command_info.output_dir.join(command_info.output_filename);
-    let opath_str = opath.to_str().ok_or(error::Error::ErrorMessage { message: format!("Unable to build filepath for '{}'", command_info.output_filename) })?;
-    let ofile = File::create(opath_str).context(crate::error::FileError { path: opath_str.to_string() })?;
-    let efile = ofile.try_clone().context(crate::error::FileError { path: opath_str.to_string() })?;
+    let opath_str = opath.to_str().ok_or(
+        error::Error::ErrorMessage {
+            message: format!("Unable to build filepath for '{}'",
+                             command_info.output_filename)
+        }
+    )?;
+    let ofile = File::create(opath_str)
+        .context(crate::error::FileError { path: opath_str.to_string() })?;
+    let efile = ofile.try_clone()
+        .context(crate::error::FileError { path: opath_str.to_string() })?;
     Command::new(command_info.command)
         .args(command_info.args)
         .stdout(Stdio::from(ofile))
