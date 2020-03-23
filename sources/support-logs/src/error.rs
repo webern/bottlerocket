@@ -1,14 +1,12 @@
+// Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
+// SPDX-License-Identifier: MIT OR Apache-2.0
+
 use snafu::{Snafu, Backtrace};
 use std::io;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
 pub enum Error {
-    #[snafu(display("Something happened: '{}': {}", message, source))]
-    SomethingHappened {
-        message: String,
-        source: std::io::Error,
-    },
     #[snafu(display("Error: '{}'", message))]
     ErrorMessage {
         message: String,
