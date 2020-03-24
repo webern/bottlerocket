@@ -230,9 +230,6 @@ install -p -m 0644 %{S:3} %{buildroot}%{_cross_datadir}/eks
 install -d %{buildroot}%{_cross_datadir}/updog
 install -p -m 0644 %{S:4} %{buildroot}%{_cross_datadir}/updog
 
-# install -d %{buildroot}%{_cross_datadir}/logdog
-# install -p -m 0644 %{S:4} %{buildroot}%{_cross_datadir}/logdog
-
 install -d %{buildroot}%{_cross_templatedir}
 install -p -m 0644 %{S:5} %{buildroot}%{_cross_templatedir}
 
