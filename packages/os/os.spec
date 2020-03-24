@@ -311,12 +311,12 @@ install -p -m 0644 %{S:201} %{buildroot}%{_cross_tmpfilesdir}/host-containers.co
 %files -n %{_cross_os}growpart
 %{_cross_sbindir}/growpart
 
-%files -n %{_cross_os}logdog
-%{_cross_sbindir}/logdog
-
 %files -n %{_cross_os}signpost
 %{_cross_bindir}/signpost
 %{_cross_unitdir}/mark-successful-boot.service
+
+%files -n %{_cross_os}logdog
+%{_cross_bindir}/logdog
 
 %files -n %{_cross_os}updog
 %{_cross_bindir}/updog
