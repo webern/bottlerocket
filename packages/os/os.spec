@@ -120,6 +120,11 @@ Summary: Tool to grow partitions
 %description -n %{_cross_os}growpart
 %{summary}.
 
+%package -n %{_cross_os}logdog
+Summary: Tool to get support logs
+%description -n %{_cross_os}logdog
+%{summary}.
+
 %package -n %{_cross_os}signpost
 Summary: Bottlerocket GPT priority querier/switcher
 %description -n %{_cross_os}signpost
@@ -163,6 +168,7 @@ mkdir bin
     -p signpost \
     -p updog \
     -p growpart \
+    -p logdog \
     -p laika \
     %{nil}
 
@@ -183,6 +189,7 @@ for p in \
   thar-be-settings servicedog host-containers \
   storewolf settings-committer \
   migrator \
+  logdog \
   signpost updog ;
 do
   install -p -m 0755 ${HOME}/.cache/%{__cargo_target}/release/${p} %{buildroot}%{_cross_bindir}
@@ -303,6 +310,9 @@ install -p -m 0644 %{S:201} %{buildroot}%{_cross_tmpfilesdir}/host-containers.co
 
 %files -n %{_cross_os}growpart
 %{_cross_sbindir}/growpart
+
+%files -n %{_cross_os}logdog
+%{_cross_sbindir}/logdog
 
 %files -n %{_cross_os}signpost
 %{_cross_bindir}/signpost

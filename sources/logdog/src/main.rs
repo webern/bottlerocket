@@ -15,15 +15,13 @@ use structopt::StructOpt;
 #[derive(Debug, StructOpt)]
 pub struct ProgramArgs {
     /// The compressed output file that will be written containing all of the support logs.
-    #[structopt(short = "o", long = "output", default_value = "/tmp/support-logs.tar.gz")]
+    #[structopt(short = "o", long = "output", default_value = "/tmp/logdog.tar.gz")]
     output: PathBuf,
 
     /// The temporary working directory where log files will be written before being aggregated.
-    #[structopt(short = "t", long = "tempdir", default_value = "/tmp/support-logs")]
+    #[structopt(short = "t", long = "tempdir", default_value = "/tmp/logdog")]
     tempdir: PathBuf,
 }
-
-// TODO: https://rust-lang-nursery.github.io/rust-cookbook/compression/tar.html
 
 fn main() -> ! {
     let args = ProgramArgs::from_args();
@@ -44,8 +42,12 @@ fn main() -> ! {
 }
 
 fn run_program(args: &ProgramArgs) -> Result<()> {
+    // TODO - delete tempdir if exists
+    // TODO - create tempdir (using a self-cleaning tempdir object)
+    // TODO - run many actual commands instead of this single echo command
     crate::exec_to_file::exec_to_file(make_fake_command(&args.tempdir))?;
     crate::create_tarball::create_tarball(&args.tempdir, &args.output)
+    // TODO - tell the customer where the tarball is
 }
 
 fn make_fake_command(tempdir: &PathBuf) -> crate::exec_to_file::ExecToFile<'static> {
