@@ -9,7 +9,6 @@ publish = false
 [dependencies]
 flate2 = "1.0"
 snafu = "0.6"
-structopt = "0.3"
 tar = "0.4"
 
 [build-dependencies]
