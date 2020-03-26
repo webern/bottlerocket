@@ -12,5 +12,5 @@ pub fn create_tarball(tempdir: &PathBuf, outfile: &PathBuf) -> crate::error::Res
     let tarfile = File::create(outfile).context(crate::error::FileError { path: outfile.to_str().unwrap() })?;
     let encoder = GzEncoder::new(tarfile, Compression::default());
     let mut tarball = tar::Builder::new(encoder);
-    tarball.append_dir_all("logdog", tempdir.to_str().unwrap()).context(crate::error::IoError {})
+    tarball.append_dir_all("bottlerocket-logs", tempdir.to_str().unwrap()).context(crate::error::IoError {})
 }
