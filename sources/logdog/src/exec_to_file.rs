@@ -5,6 +5,8 @@ use std::path::PathBuf;
 use std::fs::File;
 use snafu::ResultExt;
 use std::process::{Command, Stdio};
+use crate::error::Result;
+use std::io::Write;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ExecToFile {
@@ -16,12 +18,6 @@ pub(crate) struct ExecToFile {
 impl ExecToFile {
     pub(crate) fn run(&self, tempdir: &PathBuf) -> crate::error::Result<()> {
         let opath = tempdir.join(self.output_filename);
-        // let opath_str = opath.to_str().ok_or(
-        //     crate::error::Error::ErrorMessage {
-        //         message: format!("Unable to build filepath for '{}'",
-        //                          ex_info.output_filename)
-        //     }
-        // )?;
         let ofile = File::create(&opath)
             .context(crate::error::FileError { path: opath.clone() })?;
         let efile = ofile.try_clone()
@@ -37,24 +33,20 @@ impl ExecToFile {
     }
 }
 
-// pub(crate) fn exec_to_file(ex_info: ExecToFile<'_>, tempdir: &PathBuf) -> crate::error::Result<()> {
-//     let opath = tempdir.join(ex_info.output_filename);
-//     let opath_str = opath.to_str().ok_or(
-//         crate::error::Error::ErrorMessage {
-//             message: format!("Unable to build filepath for '{}'",
-//                              ex_info.output_filename)
-//         }
-//     )?;
-//     let ofile = File::create(opath_str)
-//         .context(crate::error::FileError { path: opath_str.to_string() })?;
-//     let efile = ofile.try_clone()
-//         .context(crate::error::FileError { path: opath_str.to_string() })?;
-//     Command::new(ex_info.command)
-//         .args(ex_info.args)
-//         .stdout(Stdio::from(ofile))
-//         .stderr(Stdio::from(efile))
-//         .spawn().context(crate::error::IoError {})?
-//         .wait_with_output()
-//         .context(crate::error::IoError {})?;
-//     Ok(())
-// }
+pub(crate) fn run_commands(commands: Vec<crate::exec_to_file::ExecToFile>, outdir: &PathBuf) -> Result<()> {
+    let error_path = outdir.join(crate::ERROR_FILENAME);
+    let mut error_file = File::create(&error_path)
+        .context(crate::error::FileError { path: error_path.clone() })?;
+    for ex in commands.iter() {
+        if let Err(e) = ex.run(&outdir) {
+            error_file.write(
+                format!(
+                    "Error running command '{:?}': '{}'",
+                    ex.clone(),
+                    e
+                ).into_bytes().as_slice()
+            ).context(crate::error::FileError { path: error_path.clone() })?;
+        }
+    }
+    Ok(())
+}

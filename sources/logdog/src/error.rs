@@ -3,7 +3,6 @@
 
 use snafu::{Snafu, Backtrace};
 use std::io;
-use crate::exec_to_file::ExecToFile;
 use std::path::PathBuf;
 
 #[derive(Debug, Snafu)]
@@ -24,11 +23,6 @@ pub enum Error {
         source: io::Error,
         backtrace: Backtrace,
     },
-    // #[snafu(display("Error while executing command '{:?}': '{}'", command, source))]
-    // CommandError {
-    //     source: io::Error,
-    //     command: ExecToFile,
-    // },
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
