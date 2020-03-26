@@ -7,6 +7,7 @@ edition = "2018"
 publish = false
 
 [dependencies]
+drop-dir = "0.1.0"
 flate2 = "1.0"
 snafu = "0.6"
 tar = "0.4"

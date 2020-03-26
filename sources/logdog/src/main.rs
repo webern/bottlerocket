@@ -8,9 +8,11 @@ mod exec_to_file;
 mod create_tarball;
 
 use crate::error::Result;
-use snafu::ErrorCompat;
+use snafu::{ErrorCompat, ResultExt};
 use std::path::PathBuf;
 use std::{env, process};
+use drop_dir;
+use crate::error::Error::IoError;
 
 pub struct ProgramArgs {
     output: PathBuf,
@@ -22,7 +24,6 @@ fn usage() -> ! {
     let program_name = env::args().next().unwrap_or_else(|| "program".to_string());
     eprintln!(
         r"Usage: {}
-            [ --tempdir PATH directory to write logs to temporarily before zipping ]
             [ --output PATH file to write zipped logs to ]
 ",
         program_name,
@@ -36,23 +37,14 @@ fn usage_msg(msg: &str) -> ! {
     usage();
 }
 
-/// Parses the command line arguments and provides defaults for those that are optional.
-fn parse_args(args: env::Args) -> ProgramArgs {
-    let mut tempdir_arg_str = None;
-    let mut output_arg_str = None;
-
+/// Parses the command line arguments and provides path of the output file.
+fn parse_args(args: env::Args) -> PathBuf {
+    let mut output_arg = None;
     let mut iter = args.skip(1);
     while let Some(arg) = iter.next() {
         match arg.as_ref() {
-            "--tempdir" => {
-                tempdir_arg_str = Some(
-                    iter.next()
-                        .unwrap_or_else(|| usage_msg("Did not give argument to --tempdir")),
-                )
-            }
-
             "--output" => {
-                output_arg_str = Some(
+                output_arg = Some(
                     iter.next()
                         .unwrap_or_else(|| usage_msg("Did not give argument to --output")),
                 )
@@ -62,16 +54,15 @@ fn parse_args(args: env::Args) -> ProgramArgs {
         }
     }
 
-    // TODO - handle None for these with default values
-    ProgramArgs {
-        tempdir: PathBuf::from(tempdir_arg_str.unwrap()),
-        output: PathBuf::from(output_arg_str.unwrap()),
+    match output_arg {
+        Some(path) => PathBuf::from(path),
+        None => std::env::temp_dir().as_path().join("bottlerocket-logs.tar.gz"),
     }
 }
 
 fn main() -> ! {
-    let args = parse_args(env::args());
-    std::process::exit(match run_program(&args) {
+    let output = parse_args(env::args());
+    std::process::exit(match run_program(output) {
         Ok(()) => 0,
         Err(err) => {
             eprintln!("{}", err);
@@ -87,12 +78,17 @@ fn main() -> ! {
     })
 }
 
-fn run_program(args: &ProgramArgs) -> Result<()> {
-    // TODO - delete tempdir if exists
-    // TODO - create tempdir (using a self-cleaning tempdir object)
+fn run_program(output: PathBuf) -> Result<()> {
+    let temp_dir_path = std::env::temp_dir().join("logdog-temp");
+    if std::path::Path::new(&temp_dir_path).exists() {
+        std::fs::remove_dir_all(&temp_dir_path).context(crate::error::FileError { path: temp_dir_path.to_string_lossy() })?;
+    }
+    let temp_dir = drop_dir::DropDir::new(temp_dir_path).context(crate::error::IoError {})?;
     // TODO - run many actual commands instead of this single echo command
-    crate::exec_to_file::exec_to_file(make_fake_command(&args.tempdir))?;
-    crate::create_tarball::create_tarball(&args.tempdir, &args.output)
+    crate::exec_to_file::exec_to_file(make_fake_command(&temp_dir.path()))?;
+    crate::create_tarball::create_tarball(&temp_dir.path(), &output)?;
+    println!("logs are at: {}", output.to_string_lossy());
+    Ok(())
     // TODO - tell the customer where the tarball is
 }
 
