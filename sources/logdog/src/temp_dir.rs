@@ -1,11 +1,11 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::fs::{remove_dir_all, create_dir_all};
+use std::fs::{create_dir_all, remove_dir_all};
 use std::path::PathBuf;
 
-/// Represents a self-cleaning (RAII) temporary directory. This is a simple inline implementation to
-/// avoid bringing in unnecessary dependencies.
+/// Represents a self-cleaning (RAII) temporary directory.
+/// This is a simple inline implementation to avoid bringing in unnecessary dependencies.
 pub(crate) struct TempDir {
     path_buf: PathBuf,
 }

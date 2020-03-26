@@ -327,6 +327,23 @@ We use it for the control container because it needs to be available early to gi
 
 Be careful, and make sure you have a similar low-level use case before reaching for host containers.
 
+### Logs
+
+Using the admin container, you can obtain a tarball of logs using `logdog`. SSH to the Bottlerocket host, then run:
+
+```bash
+sudo sheltie
+logdog
+```
+
+This will write a file to `/tmp/bottlerocket-logs.tar.gz`. You can use SSH to retrieve the file. Once you have exited from the Bottlerocket host, run:
+
+```bash
+ssh -i the-key.pem \
+    ec2-user@$BOTTLEROCKET_IP \
+    "cat /.bottlerocket/rootfs/tmp/bottlerocket-logs.tar.gz" > bottlerocket-logs.tar.gz
+```
+
 ## Details
 
 ### Security

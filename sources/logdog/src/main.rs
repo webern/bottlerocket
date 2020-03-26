@@ -8,45 +8,36 @@
 into a tarball for easy export.
 
 Usage example:
-```bash
+```
 $ logdog
 logs are at: /tmp/bottlerocket-logs.tar.gz
 ```
-
-## TODO
-
- [x] journalctl-list-boots is instead errors
- [x] dmesg not working
- [x] iptables missing
- [ ] customer readme instructions ssh
- [ ] customer readme instructions ssm
- [ ] unit tests
 */
 
 #![deny(rust_2018_idioms)]
 
+mod create_tarball;
 mod error;
 mod exec_to_file;
-mod create_tarball;
 mod temp_dir;
 
 use std::fs::remove_dir_all;
-use std::path::{PathBuf, Path};
+use std::path::{Path, PathBuf};
 use std::{env, process};
 
 use create_tarball::create_tarball;
-use error::{Result, FileError, IoError};
-use exec_to_file::{ExecToFile, run_commands};
+use error::{FileError, IoError, Result};
+use exec_to_file::{run_commands, ExecToFile};
 use temp_dir::TempDir;
 
 use snafu::{ErrorCompat, ResultExt};
 
-const TEMP_SUBDIR_NANE: &str = "logdog-temp";
-const OUTPUT_FILENAME: &str = "bottlerocket-logs.tar.gz";
 const ERROR_FILENAME: &str = "logdog.errors";
+const OUTPUT_FILENAME: &str = "bottlerocket-logs.tar.gz";
 const TARBALL_DIRNAME: &str = "bottlerocket-logs";
+const TEMPDIR_NAME: &str = "logdog-temp";
 
-/// Prints a usage message in the event a bad arg is passed
+/// Prints a usage message in the event a bad arg is passed.
 fn usage() -> ! {
     let program_name = env::args().next().unwrap_or_else(|| "program".to_string());
     eprintln!(
@@ -87,24 +78,24 @@ fn parse_args(args: env::Args) -> PathBuf {
     }
 }
 
-// Runs the bulk of the program's logic, main wraps this.
+/// Runs the bulk of the program's logic, main wraps this.
 fn run_program(output: PathBuf) -> Result<()> {
-    let temp_dir_path = env::temp_dir().join(TEMP_SUBDIR_NANE);
+    let temp_dir_path = env::temp_dir().join(TEMPDIR_NAME);
     if Path::new(&temp_dir_path).exists() {
-        remove_dir_all(&temp_dir_path)
-            .context(FileError { path: temp_dir_path.clone() })?;
+        remove_dir_all(&temp_dir_path).context(FileError {
+            path: temp_dir_path.clone(),
+        })?;
     }
-    let temp_dir = TempDir::new(temp_dir_path)
-        .context(IoError {})?;
+    let temp_dir = TempDir::new(temp_dir_path).context(IoError {})?;
     run_commands(create_commands(), &temp_dir.path())?;
     create_tarball(&temp_dir.path(), &output)?;
     println!("logs are at: {}", output.to_string_lossy());
     Ok(())
 }
 
-// Produces the list of commands that we will run on the Bottlerocket host.
+/// Produces the list of commands that we will run on the Bottlerocket host.
 fn create_commands() -> Vec<ExecToFile> {
-    vec!(
+    vec![
         ExecToFile {
             command: "cat",
             args: vec!["/etc/os-release"],
@@ -164,10 +155,9 @@ fn create_commands() -> Vec<ExecToFile> {
             command: "iptables",
             args: vec!["-nvL", "-t", "nat"],
             output_filename: "iptables-nat",
-        }
-    )
+        },
+    ]
 }
-
 
 fn main() -> ! {
     let output = parse_args(env::args());

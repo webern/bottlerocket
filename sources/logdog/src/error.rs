@@ -4,7 +4,7 @@
 use std::io;
 use std::path::PathBuf;
 
-use snafu::{Snafu, Backtrace};
+use snafu::{Backtrace, Snafu};
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
