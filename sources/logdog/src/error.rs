@@ -4,6 +4,7 @@
 use snafu::{Snafu, Backtrace};
 use std::io;
 use crate::exec_to_file::ExecToFile;
+use std::path::PathBuf;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
@@ -12,10 +13,10 @@ pub enum Error {
     ErrorMessage {
         message: String,
     },
-    #[snafu(display("File error '{}': {}", path, source))]
+    #[snafu(display("File error '{}': {}", path.to_string_lossy(), source))]
     FileError {
         source: io::Error,
-        path: String,
+        path: PathBuf,
         backtrace: Backtrace,
     },
     #[snafu(display("IO error: {}", source))]

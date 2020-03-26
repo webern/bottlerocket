@@ -6,7 +6,7 @@ use std::fs::File;
 use snafu::ResultExt;
 use std::process::{Command, Stdio};
 
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone)]
 pub(crate) struct ExecToFile {
     pub command: &'static str,
     pub args: Vec<&'static str>,
@@ -23,9 +23,9 @@ impl ExecToFile {
         //     }
         // )?;
         let ofile = File::create(&opath)
-            .context(crate::error::FileError { path: opath.to_string_lossy() })?;
+            .context(crate::error::FileError { path: opath.clone() })?;
         let efile = ofile.try_clone()
-            .context(crate::error::FileError { path: opath.to_string_lossy() })?;
+            .context(crate::error::FileError { path: opath.clone() })?;
         Command::new(self.command)
             .args(&self.args)
             .stdout(Stdio::from(ofile))

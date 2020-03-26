@@ -13,6 +13,7 @@ use std::path::PathBuf;
 use std::{env, process};
 use drop_dir;
 use crate::exec_to_file::ExecToFile;
+use std::io::Write;
 
 /// Print a usage message in the event a bad arg is passed
 fn usage() -> ! {
@@ -82,7 +83,7 @@ fn run_program(output: PathBuf) -> Result<()> {
     let temp_dir_path = std::env::temp_dir().join("logdog-temp");
     if std::path::Path::new(&temp_dir_path).exists() {
         std::fs::remove_dir_all(&temp_dir_path)
-            .context(crate::error::FileError { path: temp_dir_path.to_string_lossy() })?;
+            .context(crate::error::FileError { path: temp_dir_path.clone() })?;
     }
     let temp_dir = drop_dir::DropDir::new(temp_dir_path)
         .context(crate::error::IoError {})?;
@@ -92,6 +93,11 @@ fn run_program(output: PathBuf) -> Result<()> {
                 command: "echo",
                 args: vec!["Hello", "World!"],
                 output_filename: "hello.log",
+            },
+            ExecToFile {
+                command: "badcommandfoo",
+                args: vec!["fee", "fi"],
+                output_filename: "badcommandfoo.log",
             }
         ), &temp_dir.path())?;
     crate::create_tarball::create_tarball(&temp_dir.path(), &output)?;
@@ -100,16 +106,20 @@ fn run_program(output: PathBuf) -> Result<()> {
 }
 
 fn run_commands(commands: Vec<crate::exec_to_file::ExecToFile>, tempdir: &PathBuf) -> Result<()> {
-    // let mut errors: Vec<crate::error::Error> = Vec::new();
-
+    let error_path = tempdir.join("logdog.errors");
+    let mut error_file = std::fs::File::create(&error_path)
+        .context(crate::error::FileError { path: error_path.clone() })?;
     for ex in commands.iter() {
-        // let ex = make_exec(cmd_and_dest);
-        // crate::exec_to_file::exec_to_file(ex, &tempdir)?;
-        let run_result = ex.run(&tempdir);
-        match run_result {}
+        if let Err(e) = ex.run(&tempdir) {
+            error_file.write(
+                format!(
+                    "Error running command '{:?}': '{}'",
+                    ex.clone(),
+                    e
+                ).into_bytes().as_slice()
+            ).context(crate::error::FileError { path: error_path.clone() })?;
+        }
     }
-
-
     Ok(())
 }
 //
