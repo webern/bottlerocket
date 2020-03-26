@@ -12,6 +12,7 @@ use snafu::{ErrorCompat, ResultExt};
 use std::path::PathBuf;
 use std::{env, process};
 use drop_dir;
+use crate::exec_to_file::ExecToFile;
 
 /// Print a usage message in the event a bad arg is passed
 fn usage() -> ! {
@@ -72,10 +73,10 @@ fn main() -> ! {
     })
 }
 
-struct CmdAndDest {
-    dest: &'static str,
-    cmd: Vec<&'static str>,
-}
+// struct CmdAndDest {
+//     dest: &'static str,
+//     cmd: Vec<&'static str>,
+// }
 
 fn run_program(output: PathBuf) -> Result<()> {
     let temp_dir_path = std::env::temp_dir().join("logdog-temp");
@@ -85,28 +86,37 @@ fn run_program(output: PathBuf) -> Result<()> {
     }
     let temp_dir = drop_dir::DropDir::new(temp_dir_path)
         .context(crate::error::IoError {})?;
-    run_commands(
+    let command_errors = run_commands(
         vec!(
-            CmdAndDest { dest: "foo.log", cmd: vec!("echo", "Hello World!", "++") }
+            ExecToFile {
+                command: "echo",
+                args: vec!["Hello", "World!"],
+                output_filename: "hello.log",
+            }
         ), &temp_dir.path())?;
     crate::create_tarball::create_tarball(&temp_dir.path(), &output)?;
     println!("logs are at: {}", output.to_string_lossy());
     Ok(())
 }
 
-fn run_commands(commands: Vec<CmdAndDest>, tempdir: &PathBuf) -> Result<()> {
-    for cmd_and_dest in commands.iter() {
-        let ex = make_exec(cmd_and_dest, &tempdir);
-        crate::exec_to_file::exec_to_file(ex)?;
+fn run_commands(commands: Vec<crate::exec_to_file::ExecToFile>, tempdir: &PathBuf) -> Result<()> {
+    // let mut errors: Vec<crate::error::Error> = Vec::new();
+
+    for ex in commands.iter() {
+        // let ex = make_exec(cmd_and_dest);
+        // crate::exec_to_file::exec_to_file(ex, &tempdir)?;
+        let run_result = ex.run(&tempdir);
+        match run_result {}
     }
+
+
     Ok(())
 }
-
-fn make_exec<'a>(cmd_dest: &'a CmdAndDest, tempdir: &PathBuf) -> exec_to_file::ExecToFile<'a> {
-    crate::exec_to_file::ExecToFile {
-        command: cmd_dest.cmd.get(0).unwrap(),
-        args: cmd_dest.cmd[1..].to_vec(),
-        output_filename: cmd_dest.dest,
-        output_dir: tempdir.clone(),
-    }
-}
+//
+// fn make_exec<'a>(cmd_dest: &'a CmdAndDest) -> exec_to_file::ExecToFile<'a> {
+//     crate::exec_to_file::ExecToFile {
+//         command: cmd_dest.cmd.get(0).unwrap(),
+//         args: cmd_dest.cmd[1..].to_vec(),
+//         output_filename: cmd_dest.dest,
+//     }
+// }
