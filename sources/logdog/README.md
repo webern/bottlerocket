@@ -1,8 +1,17 @@
 # logdog
 
-Current version: 0.0.0
+Current version: 0.1.0
 
+## Introduction
 
+`logdog` is a program that gathers logs from various places on a Bottlerocket host and combines them
+into a tarball for easy export.
+
+Usage example:
+```bash
+$ logdog
+logs are at: /tmp/bottlerocket-logs.tar.gz
+```
 
 ## Colophon
 

@@ -1,9 +1,10 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use snafu::{Snafu, Backtrace};
 use std::io;
 use std::path::PathBuf;
+
+use snafu::{Snafu, Backtrace};
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]

@@ -1,12 +1,13 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
-use std::path::PathBuf;
 use std::fs::File;
-use snafu::ResultExt;
-use std::process::{Command, Stdio};
-use crate::error::Result;
 use std::io::Write;
+use std::path::PathBuf;
+use std::process::{Command, Stdio};
+
+use crate::error::{Result, FileError, IoError};
+use snafu::ResultExt;
 
 #[derive(Debug, Clone)]
 pub(crate) struct ExecToFile {
@@ -16,27 +17,29 @@ pub(crate) struct ExecToFile {
 }
 
 impl ExecToFile {
-    pub(crate) fn run(&self, tempdir: &PathBuf) -> crate::error::Result<()> {
+    pub(crate) fn run(&self, tempdir: &PathBuf) -> Result<()> {
         let opath = tempdir.join(self.output_filename);
-        let ofile = File::create(&opath)
-            .context(crate::error::FileError { path: opath.clone() })?;
+        let mut ofile = File::create(&opath)
+            .context(FileError { path: opath.clone() })?;
         let efile = ofile.try_clone()
-            .context(crate::error::FileError { path: opath.clone() })?;
+            .context(FileError { path: opath.clone() })?;
+        ofile.write(format!("{:?}\n", self).into_bytes().as_slice())
+            .context(FileError { path: opath.clone() })?;
         Command::new(self.command)
             .args(&self.args)
             .stdout(Stdio::from(ofile))
             .stderr(Stdio::from(efile))
-            .spawn().context(crate::error::IoError {})?
+            .spawn().context(IoError {})?
             .wait_with_output()
-            .context(crate::error::IoError {})?;
+            .context(IoError {})?;
         Ok(())
     }
 }
 
-pub(crate) fn run_commands(commands: Vec<crate::exec_to_file::ExecToFile>, outdir: &PathBuf) -> Result<()> {
+pub(crate) fn run_commands(commands: Vec<ExecToFile>, outdir: &PathBuf) -> Result<()> {
     let error_path = outdir.join(crate::ERROR_FILENAME);
     let mut error_file = File::create(&error_path)
-        .context(crate::error::FileError { path: error_path.clone() })?;
+        .context(FileError { path: error_path.clone() })?;
     for ex in commands.iter() {
         if let Err(e) = ex.run(&outdir) {
             error_file.write(
@@ -45,7 +48,7 @@ pub(crate) fn run_commands(commands: Vec<crate::exec_to_file::ExecToFile>, outdi
                     ex.clone(),
                     e
                 ).into_bytes().as_slice()
-            ).context(crate::error::FileError { path: error_path.clone() })?;
+            ).context(FileError { path: error_path.clone() })?;
         }
     }
     Ok(())

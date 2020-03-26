@@ -1,18 +1,36 @@
 // Copyright 2019 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 // SPDX-License-Identifier: MIT OR Apache-2.0
 
+/*!
+# Introduction
+
+`logdog` is a program that gathers logs from various places on a Bottlerocket host and combines them
+into a tarball for easy export.
+
+Usage example:
+```bash
+$ logdog
+logs are at: /tmp/bottlerocket-logs.tar.gz
+```
+*/
+
 #![deny(rust_2018_idioms)]
 
 mod error;
 mod exec_to_file;
 mod create_tarball;
+mod temp_dir;
 
-use crate::error::Result;
-use snafu::{ErrorCompat, ResultExt};
-use std::path::PathBuf;
+use std::fs::remove_dir_all;
+use std::path::{PathBuf, Path};
 use std::{env, process};
-use drop_dir;
-use crate::exec_to_file::{ExecToFile, run_commands};
+
+use create_tarball::create_tarball;
+use error::{Result, FileError, IoError};
+use exec_to_file::{ExecToFile, run_commands};
+use temp_dir::TempDir;
+
+use snafu::{ErrorCompat, ResultExt};
 
 const TEMP_SUBDIR_NANE: &str = "logdog-temp";
 const OUTPUT_FILENAME: &str = "bottlerocket-logs.tar.gz";
@@ -56,20 +74,20 @@ fn parse_args(args: env::Args) -> PathBuf {
 
     match output_arg {
         Some(path) => PathBuf::from(path),
-        None => std::env::temp_dir().as_path().join(OUTPUT_FILENAME),
+        None => env::temp_dir().as_path().join(OUTPUT_FILENAME),
     }
 }
 
 fn run_program(output: PathBuf) -> Result<()> {
-    let temp_dir_path = std::env::temp_dir().join(TEMP_SUBDIR_NANE);
-    if std::path::Path::new(&temp_dir_path).exists() {
-        std::fs::remove_dir_all(&temp_dir_path)
-            .context(crate::error::FileError { path: temp_dir_path.clone() })?;
+    let temp_dir_path = env::temp_dir().join(TEMP_SUBDIR_NANE);
+    if Path::new(&temp_dir_path).exists() {
+        remove_dir_all(&temp_dir_path)
+            .context(FileError { path: temp_dir_path.clone() })?;
     }
-    let temp_dir = drop_dir::DropDir::new(temp_dir_path)
-        .context(crate::error::IoError {})?;
+    let temp_dir = TempDir::new(temp_dir_path)
+        .context(IoError {})?;
     run_commands(create_commands(), &temp_dir.path())?;
-    crate::create_tarball::create_tarball(&temp_dir.path(), &output)?;
+    create_tarball(&temp_dir.path(), &output)?;
     println!("logs are at: {}", output.to_string_lossy());
     Ok(())
 }
@@ -133,11 +151,11 @@ fn create_commands() -> Vec<ExecToFile> {
 
 fn main() -> ! {
     let output = parse_args(env::args());
-    std::process::exit(match run_program(output) {
+    process::exit(match run_program(output) {
         Ok(()) => 0,
         Err(err) => {
             eprintln!("{}", err);
-            if let Some(var) = std::env::var_os("RUST_BACKTRACE") {
+            if let Some(var) = env::var_os("RUST_BACKTRACE") {
                 if var != "0" {
                     if let Some(backtrace) = err.backtrace() {
                         eprintln!("\n{:?}", backtrace);
