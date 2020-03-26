@@ -12,6 +12,12 @@ Usage example:
 $ logdog
 logs are at: /tmp/bottlerocket-logs.tar.gz
 ```
+
+## TODO
+
+ [ ] journalctl-list-boots is instead errors
+ [x] dmesg not working
+ [ ] iptables missing
 */
 
 #![deny(rust_2018_idioms)]
@@ -142,7 +148,7 @@ fn create_commands() -> Vec<ExecToFile> {
         },
         ExecToFile {
             command: "dmesg",
-            args: vec!["--color", "never", "--nopager"],
+            args: vec!["--color=never", "--nopager"],
             output_filename: "dmesg",
         }
     )
