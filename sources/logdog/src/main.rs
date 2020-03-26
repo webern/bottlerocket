@@ -17,6 +17,7 @@ use crate::exec_to_file::{ExecToFile, run_commands};
 const TEMP_SUBDIR_NANE: &str = "logdog-temp";
 const OUTPUT_FILENAME: &str = "bottlerocket-logs.tar.gz";
 const ERROR_FILENAME: &str = "logdog.errors";
+const TARBALL_DIRNAME: &str = "bottlerocket-logs";
 
 /// Prints a usage message in the event a bad arg is passed
 fn usage() -> ! {
@@ -73,17 +74,58 @@ fn run_program(output: PathBuf) -> Result<()> {
     Ok(())
 }
 
+// Produces the list of commands that we will run on the Bottlerocket host.
 fn create_commands() -> Vec<ExecToFile> {
     vec!(
         ExecToFile {
-            command: "echo",
-            args: vec!["Hello", "World!"],
-            output_filename: "hello.log",
+            command: "cat",
+            args: vec!["/etc/os-release"],
+            output_filename: "os-release",
         },
         ExecToFile {
-            command: "badcommandfoo",
-            args: vec!["fee", "fi"],
-            output_filename: "badcommandfoo.log",
+            command: "journalctl",
+            args: vec!["-p", "3", "--no-pager"],
+            output_filename: "journalctl-list-boots",
+        },
+        ExecToFile {
+            command: "journalctl",
+            args: vec!["-p", "err", "-a", "--no-pager"],
+            output_filename: "journalctl.errors",
+        },
+        ExecToFile {
+            command: "journalctl",
+            args: vec!["-a", "--no-pager"],
+            output_filename: "journalctl.log",
+        },
+        ExecToFile {
+            command: "signpost",
+            args: vec!["status"],
+            output_filename: "signpost",
+        },
+        ExecToFile {
+            command: "apiclient",
+            args: vec!["--method", "GET", "--uri", "/settings"],
+            output_filename: "settings.json",
+        },
+        ExecToFile {
+            command: "wicked",
+            args: vec!["show", "all"],
+            output_filename: "wicked",
+        },
+        ExecToFile {
+            command: "containerd",
+            args: vec!["config", "dump"],
+            output_filename: "containerd-config",
+        },
+        ExecToFile {
+            command: "systemctl",
+            args: vec!["status", "kube*", "-l", "--no-pager"],
+            output_filename: "kube-status",
+        },
+        ExecToFile {
+            command: "dmesg",
+            args: vec!["--color", "never", "--nopager"],
+            output_filename: "dmesg",
         }
     )
 }

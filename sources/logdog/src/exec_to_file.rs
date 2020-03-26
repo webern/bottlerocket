@@ -41,7 +41,7 @@ pub(crate) fn run_commands(commands: Vec<crate::exec_to_file::ExecToFile>, outdi
         if let Err(e) = ex.run(&outdir) {
             error_file.write(
                 format!(
-                    "Error running command '{:?}': '{}'",
+                    "Error running command '{:?}': '{}'\n",
                     ex.clone(),
                     e
                 ).into_bytes().as_slice()
