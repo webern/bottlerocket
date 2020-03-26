@@ -9,10 +9,6 @@ use snafu::{Snafu, Backtrace};
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
 pub enum Error {
-    #[snafu(display("Error: '{}'", message))]
-    ErrorMessage {
-        message: String,
-    },
     #[snafu(display("File error '{}': {}", path.to_string_lossy(), source))]
     FileError {
         source: io::Error,

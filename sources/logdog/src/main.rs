@@ -17,7 +17,10 @@ logs are at: /tmp/bottlerocket-logs.tar.gz
 
  [x] journalctl-list-boots is instead errors
  [x] dmesg not working
- [ ] iptables missing
+ [x] iptables missing
+ [ ] customer readme instructions ssh
+ [ ] customer readme instructions ssm
+ [ ] unit tests
 */
 
 #![deny(rust_2018_idioms)]
@@ -84,6 +87,7 @@ fn parse_args(args: env::Args) -> PathBuf {
     }
 }
 
+// Runs the bulk of the program's logic, main wraps this.
 fn run_program(output: PathBuf) -> Result<()> {
     let temp_dir_path = env::temp_dir().join(TEMP_SUBDIR_NANE);
     if Path::new(&temp_dir_path).exists() {
@@ -150,6 +154,16 @@ fn create_commands() -> Vec<ExecToFile> {
             command: "dmesg",
             args: vec!["--color=never", "--nopager"],
             output_filename: "dmesg",
+        },
+        ExecToFile {
+            command: "iptables",
+            args: vec!["-nvL", "-t", "filter"],
+            output_filename: "iptables-filter",
+        },
+        ExecToFile {
+            command: "iptables",
+            args: vec!["-nvL", "-t", "nat"],
+            output_filename: "iptables-nat",
         }
     )
 }
