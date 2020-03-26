@@ -15,7 +15,7 @@ logs are at: /tmp/bottlerocket-logs.tar.gz
 
 ## TODO
 
- [ ] journalctl-list-boots is instead errors
+ [x] journalctl-list-boots is instead errors
  [x] dmesg not working
  [ ] iptables missing
 */
@@ -108,7 +108,7 @@ fn create_commands() -> Vec<ExecToFile> {
         },
         ExecToFile {
             command: "journalctl",
-            args: vec!["-p", "3", "--no-pager"],
+            args: vec!["--list-boots", "--no-pager"],
             output_filename: "journalctl-list-boots",
         },
         ExecToFile {
