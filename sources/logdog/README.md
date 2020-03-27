@@ -8,7 +8,7 @@ Current version: 0.1.0
 into a tarball for easy export.
 
 Usage example:
-```bash
+```rust
 $ logdog
 logs are at: /tmp/bottlerocket-logs.tar.gz
 ```
