@@ -12,6 +12,24 @@ Usage example:
 $ logdog
 logs are at: /tmp/bottlerocket-logs.tar.gz
 ```
+
+### Logs Collected
+
+`logdog` will aggregate the following information:
+
+ * a copy of os-release to tell us the version and build of Bottlerocket
+ * a list of boots that journalctl knows about
+ * errors from journalctl
+ * all log lines from journalctl
+ * signpost status to tell us the status of grub and the boot partitions
+ * Bottlerocket settings using the apiclient
+ * networking status from wicked
+ * configuration info from containerd
+ * the status of kubelet and other kube processes from systemctl
+ * the kernel message buffer with dmesg
+ * firewall filtering information from iptables
+ * firewall nat information from iptables.
+
 */
 
 #![deny(rust_2018_idioms)]
@@ -96,7 +114,7 @@ fn run_program(output: &PathBuf) -> Result<()> {
 /// Produces the list of commands that we will run on the Bottlerocket host.
 fn create_commands() -> Vec<ExecToFile> {
     vec![
-        // Get a copy of os-release to tell us the version and build of Bottlerocket.
+        // a copy of os-release to tell us the version and build of Bottlerocket.
         ExecToFile {
             command: "cat",
             args: vec!["/etc/os-release"],
@@ -108,7 +126,7 @@ fn create_commands() -> Vec<ExecToFile> {
             args: vec!["--list-boots", "--no-pager"],
             output_filename: "journalctl-list-boots",
         },
-        // Get errors only from journalctl.
+        // Get errors from journalctl.
         ExecToFile {
             command: "journalctl",
             args: vec!["-p", "err", "-a", "--no-pager"],
@@ -132,7 +150,7 @@ fn create_commands() -> Vec<ExecToFile> {
             args: vec!["--method", "GET", "--uri", "/settings"],
             output_filename: "settings.json",
         },
-        // Get networking status with wicked.
+        // Get networking status from wicked.
         ExecToFile {
             command: "wicked",
             args: vec!["show", "all"],
@@ -156,13 +174,13 @@ fn create_commands() -> Vec<ExecToFile> {
             args: vec!["--color=never", "--nopager"],
             output_filename: "dmesg",
         },
-        // Get firewall filtering information with iptables.
+        // Get firewall filtering information from iptables.
         ExecToFile {
             command: "iptables",
             args: vec!["-nvL", "-t", "filter"],
             output_filename: "iptables-filter",
         },
-        // Get firewall nat information with iptables.
+        // Get firewall nat information from iptables.
         ExecToFile {
             command: "iptables",
             args: vec!["-nvL", "-t", "nat"],

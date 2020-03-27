@@ -29,8 +29,8 @@ mod tests {
     use uuid::Uuid;
 
     use super::*;
-    use std::io::Write;
     use flate2::read::GzDecoder;
+    use std::io::Write;
     use tar::Archive;
 
     #[test]
