@@ -34,7 +34,7 @@ mod tests {
     use tar::Archive;
 
     #[test]
-    fn test() {
+    fn tarball_test() {
         let inpath = std::env::temp_dir().join(Uuid::new_v4().to_string());
         let _indir = crate::TempDir::new(inpath.clone()).unwrap();
         let outpath = std::env::temp_dir().join(Uuid::new_v4().to_string());
