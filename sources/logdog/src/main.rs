@@ -79,7 +79,7 @@ fn parse_args(args: env::Args) -> PathBuf {
 }
 
 /// Runs the bulk of the program's logic, main wraps this.
-fn run_program(output: PathBuf) -> Result<()> {
+fn run_program(output: &PathBuf) -> Result<()> {
     let temp_dir_path = env::temp_dir().join(TEMPDIR_NAME);
     if Path::new(&temp_dir_path).exists() {
         remove_dir_all(&temp_dir_path).context(FileError {
@@ -161,7 +161,7 @@ fn create_commands() -> Vec<ExecToFile> {
 
 fn main() -> ! {
     let output = parse_args(env::args());
-    process::exit(match run_program(output) {
+    process::exit(match run_program(&output) {
         Ok(()) => 0,
         Err(err) => {
             eprintln!("{}", err);
@@ -175,4 +175,45 @@ fn main() -> ! {
             1
         }
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use flate2::read::GzDecoder;
+    use std::fs::File;
+    use tar::Archive;
+    use uuid::Uuid;
+
+    #[test]
+    fn test_program() {
+        let output_tempdir =
+            TempDir::new(std::env::temp_dir().join(Uuid::new_v4().to_string())).unwrap();
+        let output_filepath = output_tempdir.path().join("logstest");
+
+        // This should work on any system, even if the underlying programs being called are absent.
+        run_program(&output_filepath).unwrap();
+
+        // Open the file and spot check that a couple of expected files exist inside it.
+        // These function will panic if the path is not found in the tarball
+        let find = |path_to_find: &PathBuf| {
+            let tar_gz = File::open(&output_filepath).unwrap();
+            let tar = GzDecoder::new(tar_gz);
+            let mut archive = Archive::new(tar);
+            let mut entries = archive.entries().unwrap();
+            let _found = entries
+                .find(|item| {
+                    let entry = item.as_ref().clone().unwrap();
+                    let path = entry.path().unwrap();
+                    PathBuf::from(path) == PathBuf::from(path_to_find)
+                })
+                .unwrap()
+                .unwrap();
+        };
+
+        // These assert that the provided paths exist in the tarball
+        find(&PathBuf::from(TARBALL_DIRNAME));
+        find(&PathBuf::from(TARBALL_DIRNAME).join("os-release"));
+        find(&PathBuf::from(TARBALL_DIRNAME).join("journalctl.log"));
+    }
 }
