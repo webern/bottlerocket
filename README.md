@@ -344,6 +344,8 @@ ssh -i the-key.pem \
     "cat /.bottlerocket/rootfs/tmp/bottlerocket-logs.tar.gz" > bottlerocket-logs.tar.gz
 ```
 
+For a list of what is collected, see the logdog [README](sources/logdog/README.md)
+
 ## Details
 
 ### Security
