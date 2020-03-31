@@ -2,7 +2,7 @@
 
 use std::fs::File;
 use std::io::Write;
-use std::path::PathBuf;
+use std::path::Path;
 use std::process::{Command, Stdio};
 
 use crate::error;
@@ -19,8 +19,8 @@ pub(crate) struct ExecToFile {
 
 impl ExecToFile {
     /// Runs a shell command and pipes its output to a named file in the specified outdir.
-    pub(crate) fn run(&self, outdir: &PathBuf) -> Result<()> {
-        let opath = outdir.join(self.output_filename);
+    pub(crate) fn run<P: AsRef<Path>>(&self, outdir: P) -> Result<()> {
+        let opath = outdir.as_ref().join(self.output_filename);
         let mut ofile = File::create(&opath).context(error::File {
             path: opath.clone(),
         })?;
@@ -44,15 +44,15 @@ impl ExecToFile {
 
 /// Runs a list of commands and pipes all of them into the same outdir. If a command raises an error,
 /// `run_commands` pipes that error to a file and continues without failing.
-pub(crate) fn run_commands(commands: Vec<ExecToFile>, outdir: &PathBuf) -> Result<()> {
+pub(crate) fn run_commands<P: AsRef<Path>>(commands: Vec<ExecToFile>, outdir: P) -> Result<()> {
     // if a command fails, we will pipe its error here and continue.
-    let error_path = outdir.join(crate::ERROR_FILENAME);
+    let error_path = outdir.as_ref().join(crate::ERROR_FILENAME);
     let mut error_file = File::create(&error_path).context(error::File {
         path: error_path.clone(),
     })?;
 
     for ex in commands.iter() {
-        if let Err(e) = ex.run(&outdir) {
+        if let Err(e) = ex.run(outdir.as_ref()) {
             // ignore the error, but make note of it in the error file.
             error_file
                 .write(

@@ -3,7 +3,7 @@
 use crate::error;
 use crate::error::Result;
 use std::fs::File;
-use std::path::PathBuf;
+use std::path::Path;
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
@@ -12,14 +12,18 @@ use tar;
 
 // Creates a tarball with all the contents of directory `dir`.
 // Outputs as file to `outfile`.
-pub(crate) fn create_tarball(dir: &PathBuf, outfile: &PathBuf) -> Result<()> {
-    let tarfile = File::create(outfile).context(error::File {
-        path: outfile.to_str().unwrap(),
+pub(crate) fn create_tarball<P1, P2>(dir: P1, outfile: P2) -> Result<()>
+where
+    P1: AsRef<Path>,
+    P2: AsRef<Path>,
+{
+    let tarfile = File::create(outfile.as_ref()).context(error::File {
+        path: outfile.as_ref(),
     })?;
     let encoder = GzEncoder::new(tarfile, Compression::default());
     let mut tarball = tar::Builder::new(encoder);
     tarball
-        .append_dir_all(crate::TARBALL_DIRNAME, dir.to_str().unwrap())
+        .append_dir_all(crate::TARBALL_DIRNAME, dir.as_ref())
         .context(error::Io)
 }
 
@@ -28,7 +32,7 @@ mod tests {
     use super::*;
 
     use std::io::Write;
-    use std::path::Path;
+    use std::path::{Path, PathBuf};
 
     use flate2::read::GzDecoder;
     use tar::Archive;
