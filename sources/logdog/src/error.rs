@@ -7,7 +7,7 @@ use snafu::{Backtrace, Snafu};
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
-pub(crate) enum Error {
+pub enum Error {
     #[snafu(display("Error creating the tarball file '{}': {}", path.display(), source))]
     TarballFileCreate {
         source: io::Error,
@@ -73,6 +73,8 @@ pub(crate) enum Error {
         source: io::Error,
         backtrace: Backtrace,
     },
+    #[snafu(display("Error, the output file '{}' already exists", path.display()))]
+    OutputFileExists { path: PathBuf, backtrace: Backtrace },
 }
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;

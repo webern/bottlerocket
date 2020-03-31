@@ -1,13 +1,13 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 use crate::error;
-use crate::error::Result;
+use crate::error::{Error, Result};
 use std::fs::File;
-use std::path::Path;
+use std::path::{Path, PathBuf};
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use snafu::ResultExt;
+use snafu::{Backtrace, GenerateBacktrace, ResultExt};
 use tar;
 
 // Creates a tarball with all the contents of directory `dir`.
@@ -17,6 +17,12 @@ where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
 {
+    if Path::new(outfile.as_ref()).exists() {
+        return Err(Error::OutputFileExists {
+            path: PathBuf::from(outfile.as_ref()),
+            backtrace: Backtrace::generate(),
+        });
+    }
     let tarfile = File::create(outfile.as_ref()).context(error::TarballFileCreate {
         path: outfile.as_ref(),
     })?;
