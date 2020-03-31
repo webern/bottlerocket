@@ -17,14 +17,17 @@ where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
 {
-    let tarfile = File::create(outfile.as_ref()).context(error::File {
+    let tarfile = File::create(outfile.as_ref()).context(error::TarballFileCreate {
         path: outfile.as_ref(),
     })?;
     let encoder = GzEncoder::new(tarfile, Compression::default());
     let mut tarball = tar::Builder::new(encoder);
     tarball
         .append_dir_all(crate::TARBALL_DIRNAME, dir.as_ref())
-        .context(error::Io)
+        .context(error::TarballWrite {
+            path: outfile.as_ref(),
+        })
+    // TODO correctly close the tarball file
 }
 
 #[cfg(test)]

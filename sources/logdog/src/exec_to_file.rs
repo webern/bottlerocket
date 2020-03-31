@@ -21,24 +21,34 @@ impl ExecToFile {
     /// Runs a shell command and pipes its output to a named file in the specified outdir.
     pub(crate) fn run<P: AsRef<Path>>(&self, outdir: P) -> Result<()> {
         let opath = outdir.as_ref().join(self.output_filename);
-        let mut ofile = File::create(&opath).context(error::File {
+        let mut ofile = File::create(&opath).context(error::CommandOutputFile {
             path: opath.clone(),
         })?;
-        let efile = ofile.try_clone().context(error::File {
+        let efile = ofile.try_clone().context(error::CommandErrFile {
             path: opath.clone(),
         })?;
         ofile
             .write(format!("{:?}\n", self).into_bytes().as_slice())
-            .context(error::File { path: opath })?;
+            .context(error::StdoutWrite { path: opath })?;
         Command::new(self.command)
             .args(&self.args)
             .stdout(Stdio::from(ofile))
             .stderr(Stdio::from(efile))
             .spawn()
-            .context(error::Io)?
+            .context(error::CommandSpawn {
+                command: self.to_string(),
+            })?
             .wait_with_output()
-            .context(error::Io)?;
+            .context(error::CommandFinish {
+                command: self.to_string(),
+            })?;
         Ok(())
+    }
+}
+
+impl ToString for ExecToFile {
+    fn to_string(&self) -> String {
+        format!("{} {}", self.command, self.args.join(" "))
     }
 }
 
@@ -47,7 +57,7 @@ impl ExecToFile {
 pub(crate) fn run_commands<P: AsRef<Path>>(commands: Vec<ExecToFile>, outdir: P) -> Result<()> {
     // if a command fails, we will pipe its error here and continue.
     let error_path = outdir.as_ref().join(crate::ERROR_FILENAME);
-    let mut error_file = File::create(&error_path).context(error::File {
+    let mut error_file = File::create(&error_path).context(error::ErrorFile {
         path: error_path.clone(),
     })?;
 
@@ -60,7 +70,7 @@ pub(crate) fn run_commands<P: AsRef<Path>>(commands: Vec<ExecToFile>, outdir: P)
                         .into_bytes()
                         .as_slice(),
                 )
-                .context(error::File {
+                .context(error::ErrorWrite {
                     path: error_path.clone(),
                 })?;
         }

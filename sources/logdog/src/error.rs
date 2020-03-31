@@ -8,14 +8,62 @@ use snafu::{Backtrace, Snafu};
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
 pub enum Error {
-    #[snafu(display("File error '{}': {}", path.to_string_lossy(), source))]
-    File {
+    #[snafu(display("Error creating the tarball file '{}': {}", path.display(), source))]
+    TarballFileCreate {
         source: io::Error,
         path: PathBuf,
         backtrace: Backtrace,
     },
-    #[snafu(display("IO error: {}", source))]
-    Io {
+    #[snafu(display("Error creating the command stdout file '{}': {}", path.display(), source))]
+    CommandOutputFile {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error creating the command stderr file '{}': {}", path.display(), source))]
+    CommandErrFile {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error creating the error file '{}': {}", path.display(), source))]
+    ErrorFile {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error writing to the error file '{}': {}", path.display(), source))]
+    ErrorWrite {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error writing to the stdout file '{}': {}", path.display(), source))]
+    StdoutWrite {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error writing to the tarball: {}", source))]
+    TarballWrite {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error starting command '{}': {}", command, source))]
+    CommandSpawn {
+        command: String,
+        source: io::Error,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error completing command '{}': {}", command, source))]
+    CommandFinish {
+        command: String,
+        source: io::Error,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error creating tempdir: {}", source))]
+    TempDirCreate {
         source: io::Error,
         backtrace: Backtrace,
     },

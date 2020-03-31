@@ -83,7 +83,7 @@ fn parse_args(args: env::Args) -> PathBuf {
 
 /// Runs the bulk of the program's logic, main wraps this.
 fn run(output: &PathBuf) -> Result<()> {
-    let temp_dir = TempDir::new().context(error::Io)?;
+    let temp_dir = TempDir::new().context(error::TempDirCreate)?;
     run_commands(commands(), &temp_dir.path().to_path_buf())?;
     create_tarball(&temp_dir.path().to_path_buf(), &output)?;
     println!("logs are at: {}", output.to_string_lossy());
