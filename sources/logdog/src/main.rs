@@ -86,7 +86,7 @@ fn run(output: &PathBuf) -> Result<()> {
     let temp_dir = TempDir::new().context(error::TempDirCreate)?;
     run_commands(commands(), &temp_dir.path().to_path_buf())?;
     create_tarball(&temp_dir.path().to_path_buf(), &output)?;
-    println!("logs are at: {}", output.to_string_lossy());
+    println!("logs are at: {}", output.display());
     Ok(())
 }
 
