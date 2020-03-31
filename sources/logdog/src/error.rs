@@ -5,6 +5,8 @@ use std::path::PathBuf;
 
 use snafu::{Backtrace, Snafu};
 
+/// Contains the list of errors for `logdog`.
+
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
 pub enum Error {

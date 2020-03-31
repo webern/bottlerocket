@@ -9,6 +9,8 @@ use crate::error;
 use crate::error::Result;
 use snafu::ResultExt;
 
+/// Provides a structure and functions for running commands and saving the output to a file.
+
 /// Aggregates the information needed to run a shell command and write its output to a file.
 #[derive(Debug, Clone)]
 pub(crate) struct ExecToFile {

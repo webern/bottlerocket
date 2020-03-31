@@ -2,6 +2,8 @@
 
 use crate::exec_to_file::ExecToFile;
 
+/// Contains the list of command that `logdog` will run.
+
 /// Produces the list of commands that we will run on the Bottlerocket host.
 pub(crate) fn commands() -> Vec<ExecToFile> {
     vec![
