@@ -12,9 +12,9 @@ use snafu::ResultExt;
 /// Aggregates the information needed to run a shell command and write its output to a file.
 #[derive(Debug, Clone)]
 pub(crate) struct ExecToFile {
-    pub command: &'static str,
-    pub args: Vec<&'static str>,
-    pub output_filename: &'static str,
+    pub(crate) command: &'static str,
+    pub(crate)  args: Vec<&'static str>,
+    pub(crate)  output_filename: &'static str,
 }
 
 impl ExecToFile {

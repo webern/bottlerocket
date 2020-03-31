@@ -7,7 +7,7 @@ use snafu::{Backtrace, Snafu};
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub")]
-pub enum Error {
+pub(crate) enum Error {
     #[snafu(display("Error creating the tarball file '{}': {}", path.display(), source))]
     TarballFileCreate {
         source: io::Error,
@@ -75,4 +75,4 @@ pub enum Error {
     },
 }
 
-pub type Result<T> = std::result::Result<T, Error>;
+pub(crate) type Result<T> = std::result::Result<T, Error>;
