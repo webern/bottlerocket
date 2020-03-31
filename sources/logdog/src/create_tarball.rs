@@ -26,8 +26,10 @@ where
         .append_dir_all(crate::TARBALL_DIRNAME, dir.as_ref())
         .context(error::TarballWrite {
             path: outfile.as_ref(),
-        })
-    // TODO correctly close the tarball file
+        })?;
+    tarball
+        .finish()
+        .context(error::TarballClose { path: dir.as_ref() })
 }
 
 #[cfg(test)]

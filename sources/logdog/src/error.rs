@@ -14,6 +14,18 @@ pub enum Error {
         path: PathBuf,
         backtrace: Backtrace,
     },
+    #[snafu(display("Error writing to the tarball: {}", source))]
+    TarballWrite {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+    #[snafu(display("Error closing the tarball: {}", source))]
+    TarballClose {
+        source: io::Error,
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
     #[snafu(display("Error creating the command stdout file '{}': {}", path.display(), source))]
     CommandOutputFile {
         source: io::Error,
@@ -40,12 +52,6 @@ pub enum Error {
     },
     #[snafu(display("Error writing to the stdout file '{}': {}", path.display(), source))]
     StdoutWrite {
-        source: io::Error,
-        path: PathBuf,
-        backtrace: Backtrace,
-    },
-    #[snafu(display("Error writing to the tarball: {}", source))]
-    TarballWrite {
         source: io::Error,
         path: PathBuf,
         backtrace: Backtrace,
