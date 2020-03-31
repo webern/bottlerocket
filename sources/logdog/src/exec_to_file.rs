@@ -18,7 +18,7 @@ pub(crate) struct ExecToFile {
 }
 
 impl ExecToFile {
-    /// Runs a shell command and pipes its output to a named file in the specified outdir.
+    /// Runs a command specified in an `ExecToFile` and writes its output to a file in the specified `outdir`.
     pub(crate) fn run<P: AsRef<Path>>(&self, outdir: P) -> Result<()> {
         let opath = outdir.as_ref().join(self.output_filename);
         let ofile = File::create(&opath).context(error::CommandOutputFile {
@@ -49,8 +49,9 @@ impl ToString for ExecToFile {
     }
 }
 
-/// Runs a list of commands and pipes all of them into the same outdir. If a command raises an error,
-/// `run_commands` pipes that error to a file and continues without failing.
+/// Runs a list of commands and writes all of their output into files in the same `outdir`.  Any
+/// failures are noted in the file named by ERROR_FILENAME.  This function ignores the commands'
+/// return status and only fails if we can't save our own errors.
 pub(crate) fn run_commands<P: AsRef<Path>>(commands: Vec<ExecToFile>, outdir: P) -> Result<()> {
     // if a command fails, we will pipe its error here and continue.
     let error_path = outdir.as_ref().join(crate::ERROR_FILENAME);
@@ -61,15 +62,15 @@ pub(crate) fn run_commands<P: AsRef<Path>>(commands: Vec<ExecToFile>, outdir: P)
     for ex in commands.iter() {
         if let Err(e) = ex.run(outdir.as_ref()) {
             // ignore the error, but make note of it in the error file.
-            error_file
-                .write(
-                    format!("Error running command '{:?}': '{}'\n", ex.clone(), e)
-                        .into_bytes()
-                        .as_slice(),
-                )
-                .context(error::ErrorWrite {
-                    path: error_path.clone(),
-                })?;
+            write!(
+                &mut error_file,
+                "Error running command '{:?}': '{}'\n",
+                ex.to_string(),
+                e
+            )
+            .context(error::ErrorWrite {
+                path: error_path.clone(),
+            })?;
         }
     }
     Ok(())

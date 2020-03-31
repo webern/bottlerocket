@@ -45,7 +45,7 @@ fn usage() -> ! {
     let program_name = env::args().next().unwrap_or_else(|| "program".to_string());
     eprintln!(
         r"Usage: {}
-            [ --output PATH file to write zipped logs to ]
+            [ --output PATH ]       where to write archived logs
 ",
         program_name,
     );
