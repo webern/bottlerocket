@@ -51,6 +51,31 @@ impl ToString for ExecToFile {
     }
 }
 
+impl From<(&'static str, &'static str)> for ExecToFile {
+    fn from(file_and_command: (&'static str, &'static str)) -> Self {
+        let command_parts: Vec<&'static str> = file_and_command
+            .1
+            .split::<&'static str>(" ")
+            .into()
+            .collect()
+            .as_slice();
+        let command = match command_parts.get(0) {
+            Some(&c) => c,
+            None => "",
+        };
+        let args: Vec<&'static str> = if command_parts.len() > 1 {
+            command_parts[1..].to_owned()
+        } else {
+            vec![]
+        };
+        ExecToFile {
+            command,
+            args,
+            output_filename: file_and_command.0,
+        }
+    }
+}
+
 /// Runs a list of commands and writes all of their output into files in the same `outdir`.  Any
 /// failures are noted in the file named by ERROR_FILENAME.  This function ignores the commands'
 /// return status and only fails if we can't save our own errors.
