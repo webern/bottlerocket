@@ -13,23 +13,20 @@ use snafu::ResultExt;
 #[derive(Debug, Clone)]
 pub(crate) struct ExecToFile {
     pub(crate) command: &'static str,
-    pub(crate)  args: Vec<&'static str>,
-    pub(crate)  output_filename: &'static str,
+    pub(crate) args: Vec<&'static str>,
+    pub(crate) output_filename: &'static str,
 }
 
 impl ExecToFile {
     /// Runs a shell command and pipes its output to a named file in the specified outdir.
     pub(crate) fn run<P: AsRef<Path>>(&self, outdir: P) -> Result<()> {
         let opath = outdir.as_ref().join(self.output_filename);
-        let mut ofile = File::create(&opath).context(error::CommandOutputFile {
+        let ofile = File::create(&opath).context(error::CommandOutputFile {
             path: opath.clone(),
         })?;
-        let efile = ofile.try_clone().context(error::CommandErrFile {
-            path: opath.clone(),
-        })?;
-        ofile
-            .write(format!("{:?}\n", self).into_bytes().as_slice())
-            .context(error::StdoutWrite { path: opath })?;
+        let efile = ofile
+            .try_clone()
+            .context(error::CommandErrFile { path: opath })?;
         Command::new(self.command)
             .args(&self.args)
             .stdout(Stdio::from(ofile))

@@ -50,12 +50,6 @@ pub enum Error {
         path: PathBuf,
         backtrace: Backtrace,
     },
-    #[snafu(display("Error writing to the stdout file '{}': {}", path.display(), source))]
-    StdoutWrite {
-        source: io::Error,
-        path: PathBuf,
-        backtrace: Backtrace,
-    },
     #[snafu(display("Error starting command '{}': {}", command, source))]
     CommandSpawn {
         command: String,
