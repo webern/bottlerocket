@@ -1,6 +1,6 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
-/// Contains the list of command that `logdog` will run.
+/// Provides the list of command that `logdog` will run.
 
 /// Returns the standard list of `logdog` commands.
 pub(crate) fn commands() -> Vec<(&'static str, &'static str)> {
