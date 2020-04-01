@@ -153,9 +153,9 @@ pub(crate) fn run_commands<P: AsRef<Path>>(
 }
 
 /// Runs the bulk of the program's logic, main wraps this.
-fn run(output: &PathBuf) -> Result<()> {
+fn run(filename_and_command_list: Vec<(&str, &str)>, output: &PathBuf) -> Result<()> {
     let temp_dir = TempDir::new().context(error::TempDirCreate)?;
-    run_commands(commands(), &temp_dir.path().to_path_buf())?;
+    run_commands(filename_and_command_list, &temp_dir.path().to_path_buf())?;
     create_tarball(&temp_dir.path().to_path_buf(), &output)?;
     println!("logs are at: {}", output.display());
     Ok(())
@@ -163,7 +163,7 @@ fn run(output: &PathBuf) -> Result<()> {
 
 fn main() -> ! {
     let output = parse_args(env::args());
-    process::exit(match run(&output) {
+    process::exit(match run(commands(), &output) {
         Ok(()) => 0,
         Err(err) => {
             eprintln!("{}", err);
@@ -191,8 +191,8 @@ mod tests {
         let output_tempdir = TempDir::new().unwrap();
         let output_filepath = output_tempdir.path().join("logstest");
 
-        // This should work on any system, even if the underlying programs being called are absent.
-        run(&output_filepath).unwrap();
+        // We assume the `echo` will not do something unexpected on the machine running this test.
+        run(vec![("hello.txt", "echo hello")], &output_filepath).unwrap();
 
         // Open the file and spot check that a couple of expected files exist inside it.
         // This function will panic if the path is not found in the tarball
@@ -213,7 +213,6 @@ mod tests {
 
         // These assert that the provided paths exist in the tarball
         find(&PathBuf::from(TARBALL_DIRNAME));
-        find(&PathBuf::from(TARBALL_DIRNAME).join("os-release"));
-        find(&PathBuf::from(TARBALL_DIRNAME).join("journalctl.log"));
+        find(&PathBuf::from(TARBALL_DIRNAME).join("hello.txt"));
     }
 }
