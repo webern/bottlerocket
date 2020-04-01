@@ -23,15 +23,16 @@ For the commands used to gather logs, please see [commands.rs](src/commands.rs).
 mod commands;
 mod create_tarball;
 mod error;
-mod exec_to_file;
 
-use std::path::PathBuf;
+use std::fs::File;
+use std::io::Write;
+use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
 use std::{env, process};
 
 use commands::commands;
 use create_tarball::create_tarball;
 use error::Result;
-use exec_to_file::run_commands;
 use tempfile::TempDir;
 
 use snafu::{ErrorCompat, ResultExt};
@@ -79,6 +80,76 @@ fn parse_args(args: env::Args) -> PathBuf {
         Some(path) => PathBuf::from(path),
         None => env::temp_dir().as_path().join(OUTPUT_FILENAME),
     }
+}
+
+/// Runs a command and writes its output to a file.
+pub(crate) fn run_command<P: AsRef<Path>>(output_filepath: P, command: &str) -> Result<()> {
+    let command_parts: Vec<String> = command
+        .to_owned()
+        .split(" ")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>();
+    let command = match command_parts.get(0) {
+        Some(c) => c.into(),
+        None => "".to_string(),
+    };
+    let args: Vec<String> = if command_parts.len() > 1 {
+        command_parts[1..].to_owned()
+    } else {
+        vec![]
+    };
+    let ofile = File::create(output_filepath.as_ref()).context(error::CommandOutputFile {
+        path: output_filepath.as_ref(),
+    })?;
+    let stderr_file = ofile.try_clone().context(error::CommandErrFile {
+        path: output_filepath.as_ref(),
+    })?;
+    Command::new(command.as_str())
+        .args(&args)
+        .stdout(Stdio::from(ofile))
+        .stderr(Stdio::from(stderr_file))
+        .spawn()
+        .context(error::CommandSpawn {
+            command: command.clone(),
+        })?
+        .wait_with_output()
+        .context(error::CommandFinish {
+            command: command.clone(),
+        })?;
+    Ok(())
+}
+
+/// Runs a list of commands and writes all of their output into files in the same `outdir`.  Any
+/// failures are noted in the file named by ERROR_FILENAME.  This function ignores the commands'
+/// return status and only fails if we can't save our own errors. The commands are specified by
+/// tuples where `.0` is the desired output filename and `.1` is the command to run.
+pub(crate) fn run_commands<P: AsRef<Path>>(
+    filename_and_command_list: Vec<(&str, &str)>,
+    outdir: P,
+) -> Result<()> {
+    // if a command fails, we will pipe its error here and continue.
+    let error_path = outdir.as_ref().join(crate::ERROR_FILENAME);
+    let mut error_file = File::create(&error_path).context(error::ErrorFile {
+        path: error_path.clone(),
+    })?;
+
+    for filename_and_command in filename_and_command_list.iter() {
+        if let Err(e) = run_command(
+            outdir.as_ref().join(&filename_and_command.0),
+            &filename_and_command.1,
+        ) {
+            // ignore the error, but make note of it in the error file.
+            write!(
+                &mut error_file,
+                "Error running command '{}': '{}'\n",
+                filename_and_command.1, e
+            )
+            .context(error::ErrorWrite {
+                path: error_path.clone(),
+            })?;
+        }
+    }
+    Ok(())
 }
 
 /// Runs the bulk of the program's logic, main wraps this.

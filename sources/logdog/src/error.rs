@@ -28,6 +28,11 @@ pub(crate) enum Error {
         path: PathBuf,
         backtrace: Backtrace,
     },
+    #[snafu(display(
+        "The output directory '{}' does not exist or cannot be accessed.",
+        path.display()
+    ))]
+    NoOutputDirectory { path: PathBuf, backtrace: Backtrace },
     #[snafu(display("Error creating the command stdout file '{}': {}", path.display(), source))]
     CommandOutputFile {
         source: io::Error,
@@ -69,7 +74,7 @@ pub(crate) enum Error {
         source: io::Error,
         backtrace: Backtrace,
     },
-    #[snafu(display("Error, the output file '{}' already exists", path.display()))]
+    #[snafu(display("Error, the output file '{}' already exists and would be overwritten.", path.display()))]
     OutputFileExists { path: PathBuf, backtrace: Backtrace },
 }
 

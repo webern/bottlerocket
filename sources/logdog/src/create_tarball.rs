@@ -1,13 +1,13 @@
 // Copyright 2020 Amazon.com, Inc. or its affiliates. All Rights Reserved.
 
 use crate::error;
-use crate::error::{Error, Result};
+use crate::error::Result;
 use std::fs::File;
 use std::path::{Path, PathBuf};
 
 use flate2::write::GzEncoder;
 use flate2::Compression;
-use snafu::{Backtrace, GenerateBacktrace, ResultExt};
+use snafu::{ensure, ResultExt};
 use tar;
 
 /// Contains a function for compressing a directory's contents into a tarball.
@@ -19,12 +19,23 @@ where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
 {
-    if Path::new(outfile.as_ref()).exists() {
-        return Err(Error::OutputFileExists {
-            path: PathBuf::from(outfile.as_ref()),
-            backtrace: Backtrace::generate(),
-        });
+    // present an error if the output directory does not exist.
+    if let Some(outdir) = outfile.as_ref().parent() {
+        ensure!(
+            Path::new(&outdir).is_dir(),
+            error::NoOutputDirectory { path: &outdir }
+        )
     }
+
+    // present an error if we would overwrite an existing file.
+    ensure!(
+        !Path::new(outfile.as_ref()).exists(),
+        error::OutputFileExists {
+            path: PathBuf::from(outfile.as_ref()),
+        }
+    );
+
+    // compress files and create the tarball.
     let tarfile = File::create(outfile.as_ref()).context(error::TarballFileCreate {
         path: outfile.as_ref(),
     })?;
