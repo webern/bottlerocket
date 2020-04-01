@@ -45,6 +45,42 @@ impl ExecToFile {
     }
 }
 
+pub(crate) fn run<P: AsRef<Path>>(output_filepath: P, command: &str) -> Result<()> {
+    let command_parts: Vec<String> = command
+        .to_owned()
+        .split(" ")
+        .map(|s| s.to_string())
+        .collect::<Vec<String>>();
+    let command = match command_parts.get(0) {
+        Some(c) => c.into(),
+        None => "".to_string(),
+    };
+    let args: Vec<String> = if command_parts.len() > 1 {
+        command_parts[1..].to_owned()
+    } else {
+        vec![]
+    };
+    let ofile = File::create(output_filepath.as_ref()).context(error::CommandOutputFile {
+        path: output_filepath.as_ref(),
+    })?;
+    let stderr_file = ofile.try_clone().context(error::CommandErrFile {
+        path: output_filepath.as_ref(),
+    })?;
+    Command::new(command.as_str())
+        .args(&args)
+        .stdout(Stdio::from(ofile))
+        .stderr(Stdio::from(stderr_file))
+        .spawn()
+        .context(error::CommandSpawn {
+            command: command.clone(),
+        })?
+        .wait_with_output()
+        .context(error::CommandFinish {
+            command: command.clone(),
+        })?;
+    Ok(())
+}
+
 impl ToString for ExecToFile {
     fn to_string(&self) -> String {
         format!("{} {}", self.command, self.args.join(" "))
