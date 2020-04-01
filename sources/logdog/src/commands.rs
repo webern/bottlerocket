@@ -6,7 +6,7 @@ use crate::exec_to_file::ExecToFile;
 
 /// Produces the list of commands that we will run on the Bottlerocket host.
 pub(crate) fn commands() -> Vec<ExecToFile> {
-    vec![
+    let v = vec![
         // a copy of os-release to tell us the version and build of Bottlerocket.
         ExecToFile {
             command: "cat".to_string(),
@@ -106,5 +106,35 @@ pub(crate) fn commands() -> Vec<ExecToFile> {
             args: vec!["-i".to_string()],
             output_filename: "df-inodes".to_string(),
         },
+    ];
+
+    for x in &v {
+        println!(
+            "(\"{}\", \"{} {}\"),",
+            x.output_filename,
+            x.command,
+            x.args.join(" ")
+        )
+    }
+
+    v
+}
+
+pub(crate) fn commands_str() -> Vec<(&'static str, &'static str)> {
+    vec![
+        ("os-release", "cat /etc/os-release"),
+        ("journalctl-boots", "journalctl --list-boots --no-pager"),
+        ("journalctl.errors", "journalctl -p err -a --no-pager"),
+        ("journalctl.log", "journalctl -a --no-pager"),
+        ("signpost", "signpost status"),
+        ("settings.json", "apiclient --method GET --uri /"),
+        ("wicked", "wicked show all"),
+        ("containerd-config", "containerd config dump"),
+        ("kube-status", "systemctl status kube* -l --no-pager"),
+        ("dmesg", "dmesg --color=never --nopager"),
+        ("iptables-filter", "iptables -nvL -t filter"),
+        ("iptables-nat", "iptables -nvL -t nat"),
+        ("df", "df -h"),
+        ("df-inodes", "df -i"),
     ]
 }
