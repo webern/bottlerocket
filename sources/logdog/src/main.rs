@@ -190,7 +190,7 @@ mod tests {
         let output_tempdir = TempDir::new().unwrap();
         let output_filepath = output_tempdir.path().join("logstest");
 
-        // We assume the `echo` will not do something unexpected on the machine running this test.
+        // We assume that `echo` will not do something unexpected on the machine running this test.
         run(vec![("hello.txt", "echo hello")], &output_filepath).unwrap();
 
         // Open the file and spot check that a couple of expected files exist inside it.
