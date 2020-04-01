@@ -13,7 +13,6 @@ use tar;
 /// Contains a function for compressing a directory's contents into a tarball.
 
 /// Creates a tarball with all the contents of directory `dir`.
-/// Outputs as file to `outfile`.
 pub(crate) fn create_tarball<P1, P2>(dir: P1, outfile: P2) -> Result<()>
 where
     P1: AsRef<Path>,
