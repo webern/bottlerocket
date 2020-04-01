@@ -8,8 +8,8 @@ use snafu::{Backtrace, Snafu};
 /// Contains the list of errors for `logdog`.
 
 #[derive(Debug, Snafu)]
-#[snafu(visibility = "pub")]
-pub enum Error {
+#[snafu(visibility = "pub(crate)")]
+pub(crate) enum Error {
     #[snafu(display("Error creating the tarball file '{}': {}", path.display(), source))]
     TarballFileCreate {
         source: io::Error,
