@@ -71,7 +71,6 @@ fn parse_args(args: env::Args) -> PathBuf {
                         .unwrap_or_else(|| usage_msg("Did not give argument to --output")),
                 )
             }
-
             _ => usage(),
         }
     }
