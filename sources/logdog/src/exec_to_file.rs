@@ -14,22 +14,22 @@ use snafu::ResultExt;
 /// Aggregates the information needed to run a shell command and write its output to a file.
 #[derive(Debug, Clone)]
 pub(crate) struct ExecToFile {
-    pub(crate) command: &'static str,
-    pub(crate) args: Vec<&'static str>,
-    pub(crate) output_filename: &'static str,
+    pub(crate) command: String,
+    pub(crate) args: Vec<String>,
+    pub(crate) output_filename: String,
 }
 
 impl ExecToFile {
     /// Runs a command specified in an `ExecToFile` and writes its output to a file in the specified `outdir`.
     pub(crate) fn run<P: AsRef<Path>>(&self, outdir: P) -> Result<()> {
-        let opath = outdir.as_ref().join(self.output_filename);
+        let opath = outdir.as_ref().join(self.output_filename.as_str());
         let ofile = File::create(&opath).context(error::CommandOutputFile {
             path: opath.clone(),
         })?;
         let efile = ofile
             .try_clone()
             .context(error::CommandErrFile { path: opath })?;
-        Command::new(self.command)
+        Command::new(self.command.as_str())
             .args(&self.args)
             .stdout(Stdio::from(ofile))
             .stderr(Stdio::from(efile))
@@ -51,30 +51,30 @@ impl ToString for ExecToFile {
     }
 }
 
-// impl From<(&'static str, &'static str)> for ExecToFile {
-//     fn from(file_and_command: (&'static str, &'static str)) -> Self {
-//         let command_parts: Vec<&'static str> = file_and_command
-//             .1
-//             .split::<&'static str>(" ")
-//             .into()
-//             .collect()
-//             .as_slice();
-//         let command = match command_parts.get(0) {
-//             Some(&c) => c,
-//             None => "",
-//         };
-//         let args: Vec<&'static str> = if command_parts.len() > 1 {
-//             command_parts[1..].to_owned()
-//         } else {
-//             vec![]
-//         };
-//         ExecToFile {
-//             command,
-//             args,
-//             output_filename: file_and_command.0,
-//         }
-//     }
-// }
+impl From<(&str, &str)> for ExecToFile {
+    fn from(file_and_command: (&str, &str)) -> Self {
+        let command_parts: Vec<String> = file_and_command
+            .1
+            .to_owned()
+            .split(" ")
+            .map(|s| s.to_string())
+            .collect::<Vec<String>>();
+        let command = match command_parts.get(0) {
+            Some(c) => c.into(),
+            None => "".to_string(),
+        };
+        let args: Vec<String> = if command_parts.len() > 1 {
+            command_parts[1..].to_owned()
+        } else {
+            vec![]
+        };
+        ExecToFile {
+            command: command.to_string(),
+            args,
+            output_filename: file_and_command.0.to_string(),
+        }
+    }
+}
 
 /// Runs a list of commands and writes all of their output into files in the same `outdir`.  Any
 /// failures are noted in the file named by ERROR_FILENAME.  This function ignores the commands'
