@@ -193,7 +193,7 @@ mod tests {
         // We assume that `echo` will not do something unexpected on the machine running this test.
         run(vec![("hello.txt", "echo hello")], &output_filepath).unwrap();
 
-        // Open the file and spot check that a couple of expected files exist inside it.
+        // open the file and check that its contents are as expected.
         // This function will panic if the path is not found in the tarball
         let find = |path_to_find: &PathBuf| {
             let tar_gz = File::open(&output_filepath).unwrap();
