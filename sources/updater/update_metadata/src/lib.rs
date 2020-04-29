@@ -368,3 +368,52 @@ impl Update {
         None
     }
 }
+
+pub fn migration_targets(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+    let mut targets = Vec::new();
+    let mut version = from;
+    while version != to {
+        let mut migrations: Vec<&(Version, Version)> = manifest
+            .migrations
+            .keys()
+            .filter(|(f, t)| *f == *version && *t <= *to)
+            .collect();
+
+        // There can be multiple paths to the same target, e.g.
+        //      (1.0.0, 1.1.0) => [...]
+        //      (1.0.0, 1.2.0) => [...]
+        // Choose one with the highest *to* version, <= our target
+        migrations.sort_unstable_by(|(_, a), (_, b)| b.cmp(&a));
+        if let Some(transition) = migrations.first() {
+            // If a transition doesn't require a migration the array will be empty
+            if let Some(migrations) = manifest.migrations.get(transition) {
+                targets.extend_from_slice(&migrations);
+            }
+            version = &transition.1;
+        } else {
+            return error::MissingMigration {
+                current: version.clone(),
+                target: to.clone(),
+            }
+                .fail();
+        }
+    }
+    Ok(targets)
+}
+
+#[test]
+fn test_migrations() {
+    // A manifest with four migration tuples starting at 1.0 and ending at 1.3.
+    // There is a shortcut from 1.1 to 1.3, skipping 1.2
+    let path = "../updog/tests/data/migrations.json";
+    let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
+    let from = Version::parse("1.0.0").unwrap();
+    let to = Version::parse("1.5.0").unwrap();
+    let targets = migration_targets(&from, &to, &manifest).unwrap();
+
+    assert!(targets.len() == 3);
+    let mut i = targets.iter();
+    assert!(i.next().unwrap() == "migration_1.1.0_a");
+    assert!(i.next().unwrap() == "migration_1.1.0_b");
+    assert!(i.next().unwrap() == "migration_1.5.0_shortcut");
+}

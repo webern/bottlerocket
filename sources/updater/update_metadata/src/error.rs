@@ -103,6 +103,17 @@ pub enum Error {
         to: Version,
     },
 
+    #[snafu(display(
+    "Reached end of migration chain at {} but target is {}",
+    current,
+    target
+    ))]
+    MissingMigration {
+        backtrace: Backtrace,
+        current: Version,
+        target: Version,
+    },
+
     #[snafu(display("Failed to serialize update information: {}", source))]
     UpdateSerialize {
         source: serde_json::Error,
