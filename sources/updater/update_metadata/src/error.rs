@@ -58,12 +58,13 @@ pub enum Error {
     #[snafu(display("Duplicate version key: {}", key))]
     DuplicateVersionKey { backtrace: Backtrace, key: String },
 
-    #[snafu(display("Manifest not found"))]
+    #[snafu(display("Manifest not found: {}", source))]
     ManifestNotFound {
+        source: tough::Error,
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Failed to parse the manifest file: {}", source))]
+    #[snafu(display("Failed to parse manifest file: {}", source))]
     ManifestParse {
         source: serde_json::Error,
         backtrace: Backtrace,

@@ -218,8 +218,7 @@ fn retrieve_migrations(
     // download each migration, making sure they are executable and removing
     // known extensions from our compression, e.g. .lz4
     let mut targets = migration_targets(start, target, &manifest)?;
-    targets.sort(); // why?
-    // TODO - a similar loop will happen in migrator
+    targets.sort();
     for name in &targets {
         let mut destination = dir.join(&name);
         if destination.extension() == Some("lz4".as_ref()) {

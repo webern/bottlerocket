@@ -18,7 +18,6 @@ serde_json = "1.0.40"
 serde_plain = "0.3.0"
 snafu = "0.6.0"
 tough = "0.4.0"
-#migrator = { path = "../../api/migration/migrator" }
 
 [lib]
 name = "update_metadata"

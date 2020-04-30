@@ -5,26 +5,24 @@ pub mod error;
 mod se;
 
 use chrono::{DateTime, Duration, Utc};
+use crate::error::Result;
+use lazy_static::lazy_static;
 use parse_datetime::parse_datetime;
 use rand::{thread_rng, Rng};
+use regex::Regex;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use snafu::{ensure, OptionExt, ResultExt};
 use std::collections::BTreeMap;
-use std::fs;
 use std::fs::File;
+use std::fs;
 use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
 use std::str::FromStr;
 use tough;
-use lazy_static::lazy_static;
-use regex::Regex;
-
-use crate::error::Result;
 
 pub const MAX_SEED: u32 = 2048;
 
-// TODO - move this somewhere
 lazy_static! {
     /// Regular expression that will match migration file names and allow retrieving the
     /// version and name components.
@@ -135,7 +133,6 @@ pub fn write_file(path: &Path, manifest: &Manifest) -> Result<()> {
 }
 
 impl Manifest {
-
     pub fn add_migration(
         &mut self,
         append: bool,
@@ -331,8 +328,6 @@ impl Manifest {
         Ok(num_matching)
     }
 }
-
-
 
 impl Update {
     /// Returns the update wave that Updog belongs to, based on the seed value.
