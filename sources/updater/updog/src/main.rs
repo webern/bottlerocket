@@ -22,7 +22,7 @@ use std::process;
 use std::str::FromStr;
 use std::thread;
 use tough::{Limits, Repository, Settings};
-use update_metadata::{Manifest, Update, migration_targets};
+use update_metadata::{Manifest, Update, migration_targets, load_manifest};
 
 #[cfg(target_arch = "x86_64")]
 const TARGET_ARCH: &str = "x86_64";
@@ -124,18 +124,6 @@ fn load_repository<'a>(
         },
     )
     .context(error::Metadata)
-}
-
-// TODO - allow use of filesystem transport and move to update_metadata
-fn load_manifest(repository: &HttpQueryRepo<'_>) -> Result<Manifest> {
-    let target = "manifest.json";
-    serde_json::from_reader(
-        repository
-            .read_target(target)
-            .context(error::Metadata)?
-            .context(error::TargetNotFound { target })?,
-    )
-    .context(error::ManifestParse)
 }
 
 fn running_version() -> Result<(Version, String)> {

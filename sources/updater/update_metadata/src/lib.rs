@@ -16,6 +16,7 @@ use std::fs::File;
 use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
 use std::str::FromStr;
+use tough;
 use lazy_static::lazy_static;
 use regex::Regex;
 
@@ -423,20 +424,16 @@ pub fn migration_targets(from: &Version, to: &Version, manifest: &Manifest) -> R
     Ok(targets)
 }
 
-
-
-// TODO - allow use of filesystem transport and move to update_metadata
-// fn load_manifest(repository: &tough::Repository<'_, T>) -> Result<Manifest> {
-//     let target = "manifest.json";
-//     serde_json::from_reader(
-//         repository
-//             .read_target(target)
-//             .context(error::Metadata)?
-//             .context(error::TargetNotFound { target })?,
-//     )
-//         .context(error::ManifestParse)
-// }
-
+pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> Result<Manifest> {
+    let target = "manifest.json";
+    serde_json::from_reader(
+        repository
+            .read_target(target)
+            .context(error::ManifestLoad)?
+            .context(error::ManifestNotFound)?,
+    )
+        .context(error::ManifestParse)
+}
 
 #[test]
 fn test_migrations() {
