@@ -58,9 +58,8 @@ pub enum Error {
     #[snafu(display("Duplicate version key: {}", key))]
     DuplicateVersionKey { backtrace: Backtrace, key: String },
 
-    #[snafu(display("Manifest not found: {}", source))]
+    #[snafu(display("Manifest not found"))]
     ManifestNotFound {
-        source: tough::Error,
         backtrace: Backtrace,
     },
 
