@@ -407,7 +407,7 @@ fn test_migrations() {
 
     // A manifest with four migration tuples starting at 1.0 and ending at 1.3.
     // There is a shortcut from 1.1 to 1.3, skipping 1.2
-    let path = test_files::manifest_filepath(ManifestFile::Migrations);
+    let path = manifest_filepath(ManifestFile::Migrations);
     let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
     let from = Version::parse("1.0.0").unwrap();
     let to = Version::parse("1.5.0").unwrap();
