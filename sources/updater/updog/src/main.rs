@@ -171,7 +171,6 @@ fn update_required<'a>(
     None
 }
 
-// TODO later - remove lz4 decompression, instead save targets with tuf filename
 fn write_target_to_disk<P: AsRef<Path>>(
     repository: &HttpQueryRepo<'_>,
     target: &str,
@@ -195,7 +194,6 @@ fn write_target_to_disk<P: AsRef<Path>>(
     Ok(())
 }
 
-// TODO - split this function between concerns of finding targets vs obtaining/saving them.
 /// Store required migrations for an update in persistent storage. All intermediate migrations
 /// between the current version and the target version must be retrieved.
 fn retrieve_migrations(
@@ -233,7 +231,6 @@ fn retrieve_migrations(
     }
 
     // Set a query parameter listing the required migrations
-    // TODO - this only needs to happen in updog, not in migrator
     transport
         .queries_get_mut()
         .context(error::TransportBorrow)?
