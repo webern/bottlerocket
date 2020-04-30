@@ -1,0 +1,33 @@
+[package]
+name = "test_files"
+version = "0.1.0"
+authors = ["Matt Briggs <brigmatt@amazon.com>"]
+license = "Apache-2.0 OR MIT"
+edition = "2018"
+publish = false
+
+[dependencies]
+#bottlerocket-release = { path = "../../bottlerocket-release" }
+#chrono = "0.4.9"
+#log = "0.4"
+#lz4 = "1.23.1"
+#rand = "0.7.0"
+#regex = "1.1"
+#reqwest = { version = "0.10.1", default-features = false, features = ["rustls-tls", "blocking"] }
+#semver = "0.9.0"
+#serde = { version = "1.0.100", features = ["derive"] }
+#serde_json = "1.0.40"
+#serde_plain = "0.3.0"
+#signpost = { path = "../signpost" }
+#simplelog = "0.7"
+#snafu = "0.6.0"
+#toml = "0.5.1"
+#tough = { version = "0.4.0", features = ["http"] }
+#update_metadata = { path = "../update_metadata" }
+#structopt = "0.3"
+#migrator = { path = "../../api/migration/migrator" }
+#url = "2.1.0"
+#signal-hook = "0.1.13"
+
+[dev-dependencies]
+#tempfile = "3.1.0"

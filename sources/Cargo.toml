@@ -37,6 +37,9 @@ members = [
     "updater/updog",
 
     "webpki-roots-shim",
+
+    # test code
+    "updater/test_files"
 ]
 
 [profile.release]

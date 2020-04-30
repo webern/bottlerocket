@@ -21,3 +21,6 @@ migrator = { path = "../../api/migration/migrator" }
 [lib]
 name = "update_metadata"
 path = "src/lib.rs"
+
+[dev-dependencies]
+test_files = { path = "../test_files" }
