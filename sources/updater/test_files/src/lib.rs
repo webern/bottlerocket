@@ -18,6 +18,7 @@ pub enum ManifestFile {
     Example3,
     Migrations,
     Multiple,
+    Regret,
     SingleWave,
 }
 
@@ -56,6 +57,7 @@ fn manifest_filename(variant: ManifestFile) -> &'static str {
         ManifestFile::Example3 => "example_3.json",
         ManifestFile::Migrations => "migrations.json",
         ManifestFile::Multiple => "multiple.json",
+        ManifestFile::Regret => "regret.json",
         ManifestFile::SingleWave => "single_wave.json",
     }
 }

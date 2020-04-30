@@ -787,14 +787,14 @@ mod tests {
     fn bad_bound() {
         // This manifest has an invalid key for one of the update's waves
         assert!(
-            serde_json::from_reader::<Manifest>(File::open(manifest_filepath(ManifestFile::BadBound)).unwrap().unwrap()).is_err()
+            serde_json::from_file::<Manifest>(manifest_filepath(ManifestFile::BadBound)).is_err()
         );
     }
 
     #[test]
     fn duplicate_bound() {
         // This manifest has two waves with a bound id of 0
-        assert!(serde_json::from_reader::<Manifest>(File::open(manifest_filepath(ManifestFile::DuplicateBound)).unwrap().unwrap())
+        assert!(serde_json::from_file::<Manifest>(manifest_filepath(ManifestFile::DuplicateBound))
         .is_err());
     }
 
