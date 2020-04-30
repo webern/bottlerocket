@@ -5,7 +5,6 @@ pub mod error;
 mod se;
 
 use chrono::{DateTime, Duration, Utc};
-use migrator::MIGRATION_FILENAME_RE;
 use parse_datetime::parse_datetime;
 use rand::{thread_rng, Rng};
 use semver::Version;
@@ -17,10 +16,30 @@ use std::fs::File;
 use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
 use std::str::FromStr;
+use lazy_static::lazy_static;
+use regex::Regex;
 
 use crate::error::Result;
 
 pub const MAX_SEED: u32 = 2048;
+
+// TODO - move this somewhere
+lazy_static! {
+    /// Regular expression that will match migration file names and allow retrieving the
+    /// version and name components.
+    // Note: the version component is a simplified semver regex; we don't use any of the
+    // extensions, just a simple x.y.z, so this isn't as strict as it could be.
+    pub static ref MIGRATION_FILENAME_RE: Regex =
+        Regex::new(r"(?x)^
+                   migrate
+                   _
+                   v?  # optional 'v' prefix for humans
+                   (?P<version>[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z+-]*)
+                   _
+                   (?P<name>[a-zA-Z0-9-]+)
+                   $").unwrap();
+}
+
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wave {
@@ -115,6 +134,7 @@ pub fn write_file(path: &Path, manifest: &Manifest) -> Result<()> {
 }
 
 impl Manifest {
+
     pub fn add_migration(
         &mut self,
         append: bool,
@@ -311,6 +331,8 @@ impl Manifest {
     }
 }
 
+
+
 impl Update {
     /// Returns the update wave that Updog belongs to, based on the seed value.
     /// Depending on the waves described in the update, the possible results are
@@ -400,6 +422,21 @@ pub fn migration_targets(from: &Version, to: &Version, manifest: &Manifest) -> R
     }
     Ok(targets)
 }
+
+
+
+// TODO - allow use of filesystem transport and move to update_metadata
+// fn load_manifest(repository: &tough::Repository<'_, T>) -> Result<Manifest> {
+//     let target = "manifest.json";
+//     serde_json::from_reader(
+//         repository
+//             .read_target(target)
+//             .context(error::Metadata)?
+//             .context(error::TargetNotFound { target })?,
+//     )
+//         .context(error::ManifestParse)
+// }
+
 
 #[test]
 fn test_migrations() {
