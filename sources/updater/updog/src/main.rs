@@ -126,6 +126,7 @@ fn load_repository<'a>(
     .context(error::Metadata)
 }
 
+// TODO - allow use of filesystem transport and move to update_metadata
 fn load_manifest(repository: &HttpQueryRepo<'_>) -> Result<Manifest> {
     let target = "manifest.json";
     serde_json::from_reader(
@@ -157,7 +158,7 @@ fn applicable_updates<'a>(manifest: &'a Manifest, variant: &str) -> Vec<&'a Upda
 // TODO updog.toml may include settings that cause us to ignore/delay
 // certain/any updates;
 //  Ignore Specific Target Version
-//  Ingore Any Target
+//  Ignore Any Target
 //  ...
 fn update_required<'a>(
     _config: &Config,
@@ -182,6 +183,7 @@ fn update_required<'a>(
     None
 }
 
+// TODO later - remove lz4 decompression, instead save targets with tuf filename
 fn write_target_to_disk<P: AsRef<Path>>(
     repository: &HttpQueryRepo<'_>,
     target: &str,
@@ -205,6 +207,7 @@ fn write_target_to_disk<P: AsRef<Path>>(
     Ok(())
 }
 
+// TODO - split this function between concerns of finding targets vs obtaining/saving them.
 /// Store required migrations for an update in persistent storage. All intermediate migrations
 /// between the current version and the target version must be retrieved.
 fn retrieve_migrations(
@@ -230,6 +233,7 @@ fn retrieve_migrations(
     // known extensions from our compression, e.g. .lz4
     let mut targets = migration_targets(start, target, &manifest)?;
     targets.sort();
+    // TODO - a similar loop will happen in migrator
     for name in &targets {
         let mut destination = dir.join(&name);
         if destination.extension() == Some("lz4".as_ref()) {
@@ -241,6 +245,7 @@ fn retrieve_migrations(
     }
 
     // Set a query parameter listing the required migrations
+    // TODO - this only needs to happen in updog, not in migrator
     transport
         .queries_get_mut()
         .context(error::TransportBorrow)?
