@@ -576,6 +576,7 @@ mod tests {
     use chrono::Duration as TestDuration;
     use std::collections::BTreeMap;
     use update_metadata::{Images, Wave};
+    use test_files::{manifest_filepath, ManifestFile};
 
     #[test]
     fn test_manifest_json() {
@@ -585,7 +586,7 @@ mod tests {
         // - the (1.0, 1.1) migrations exist with the migration "migrate_1.1_foo"
         // - the image:datastore mappings exist
         // - there is a mapping between 1.11.0 and 1.0
-        let path = "tests/data/example.json";
+        let path = manifest_filepath(ManifestFile::Example);
         let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
         assert!(
             manifest.updates.len() > 0,
@@ -606,7 +607,7 @@ mod tests {
     fn test_serde_reader() {
         // A basic manifest with a single update, no migrations, and two
         // image:datastore mappings
-        let path = "tests/data/example_2.json";
+        let path = manifest_filepath(ManifestFile::Example2);
         let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
         assert!(manifest.updates.len() > 0);
     }
@@ -685,7 +686,7 @@ mod tests {
         // update in manifest has
         // - version: 1.25.0
         // - max_version: 1.20.0
-        let path = "tests/data/regret.json";
+        let path = manifest_filepath(ManifestFile::Regret);
         let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
         let config = Config {
             metadata_base_url: String::from("foo"),
@@ -704,7 +705,7 @@ mod tests {
     #[test]
     fn older_versions() {
         // A manifest with two updates, both less than 0.1.3
-        let path = "tests/data/example_3.json";
+        let path = manifest_filepath(ManifestFile::Example3);
         let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
         let config = Config {
             metadata_base_url: String::from("foo"),
@@ -729,7 +730,7 @@ mod tests {
         // version, and one which is for an aarch64 target. This asserts that
         // upgrading from the version 1.10.0 results in updating to 1.15.0
         // instead of 1.13.0 (lower), 1.25.0 (too high), or 1.16.0 (wrong arch).
-        let path = "tests/data/multiple.json";
+        let path = manifest_filepath(ManifestFile::Multiple);
         let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
         let config = Config {
             metadata_base_url: String::from("foo"),
@@ -758,7 +759,7 @@ mod tests {
         // version, and one which is for an aarch64 target. This tests forces
         // a downgrade to 1.13.0, instead of 1.15.0 like it would be in the
         // above test, test_multiple.
-        let path = "tests/data/multiple.json";
+        let path = manifest_filepath(ManifestFile::Multiple);
         let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
         let config = Config {
             metadata_base_url: String::from("foo"),
@@ -786,16 +787,14 @@ mod tests {
     fn bad_bound() {
         // This manifest has an invalid key for one of the update's waves
         assert!(
-            serde_json::from_str::<Manifest>(include_str!("../tests/data/bad-bound.json")).is_err()
+            serde_json::from_reader::<Manifest>(File::open(manifest_filepath(ManifestFile::BadBound)).unwrap().unwrap()).is_err()
         );
     }
 
     #[test]
     fn duplicate_bound() {
         // This manifest has two waves with a bound id of 0
-        assert!(serde_json::from_str::<Manifest>(include_str!(
-            "../tests/data/duplicate-bound.json"
-        ))
+        assert!(serde_json::from_reader::<Manifest>(File::open(manifest_filepath(ManifestFile::DuplicateBound)).unwrap().unwrap())
         .is_err());
     }
 
