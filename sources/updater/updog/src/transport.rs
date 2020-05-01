@@ -29,7 +29,7 @@ impl HttpQueryTransport {
     /// by key name first
     fn set_query_string(&self, mut url: Url) -> Url {
         if let Ok(mut queries) = self.parameters.try_borrow_mut() {
-            queries.sort_by(|(a, _), (b, _)| a.cmp(b));
+            queries.sort_by(|(a,_), (b,_)| a.cmp(b));
 
             for (key, val) in queries.iter() {
                 url.query_pairs_mut().append_pair(&key, &val);
@@ -38,7 +38,7 @@ impl HttpQueryTransport {
             // We can't sort the actual data at the moment, but we can sort
             // what we append to the URL.
             let mut queries = self.parameters.borrow().clone();
-            queries.sort_by(|(a, _), (b, _)| a.cmp(b));
+            queries.sort_by(|(a,_), (b,_)| a.cmp(b));
 
             for (key, val) in queries {
                 url.query_pairs_mut().append_pair(&key, &val);
