@@ -4,8 +4,8 @@ mod de;
 pub mod error;
 mod se;
 
-use chrono::{DateTime, Duration, Utc};
 use crate::error::Result;
+use chrono::{DateTime, Duration, Utc};
 use lazy_static::lazy_static;
 use parse_datetime::parse_datetime;
 use rand::{thread_rng, Rng};
@@ -14,8 +14,8 @@ use semver::Version;
 use serde::{Deserialize, Serialize};
 use snafu::{ensure, OptionExt, ResultExt};
 use std::collections::BTreeMap;
-use std::fs::File;
 use std::fs;
+use std::fs::File;
 use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
 use std::str::FromStr;
@@ -38,7 +38,6 @@ lazy_static! {
                    (?P<name>[a-zA-Z0-9-]+)
                    $").unwrap();
 }
-
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wave {
@@ -413,7 +412,7 @@ pub fn migration_targets(from: &Version, to: &Version, manifest: &Manifest) -> R
                 current: version.clone(),
                 target: to.clone(),
             }
-                .fail();
+            .fail();
         }
     }
     Ok(targets)
@@ -427,7 +426,7 @@ pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> 
             .context(error::ManifestLoad)?
             .context(error::ManifestNotFound)?,
     )
-        .context(error::ManifestParse)
+    .context(error::ManifestParse)
 }
 
 #[test]

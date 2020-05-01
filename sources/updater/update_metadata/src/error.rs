@@ -59,9 +59,7 @@ pub enum Error {
     DuplicateVersionKey { backtrace: Backtrace, key: String },
 
     #[snafu(display("Manifest not found"))]
-    ManifestNotFound {
-        backtrace: Backtrace,
-    },
+    ManifestNotFound { backtrace: Backtrace },
 
     #[snafu(display("Failed to parse manifest file: {}", source))]
     ManifestParse {
@@ -115,9 +113,9 @@ pub enum Error {
     },
 
     #[snafu(display(
-    "Reached end of migration chain at {} but target is {}",
-    current,
-    target
+        "Reached end of migration chain at {} but target is {}",
+        current,
+        target
     ))]
     MissingMigration {
         backtrace: Backtrace,
