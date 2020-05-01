@@ -22,7 +22,7 @@ use std::process;
 use std::str::FromStr;
 use std::thread;
 use tough::{Limits, Repository, Settings};
-use update_metadata::{Manifest, Update, migration_targets, load_manifest};
+use update_metadata::{load_manifest, migration_targets, Manifest, Update};
 
 #[cfg(target_arch = "x86_64")]
 const TARGET_ARCH: &str = "x86_64";
@@ -846,7 +846,7 @@ mod tests {
             u.update_wave(150).unwrap()
                 == Wave::General {
                     start: first_bound,
-                    end: second_bound
+                    end: second_bound,
                 },
             "Expected to be some bounded wave"
         );

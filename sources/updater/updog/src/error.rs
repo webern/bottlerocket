@@ -106,7 +106,7 @@ pub(crate) enum Error {
         from: Version,
         to: Version,
     },
-    
+
     #[snafu(display("Missing version in metadata: {}", version))]
     MissingVersion {
         backtrace: Backtrace,
