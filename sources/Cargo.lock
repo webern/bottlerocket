@@ -1578,6 +1578,15 @@ dependencies = [
 [[package]]
 name = "olpc-cjson"
 version = "0.1.0"
+dependencies = [
+ "serde 1.0.106 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.51 (registry+https://github.com/rust-lang/crates.io-index)",
+ "unicode-normalization 0.1.12 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "olpc-cjson"
+version = "0.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 dependencies = [
  "serde 1.0.106 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2563,6 +2572,23 @@ dependencies = [
  "hex 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
  "olpc-cjson 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "pem 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "ring 0.16.12 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.106 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_json 1.0.51 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde_plain 0.3.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "snafu 0.6.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "untrusted 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "url 2.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
+]
+
+[[package]]
+name = "tough"
+version = "0.5.0"
+dependencies = [
+ "chrono 0.4.11 (registry+https://github.com/rust-lang/crates.io-index)",
+ "hex 0.4.2 (registry+https://github.com/rust-lang/crates.io-index)",
+ "olpc-cjson 0.1.0",
+ "pem 0.7.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "reqwest 0.10.4 (registry+https://github.com/rust-lang/crates.io-index)",
  "ring 0.16.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "serde 1.0.106 (registry+https://github.com/rust-lang/crates.io-index)",
@@ -2714,7 +2740,7 @@ dependencies = [
  "structopt 0.3.12 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "toml 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
- "tough 0.4.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "tough 0.5.0",
  "update_metadata 0.1.0",
  "url 2.1.1 (registry+https://github.com/rust-lang/crates.io-index)",
 ]

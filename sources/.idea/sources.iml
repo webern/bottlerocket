@@ -1,0 +1,41 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<module type="CPP_MODULE" version="4">
+  <component name="NewModuleRootManager">
+    <content url="file://$MODULE_DIR$">
+      <sourceFolder url="file://$MODULE_DIR$/updater/signpost/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/updater/block-party/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/migration/migrations/v0.3.2/migrate-admin-container-v0-5-0/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/migration/migration-helpers/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/apiserver/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/models/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/bottlerocket-release/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/models/model-derive/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/schnauzer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/apiclient/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/host-containers/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/sundog/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/early-boot-config/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/webpki-roots-shim/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/webpki-roots-shim/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/api/pluto/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/servicedog/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/logdog/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/updater/updog/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/updater/updog/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/updater/update_metadata/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/updater/update_metadata/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/parse-datetime/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/storewolf/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/migration/migrator/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/bork/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/settings-committer/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/netdog/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/growpart/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/thar-be-settings/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/preinit/laika/src" isTestSource="false" />
+      <excludeFolder url="file://$MODULE_DIR$/target" />
+    </content>
+    <orderEntry type="inheritedJdk" />
+    <orderEntry type="sourceFolder" forTests="false" />
+  </component>
+</module>
