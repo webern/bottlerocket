@@ -89,7 +89,7 @@ fn run() -> Result<()> {
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
     let repo_datastore = Path::new(REPOSITORY_DATASTORE);
-    let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
+    let _repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
         root: File::open(&args.root_path).context(error::OpenRoot {
             path: args.root_path,
         })?,
@@ -663,5 +663,5 @@ fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
         _ => {}
     }
     ensure!(false, error::DirectoryUrl { path: path.as_ref() });
-    Ok(("unreachable".to_string()))
+    Ok("unreachable".to_string())
 }
