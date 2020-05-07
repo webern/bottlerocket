@@ -37,6 +37,7 @@ use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
 use update_metadata::MIGRATION_FILENAME_RE;
+
 mod args;
 mod direction;
 mod error;
@@ -82,6 +83,18 @@ fn run() -> Result<()> {
             process::exit(0);
         });
 
+    // We need the signed manifest.json file to determine which migrations are needed.
+    // Load the locally cached tough repository to obtain the manifest.
+    let tough_tempdir = TempDir::new().context(error::ToughTemp)?;
+    let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
+        root: std::File::open(TRUSTED_ROOT_PATH).context(error::RootOpen { path: TRUSTED_ROOT_PATH })?,
+        datastore: tough_tempdir.path(),
+        metadata_base_url: dir_url(args.metadata_directory),
+        targets_base_url: dir_url(args.migration_directories),
+        limits: Default::default(),
+    })
+        .context(error::ToughLoadFailed)?;
+
     let migrations = find_migrations(
         &args.migration_directories,
         &current_version,
@@ -110,8 +123,8 @@ fn run() -> Result<()> {
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     let datastore_dir = datastore_dir.as_ref();
 
@@ -144,8 +157,8 @@ where
 /// look in one fixed location. We need to get the list of migrations from update metadata, and
 /// only return those.  That may also obviate the need for select_migrations.
 fn find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     let dir = dir.as_ref();
     let mut result = Vec::new();
@@ -282,9 +295,9 @@ fn select_migrations<P: AsRef<Path>>(
 /// Given the versions we're migrating from and to, this will return an ordered list of paths to
 /// migration binaries we should run to complete the migration on a data store.
 // This separation allows for easy testing of select_migrations.
-fn find_migrations<P>(paths: &[P], from: &Version, to: &Version) -> Result<Vec<PathBuf>>
-where
-    P: AsRef<Path>,
+fn find_migrations<P>(paths: &[P], from: &Version, to: &Version) -> Result<Vec<String>>
+    where
+        P: AsRef<Path>,
 {
     let mut candidates = Vec::new();
     for path in paths {
@@ -302,8 +315,8 @@ fn rando() -> String {
 /// Generates a path for a new data store, given the path of the existing data store,
 /// the new version number, and a random "copy id" to append.
 fn new_datastore_location<P>(from: P, new_version: &Version) -> Result<PathBuf>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     let to = from
         .as_ref()
@@ -334,9 +347,9 @@ fn run_migrations<P1, P2>(
     source_datastore: P2,
     new_version: &Version,
 ) -> Result<PathBuf>
-where
-    P1: AsRef<Path>,
-    P2: AsRef<Path>,
+    where
+        P1: AsRef<Path>,
+        P2: AsRef<Path>,
 {
     // We start with the given source_datastore, updating this after each migration to point to the
     // output of the previous one.
@@ -429,8 +442,8 @@ where
 /// * pointing the 'current' link to the major version
 /// * fsyncing the directory to disk
 fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     // Get the directory we're working in.
     let to_dir = to_datastore
@@ -447,7 +460,7 @@ where
         // (mode doesn't matter for opening a directory)
         Mode::empty(),
     )
-    .context(error::DataStoreDirOpen { path: &to_dir })?;
+        .context(error::DataStoreDirOpen { path: &to_dir })?;
 
     // Get a unique temporary path in the directory; we need this to atomically swap.
     let temp_link = to_dir.join(rando());

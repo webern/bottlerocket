@@ -18,6 +18,8 @@ semver = "0.9"
 simplelog = "0.7"
 snafu = "0.6"
 update_metadata = { path = "../../../updater/update_metadata" }
+# TODO - remove the path reference once tough is updated
+tough = { path = "../../../../../tough/tough", version = "0.5.0" }
 
 [build-dependencies]
 cargo-readme = "3.1"

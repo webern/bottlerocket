@@ -31,8 +31,16 @@ pub(crate) enum Error {
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Failed to create metadata cache directory: {}", source))]
+    #[snafu(display("Failed to create metadata cache directory '{}': {}", path, source))]
     CreateMetadataCache {
+        path: &'static str,
+        source: std::io::Error,
+        backtrace: Backtrace,
+    },
+
+    #[snafu(display("Failed to create directory for repository datastore '{}': {}", path, source))]
+    CreateRepoStore {
+        path: &'static str,
         source: std::io::Error,
         backtrace: Backtrace,
     },
