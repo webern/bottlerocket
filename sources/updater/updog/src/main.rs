@@ -14,9 +14,9 @@ use signal_hook::{iterator::Signals, SIGTERM};
 use signpost::State;
 use simplelog::{Config as LogConfig, LevelFilter, TermLogger, TerminalMode};
 use snafu::{ensure, ErrorCompat, OptionExt, ResultExt};
-use std::fs::{self, File, OpenOptions, Permissions};
+use std::fs::{self, File, OpenOptions};
 use std::io;
-use std::os::unix::fs::PermissionsExt;
+// use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
 use std::str::FromStr;
@@ -123,7 +123,7 @@ fn load_repository<'a>(
             },
         },
     )
-    .context(error::Metadata)
+        .context(error::Metadata)
 }
 
 fn running_version() -> Result<(Version, String)> {
@@ -219,15 +219,19 @@ fn retrieve_migrations(
     // known extensions from our compression, e.g. .lz4
     let mut targets = migration_targets(start, target, &manifest)?;
     targets.sort();
-    for name in &targets {
-        let mut destination = dir.join(&name);
-        if destination.extension() == Some("lz4".as_ref()) {
-            destination.set_extension("");
-        }
-        write_target_to_disk(repository, &name, &destination)?;
-        fs::set_permissions(&destination, Permissions::from_mode(0o755))
-            .context(error::SetPermissions { path: destination })?;
-    }
+    targets.push("manifest.json".to_owned());
+
+    repository.cache(METADATA_PATH, MIGRATION_PATH, Some(&targets), true).context(error::RepoCacheMigrations)?;
+
+    // for name in &targets {
+    //     let mut destination = dir.join(&name);
+    //     if destination.extension() == Some("lz4".as_ref()) {
+    //         destination.set_extension("");
+    //     }
+    //     write_target_to_disk(repository, &name, &destination)?;
+    //     fs::set_permissions(&destination, Permissions::from_mode(0o755))
+    //         .context(error::SetPermissions { path: destination })?;
+    // }
 
     // Set a query parameter listing the required migrations
     transport
@@ -431,7 +435,7 @@ fn main_inner() -> Result<()> {
         LogConfig::default(),
         TerminalMode::Mixed,
     )
-    .context(error::Logger)?;
+        .context(error::Logger)?;
 
     let command =
         serde_plain::from_str::<Command>(&arguments.subcommand).unwrap_or_else(|_| usage());
@@ -456,7 +460,7 @@ fn main_inner() -> Result<()> {
                 &variant,
                 arguments.force_version,
             )
-            .context(error::UpdateNotAvailable)?;
+                .context(error::UpdateNotAvailable)?;
 
             if !arguments.ignore_waves {
                 ensure!(
@@ -785,7 +789,7 @@ mod tests {
         assert!(serde_json::from_str::<Manifest>(include_str!(
             "../tests/data/duplicate-bound.json"
         ))
-        .is_err());
+            .is_err());
     }
 
     #[test]
@@ -845,9 +849,9 @@ mod tests {
         assert!(
             u.update_wave(150).unwrap()
                 == Wave::General {
-                    start: first_bound,
-                    end: second_bound,
-                },
+                start: first_bound,
+                end: second_bound,
+            },
             "Expected to be some bounded wave"
         );
         assert!(
@@ -858,8 +862,8 @@ mod tests {
         assert!(
             u.update_wave(201).unwrap()
                 == Wave::Last {
-                    start: second_bound
-                },
+                start: second_bound
+            },
             "Expected to be final wave"
         );
         assert!(u.jitter(201).is_none(), "Expected immediate update");

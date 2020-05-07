@@ -235,6 +235,11 @@ pub(crate) enum Error {
         source: std::io::Error,
         backtrace: Backtrace,
     },
+
+    #[snafu(display("Failed to store migrations: {}", source))]
+    RepoCacheMigrations {
+        source: tough::error::Error,
+    },
 }
 
 impl std::convert::From<update_metadata::error::Error> for Error {
