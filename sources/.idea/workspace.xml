@@ -1,0 +1,108 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeRunConfigurationManager" shouldGenerate="true" shouldDeleteObsolete="true">
+    <generated />
+  </component>
+  <component name="CMakeSettings">
+    <configurations>
+      <configuration PROFILE_NAME="Debug" CONFIG_NAME="Debug" />
+    </configurations>
+  </component>
+  <component name="CargoProjects">
+    <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="76199d5d-3795-4b44-8936-8eba0dcd9d59" name="Default Changelist" comment="">
+      <change afterPath="$PROJECT_DIR$/../packages/.idea/packages.iml" afterDir="false" />
+      <change afterPath="$PROJECT_DIR$/.idea/runConfigurations/updog_build_musl.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/.gitignore" beforeDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sources.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sources.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/updater/update_metadata/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/updater/update_metadata/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/updater/updog/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/updater/updog/src/main.rs" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="ClangdSettings">
+    <option name="formatViaClangd" value="false" />
+  </component>
+  <component name="Git.Settings">
+    <option name="RECENT_GIT_ROOT_PATH" value="$PROJECT_DIR$/.." />
+  </component>
+  <component name="IgnoredFileRootStore">
+    <option name="generatedRoots">
+      <set>
+        <option value="$PROJECT_DIR$/.idea" />
+      </set>
+    </option>
+  </component>
+  <component name="MacroExpansionManager">
+    <option name="directoryName" value="kayzxo8j" />
+  </component>
+  <component name="ProjectId" id="1baezeSiP5HQDTgO6CpUxP0df9Z" />
+  <component name="ProjectLevelVcsManager" settingsEditedManually="true" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showExcludedFiles" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
+  </component>
+  <component name="RunManager">
+    <recent_temporary>
+      <list>
+        <item itemvalue="Cargo Command.updog build musl" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="RustProjectSettings">
+    <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
+    <option name="version" value="2" />
+  </component>
+  <component name="SvnConfiguration">
+    <configuration />
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="76199d5d-3795-4b44-8936-8eba0dcd9d59" name="Default Changelist" comment="" />
+      <created>1588874895481</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1588874895481</updated>
+      <workItem from="1588874896605" duration="656000" />
+      <workItem from="1588875999545" duration="210000" />
+    </task>
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="1" />
+  </component>
+  <component name="WindowStateProjectService">
+    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588876143292">
+      <screen x="0" y="23" width="2560" height="1577" />
+    </state>
+    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876143292" />
+    <state width="2147" height="442" key="GridCell.Tab.0.bottom" timestamp="1588876215296">
+      <screen x="0" y="23" width="2560" height="1577" />
+    </state>
+    <state width="2147" height="442" key="GridCell.Tab.0.bottom/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876215296" />
+    <state width="2147" height="442" key="GridCell.Tab.0.center" timestamp="1588876215295">
+      <screen x="0" y="23" width="2560" height="1577" />
+    </state>
+    <state width="2147" height="442" key="GridCell.Tab.0.center/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876215295" />
+    <state width="2147" height="442" key="GridCell.Tab.0.left" timestamp="1588876215294">
+      <screen x="0" y="23" width="2560" height="1577" />
+    </state>
+    <state width="2147" height="442" key="GridCell.Tab.0.left/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876215294" />
+    <state width="2147" height="442" key="GridCell.Tab.0.right" timestamp="1588876215296">
+      <screen x="0" y="23" width="2560" height="1577" />
+    </state>
+    <state width="2147" height="442" key="GridCell.Tab.0.right/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876215295" />
+  </component>
+</project>

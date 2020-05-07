@@ -17,7 +17,8 @@ serde = { version = "1.0.100", features = ["derive"] }
 serde_json = "1.0.40"
 serde_plain = "0.3.0"
 snafu = "0.6.0"
-tough = "0.4.0"
+# TODO - remove the path reference once tough is updated
+tough = { path = "../../../../tough/tough", version = "0.5.0", features = ["http"] }
 
 [lib]
 name = "update_metadata"

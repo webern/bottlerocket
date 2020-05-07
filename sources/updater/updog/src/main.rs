@@ -114,7 +114,7 @@ fn load_repository<'a>(
             })?,
             datastore: Path::new(METADATA_PATH),
             metadata_base_url: &config.metadata_base_url,
-            target_base_url: &config.targets_base_url,
+            targets_base_url: &config.targets_base_url,
             limits: Limits {
                 max_root_size: 1024 * 1024,         // 1 MiB
                 max_targets_size: 1024 * 1024 * 10, // 10 MiB
