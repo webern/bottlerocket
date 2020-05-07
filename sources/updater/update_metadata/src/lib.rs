@@ -20,6 +20,7 @@ use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
 use std::str::FromStr;
 use tough;
+use tough::Limits;
 
 pub const MAX_SEED: u32 = 2048;
 
@@ -38,6 +39,14 @@ lazy_static! {
                    (?P<name>[a-zA-Z0-9-]+)
                    $").unwrap();
 }
+
+/// These are the limits that Bottlerocket will use for `tough` repositories.
+pub const REPOSITORY_LIMITS: Limits = Limits {
+    max_root_size: 1024 * 1024,         // 1 MiB
+    max_targets_size: 1024 * 1024 * 10, // 10 MiB
+    max_timestamp_size: 1024 * 1024,    // 1 MiB
+    max_root_updates: 1024,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wave {
@@ -167,7 +176,7 @@ impl Manifest {
                 .get_mut(&(from.clone(), to.clone()))
                 .context(error::MigrationMutable { from, to })?;
             migrations.extend_from_slice(&migration_list);
-        // Otherwise just overwrite the existing migrations
+            // Otherwise just overwrite the existing migrations
         } else {
             self.migrations.insert((from, to), migration_list);
         }
@@ -412,7 +421,7 @@ pub fn migration_targets(from: &Version, to: &Version, manifest: &Manifest) -> R
                 current: version.clone(),
                 target: to.clone(),
             }
-            .fail();
+                .fail();
         }
     }
     Ok(targets)
@@ -426,7 +435,7 @@ pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> 
             .context(error::ManifestLoad)?
             .context(error::ManifestNotFound)?,
     )
-    .context(error::ManifestParse)
+        .context(error::ManifestParse)
 }
 
 #[test]

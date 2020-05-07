@@ -30,7 +30,7 @@ use simplelog::{Config as LogConfig, TermLogger, TerminalMode};
 use snafu::{ensure, OptionExt, ResultExt};
 use std::collections::HashSet;
 use std::env;
-use std::fs::{self, Permissions};
+use std::fs::{self, Permissions, File};
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
@@ -45,6 +45,9 @@ mod error;
 use args::Args;
 use direction::Direction;
 use error::Result;
+use url::Url;
+
+const REPOSITORY_DATASTORE: &str = "/var/lib/bottlerocket/migrator";
 
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
@@ -85,18 +88,20 @@ fn run() -> Result<()> {
 
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
-    let tough_tempdir = TempDir::new().context(error::ToughTemp)?;
+    let repo_datastore = Path::new(REPOSITORY_DATASTORE);
     let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
-        root: std::File::open(TRUSTED_ROOT_PATH).context(error::RootOpen { path: TRUSTED_ROOT_PATH })?,
-        datastore: tough_tempdir.path(),
-        metadata_base_url: dir_url(args.metadata_directory),
-        targets_base_url: dir_url(args.migration_directories),
+        root: File::open(&args.root_path).context(error::OpenRoot {
+            path: args.root_path,
+        })?,
+        datastore: &repo_datastore,
+        metadata_base_url: dir_url(&args.metadata_directory)?.as_str(),
+        targets_base_url: dir_url(&args.migration_directory)?.as_str(),
         limits: Default::default(),
     })
-        .context(error::ToughLoadFailed)?;
+        .context(error::RepoLoad)?;
 
     let migrations = find_migrations(
-        &args.migration_directories,
+        &args.migration_directory,
         &current_version,
         &args.migrate_to_version,
     )?;
@@ -295,14 +300,12 @@ fn select_migrations<P: AsRef<Path>>(
 /// Given the versions we're migrating from and to, this will return an ordered list of paths to
 /// migration binaries we should run to complete the migration on a data store.
 // This separation allows for easy testing of select_migrations.
-fn find_migrations<P>(paths: &[P], from: &Version, to: &Version) -> Result<Vec<String>>
+fn find_migrations<P>(path: P, from: &Version, to: &Version) -> Result<Vec<PathBuf>>
     where
         P: AsRef<Path>,
 {
     let mut candidates = Vec::new();
-    for path in paths {
-        candidates.extend(find_migrations_on_disk(path)?);
-    }
+    candidates.extend(find_migrations_on_disk(path)?);
     select_migrations(from, to, &candidates)
 }
 
@@ -649,4 +652,16 @@ mod test {
             .unwrap()
             .is_empty());
     }
+}
+
+/// Converts a filepath into a URI formatted string
+fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
+    let url_result = Url::from_directory_path(&path);
+    // TODO - I can't figure out how to use .context with this error type
+    match url_result {
+        Ok(u) => return Ok(u.to_string()),
+        _ => {}
+    }
+    ensure!(false, error::DirectoryUrl { path: path.as_ref() });
+    Ok(("unreachable".to_string()))
 }

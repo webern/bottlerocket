@@ -1,7 +1,7 @@
 //! This module owns the error type used by the migrator.
 
 use semver::Version;
-use snafu::Snafu;
+use snafu::{Snafu, Backtrace};
 use std::io;
 use std::path::PathBuf;
 use std::process::{Command, Output};
@@ -22,6 +22,12 @@ pub(crate) enum Error {
     #[snafu(display("Data store link '{}' points to /", path.display()))]
     DataStoreLinkToRoot { path: PathBuf },
 
+    #[snafu(display("Failed to convert '{}' to a URL", path.display()))]
+    DirectoryUrl {
+        path: PathBuf,
+        backtrace: Backtrace,
+    },
+
     #[snafu(display("Data store path '{}' contains invalid version: {}", path.display(), source))]
     InvalidDataStoreVersion {
         path: PathBuf,
@@ -41,10 +47,10 @@ pub(crate) enum Error {
     StartMigration { command: Command, source: io::Error },
 
     #[snafu(display("Migration returned '{}' - stderr: {}",
-                    output.status.code()
-                        .map(|i| i.to_string()).unwrap_or_else(|| "signal".to_string()),
-                    std::str::from_utf8(&output.stderr)
-                        .unwrap_or_else(|_e| "<invalid UTF-8>")))]
+    output.status.code()
+    .map(| i | i.to_string()).unwrap_or_else(|| "signal".to_string()),
+    std::str::from_utf8(& output.stderr)
+    .unwrap_or_else(| _e | "<invalid UTF-8>")))]
     MigrationFailure { output: Output },
 
     #[snafu(display("Failed to create symlink for new version at {}: {}", path.display(), source))]
@@ -59,8 +65,21 @@ pub(crate) enum Error {
     #[snafu(display("Failed listing migration directory '{}': {}", dir.display(), source))]
     ListMigrations { dir: PathBuf, source: io::Error },
 
+    #[snafu(display("Failed to open trusted root metadata file {}: {}", path.display(), source))]
+    OpenRoot {
+        path: PathBuf,
+        source: std::io::Error,
+        backtrace: Backtrace,
+    },
+
     #[snafu(display("Failed reading migration directory entry: {}", source))]
     ReadMigrationEntry { source: io::Error },
+
+    #[snafu(display("Failed to load tough repo: {}", source))]
+    RepoLoad {
+        source: tough::error::Error,
+        backtrace: Backtrace,
+    },
 
     #[snafu(display("Failed reading metadata of '{}': {}", path.display(), source))]
     PathMetadata { path: PathBuf, source: io::Error },

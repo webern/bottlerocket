@@ -21,8 +21,9 @@ use std::path::Path;
 use std::process;
 use std::str::FromStr;
 use std::thread;
-use tough::{Limits, Repository, Settings};
-use update_metadata::{load_manifest, migration_targets, Manifest, Update};
+use tough::{Repository, Settings};
+use update_metadata::{load_manifest, migration_targets, Manifest, Update, REPOSITORY_LIMITS};
+
 
 #[cfg(target_arch = "x86_64")]
 const TARGET_ARCH: &str = "x86_64";
@@ -117,12 +118,7 @@ fn load_repository<'a>(
             datastore: Path::new(DATASTORE_PATH),
             metadata_base_url: &config.metadata_base_url,
             targets_base_url: &config.targets_base_url,
-            limits: Limits {
-                max_root_size: 1024 * 1024,         // 1 MiB
-                max_targets_size: 1024 * 1024 * 10, // 10 MiB
-                max_timestamp_size: 1024 * 1024,    // 1 MiB
-                max_root_updates: 1024,
-            },
+            limits: REPOSITORY_LIMITS,
         },
     )
         .context(error::Metadata)

@@ -88,10 +88,10 @@ pub enum Error {
     },
 
     #[snafu(display(
-        "Migration {} given for {} but name implies it is for {}",
-        name,
-        to,
-        version
+    "Migration {} given for {} but name implies it is for {}",
+    name,
+    to,
+    version
     ))]
     MigrationInvalidTarget {
         backtrace: Backtrace,
@@ -101,7 +101,7 @@ pub enum Error {
     },
 
     #[snafu(display(
-        "Migration name invalid; must follow format 'migrate_${{TO_VERSION}}_${{NAME}}'"
+    "Migration name invalid; must follow format 'migrate_${{TO_VERSION}}_${{NAME}}'"
     ))]
     MigrationNaming { backtrace: Backtrace },
 
@@ -113,9 +113,9 @@ pub enum Error {
     },
 
     #[snafu(display(
-        "Reached end of migration chain at {} but target is {}",
-        current,
-        target
+    "Reached end of migration chain at {} but target is {}",
+    current,
+    target
     ))]
     MissingMigration {
         backtrace: Backtrace,
@@ -133,8 +133,8 @@ pub enum Error {
     WavesUnordered,
 
     #[snafu(display(
-        "`fleet_percentage` must be a value between 1 - 100: value provided: {}",
-        provided
+    "`fleet_percentage` must be a value between 1 - 100: value provided: {}",
+    provided
     ))]
     InvalidFleetPercentage { provided: u32 },
 }
