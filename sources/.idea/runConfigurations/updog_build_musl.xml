@@ -7,7 +7,10 @@
     <option name="emulateTerminal" value="false" />
     <option name="backtrace" value="SHORT" />
     <option name="workingDirectory" value="file://$PROJECT_DIR$" />
-    <envs />
+    <envs>
+      <env name="CC" value="x86_64-linux-musl-gcc" />
+      <env name="RUSTFLAGS" value="-C linker=x86_64-linux-musl-gcc" />
+    </envs>
     <method v="2">
       <option name="CARGO.BUILD_TASK_PROVIDER" enabled="true" />
     </method>
