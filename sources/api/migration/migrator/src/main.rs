@@ -36,7 +36,7 @@ use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
-use update_metadata::MIGRATION_FILENAME_RE;
+use update_metadata::{MIGRATION_FILENAME_RE, load_manifest};
 
 mod args;
 mod direction;
@@ -89,7 +89,9 @@ fn run() -> Result<()> {
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
     let repo_datastore = Path::new(REPOSITORY_DATASTORE);
-    let _repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
+    fs::create_dir_all(&repo_datastore).context(error::CreateRepoDatastore { path: &repo_datastore })?;
+    // TODO - ignore expiration dates https://github.com/awslabs/tough/issues/112
+    let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
         root: File::open(&args.root_path).context(error::OpenRoot {
             path: args.root_path,
         })?,
@@ -100,11 +102,15 @@ fn run() -> Result<()> {
     })
         .context(error::RepoLoad)?;
 
-    let migrations = find_migrations(
-        &args.migration_directory,
-        &current_version,
-        &args.migrate_to_version,
-    )?;
+    let manifest = load_manifest(&repo).context(error::LoadManifest)?;
+    let mut migrations = update_metadata::migration_targets(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
+    migrations.sort();
+
+    // let migrations = find_migrations(
+    //     &args.migration_directory,
+    //     &current_version,
+    //     &args.migrate_to_version,
+    // )?;
 
     if migrations.is_empty() {
         // Not all new OS versions need to change the data store format.  If there's been no
@@ -114,6 +120,7 @@ fn run() -> Result<()> {
         flip_to_new_version(&args.migrate_to_version, &args.datastore_path)?;
     } else {
         let copy_path = run_migrations(
+            &repo,
             direction,
             &migrations,
             &args.datastore_path,
@@ -344,15 +351,15 @@ fn new_datastore_location<P>(from: P, new_version: &Version) -> Result<PathBuf>
 ///
 /// The given data store is used as a starting point; each migration is given the output of the
 /// previous migration, and the final output becomes the new data store.
-fn run_migrations<P1, P2>(
+fn run_migrations<P>(
+    repository: &tough::Repository<tough::FilesystemTransport>,
     direction: Direction,
-    migrations: &[P1],
-    source_datastore: P2,
+    migrations: &[String],
+    source_datastore: P,
     new_version: &Version,
 ) -> Result<PathBuf>
     where
-        P1: AsRef<Path>,
-        P2: AsRef<Path>,
+        P: AsRef<Path>,
 {
     // We start with the given source_datastore, updating this after each migration to point to the
     // output of the previous one.
@@ -365,14 +372,20 @@ fn run_migrations<P1, P2>(
     let mut intermediate_datastores = HashSet::new();
 
     for migration in migrations {
-        // Ensure the migration is executable.
-        fs::set_permissions(migration.as_ref(), Permissions::from_mode(0o755)).context(
-            error::SetPermissions {
-                path: migration.as_ref(),
-            },
-        )?;
 
-        let mut command = Command::new(migration.as_ref());
+
+        // TODO - get the migration from the repo
+        // TODO - deflate
+        // TODO - temporary until pentacle, save it somewere and fix permissions
+        let exec_path = PathBuf::from(migration);
+        // Ensure the migration is executable.
+        // fs::set_permissions(migration.as_ref(), Permissions::from_mode(0o755)).context(
+        //     error::SetPermissions {
+        //         path: migration.as_ref(),
+        //     },
+        // )?;
+
+        let mut command = Command::new(exec_path.as_ref());
 
         // Point each migration in the right direction, and at the given data store.
         command.arg(direction.to_string());
@@ -596,6 +609,18 @@ fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
     Ok(())
 }
 
+/// Converts a filepath into a URI formatted string
+fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
+    let url_result = Url::from_directory_path(&path);
+    // TODO - I can't figure out how to use .context with this error type
+    match url_result {
+        Ok(u) => return Ok(u.to_string()),
+        _ => {}
+    }
+    ensure!(false, error::DirectoryUrl { path: path.as_ref() });
+    Ok("unreachable".to_string())
+}
+
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
 #[cfg(test)]
@@ -654,14 +679,4 @@ mod test {
     }
 }
 
-/// Converts a filepath into a URI formatted string
-fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
-    let url_result = Url::from_directory_path(&path);
-    // TODO - I can't figure out how to use .context with this error type
-    match url_result {
-        Ok(u) => return Ok(u.to_string()),
-        _ => {}
-    }
-    ensure!(false, error::DirectoryUrl { path: path.as_ref() });
-    Ok("unreachable".to_string())
-}
+
