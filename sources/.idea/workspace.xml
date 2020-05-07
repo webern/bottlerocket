@@ -13,10 +13,7 @@
   </component>
   <component name="ChangeListManager">
     <list default="true" id="76199d5d-3795-4b44-8936-8eba0dcd9d59" name="Default Changelist" comment="">
-      <change afterPath="$PROJECT_DIR$/.idea/saveactions_settings.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/updater/updog/src/error.rs" beforeDir="false" afterPath="$PROJECT_DIR$/updater/updog/src/error.rs" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/updater/updog/src/main.rs" beforeDir="false" afterPath="$PROJECT_DIR$/updater/updog/src/main.rs" afterDir="false" />
     </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
@@ -50,10 +47,20 @@
     <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
     <property name="SHARE_PROJECT_CONFIGURATION_FILES" value="true" />
     <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.path.for.package.eslint" value="project" />
+    <property name="node.js.path.for.package.tslint" value="project" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
     <property name="org.rust.cargo.project.model.PROJECT_DISCOVERY" value="true" />
-    <property name="settings.editor.selected.configurable" value="settings.saveactions" />
+    <property name="settings.editor.selected.configurable" value="language.rust.cargo" />
   </component>
-  <component name="RunManager">
+  <component name="RunManager" selected="Cargo Command.update_metadata build musl">
+    <list>
+      <item itemvalue="Cargo Command.updog build musl" />
+      <item itemvalue="Cargo Command.update_metadata build musl" />
+    </list>
     <recent_temporary>
       <list>
         <item itemvalue="Cargo Command.updog build musl" />
@@ -75,7 +82,7 @@
       <option name="presentableId" value="Default" />
       <updated>1588874895481</updated>
       <workItem from="1588874896605" duration="656000" />
-      <workItem from="1588875999545" duration="1423000" />
+      <workItem from="1588875999545" duration="1676000" />
     </task>
     <servers />
   </component>
@@ -83,33 +90,33 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588876839574">
+    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588877900128">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876839574" />
+    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877900128" />
     <state x="1121" y="553" key="EnvironmentVariablesDialog" timestamp="1588876838122">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
     <state x="1121" y="553" key="EnvironmentVariablesDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876838122" />
-    <state width="2147" height="442" key="GridCell.Tab.0.bottom" timestamp="1588877643630">
+    <state width="2147" height="442" key="GridCell.Tab.0.bottom" timestamp="1588877894861">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="442" key="GridCell.Tab.0.bottom/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877643630" />
-    <state width="2147" height="442" key="GridCell.Tab.0.center" timestamp="1588877643629">
+    <state width="2147" height="442" key="GridCell.Tab.0.bottom/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877894861" />
+    <state width="2147" height="442" key="GridCell.Tab.0.center" timestamp="1588877894860">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="442" key="GridCell.Tab.0.center/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877643629" />
-    <state width="2147" height="442" key="GridCell.Tab.0.left" timestamp="1588877643628">
+    <state width="2147" height="442" key="GridCell.Tab.0.center/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877894860" />
+    <state width="2147" height="442" key="GridCell.Tab.0.left" timestamp="1588877894860">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="442" key="GridCell.Tab.0.left/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877643628" />
-    <state width="2147" height="442" key="GridCell.Tab.0.right" timestamp="1588877643629">
+    <state width="2147" height="442" key="GridCell.Tab.0.left/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877894860" />
+    <state width="2147" height="442" key="GridCell.Tab.0.right" timestamp="1588877894861">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="442" key="GridCell.Tab.0.right/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877643629" />
-    <state x="875" y="421" key="SettingsEditor" timestamp="1588877561077">
+    <state width="2147" height="442" key="GridCell.Tab.0.right/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877894861" />
+    <state x="875" y="421" key="SettingsEditor" timestamp="1588877713071">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state x="875" y="421" key="SettingsEditor/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877561077" />
+    <state x="875" y="421" key="SettingsEditor/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588877713071" />
   </component>
 </project>
