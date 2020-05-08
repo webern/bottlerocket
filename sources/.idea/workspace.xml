@@ -12,10 +12,7 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="76199d5d-3795-4b44-8936-8eba0dcd9d59" name="Default Changelist" comment="">
-      <change beforePath="$PROJECT_DIR$/../packages/os/migrator.service" beforeDir="false" afterPath="$PROJECT_DIR$/../packages/os/migrator.service" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/api/migration/migrator/src/args.rs" beforeDir="false" afterPath="$PROJECT_DIR$/api/migration/migrator/src/args.rs" afterDir="false" />
-    </list>
+    <list default="true" id="76199d5d-3795-4b44-8936-8eba0dcd9d59" name="Default Changelist" comment="" />
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -75,15 +72,10 @@
       </method>
     </configuration>
     <list>
+      <item itemvalue="Cargo Command.migrator build musl" />
       <item itemvalue="Cargo Command.updog build musl" />
       <item itemvalue="Cargo Command.update_metadata build musl" />
-      <item itemvalue="Cargo Command.migrator build musl" />
     </list>
-    <recent_temporary>
-      <list>
-        <item itemvalue="Cargo Command.updog build musl" />
-      </list>
-    </recent_temporary>
   </component>
   <component name="RustProjectSettings">
     <option name="toolchainHomeDirectory" value="$USER_HOME$/.cargo/bin" />
@@ -100,7 +92,7 @@
       <option name="presentableId" value="Default" />
       <updated>1588874895481</updated>
       <workItem from="1588874896605" duration="656000" />
-      <workItem from="1588875999545" duration="14201000" />
+      <workItem from="1588875999545" duration="14618000" />
     </task>
     <servers />
   </component>
@@ -116,22 +108,22 @@
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
     <state x="1121" y="553" key="EnvironmentVariablesDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876838122" />
-    <state width="2147" height="309" key="GridCell.Tab.0.bottom" timestamp="1588898809779">
+    <state width="2147" height="309" key="GridCell.Tab.0.bottom" timestamp="1588899470188">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.bottom/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588898809779" />
-    <state width="2147" height="309" key="GridCell.Tab.0.center" timestamp="1588898809779">
+    <state width="2147" height="309" key="GridCell.Tab.0.bottom/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470188" />
+    <state width="2147" height="309" key="GridCell.Tab.0.center" timestamp="1588899470187">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.center/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588898809779" />
-    <state width="2147" height="309" key="GridCell.Tab.0.left" timestamp="1588898809778">
+    <state width="2147" height="309" key="GridCell.Tab.0.center/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470187" />
+    <state width="2147" height="309" key="GridCell.Tab.0.left" timestamp="1588899470187">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.left/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588898809778" />
-    <state width="2147" height="309" key="GridCell.Tab.0.right" timestamp="1588898809779">
+    <state width="2147" height="309" key="GridCell.Tab.0.left/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470187" />
+    <state width="2147" height="309" key="GridCell.Tab.0.right" timestamp="1588899470188">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.right/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588898809779" />
+    <state width="2147" height="309" key="GridCell.Tab.0.right/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470188" />
     <state x="875" y="421" key="SettingsEditor" timestamp="1588877713071">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>

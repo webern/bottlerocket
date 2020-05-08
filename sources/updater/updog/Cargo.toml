@@ -22,7 +22,7 @@ simplelog = "0.7"
 snafu = "0.6.0"
 toml = "0.5.1"
 # TODO - remove the path reference once tough is updated
-tough = { path = "../../../../tough/tough", version = "0.5.0", features = ["http"] }
+tough = { path = "../ignored/tough/tough", version = "0.5.0", features = ["http"] }
 update_metadata = { path = "../update_metadata" }
 structopt = "0.3"
 migrator = { path = "../../api/migration/migrator" }
