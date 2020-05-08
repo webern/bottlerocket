@@ -30,7 +30,7 @@ use simplelog::{Config as LogConfig, TermLogger, TerminalMode};
 use snafu::{ensure, OptionExt, ResultExt};
 use std::collections::HashSet;
 use std::env;
-use std::fs::{self, Permissions, File};
+use std::fs::{self, Permissions, File, OpenOptions};
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
@@ -48,6 +48,9 @@ use error::Result;
 use url::Url;
 
 const REPOSITORY_DATASTORE: &str = "/var/lib/bottlerocket/migrator";
+
+// TODO - remove this when we use pentacle
+const TODO_DONT_USE_MIGRATIONS_RUNDIR: &str = "/var/lib/bottlerocket/migrationrundir";
 
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
@@ -89,15 +92,22 @@ fn run() -> Result<()> {
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
     let repo_datastore = Path::new(REPOSITORY_DATASTORE);
-    fs::create_dir_all(&repo_datastore).context(error::CreateRepoDatastore { path: &repo_datastore })?;
+    fs::create_dir_all(&repo_datastore).context(error::CreateDirectory { path: &repo_datastore })?;
+
+    // TODO - either don't do this when we use pentacle or give it its own error type.
+    let migrations_rundir = PathBuf::from(&TODO_DONT_USE_MIGRATIONS_RUNDIR);
+    fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory { path: &migrations_rundir })?;
+
     // TODO - ignore expiration dates https://github.com/awslabs/tough/issues/112
+    let metadata_url = dir_url(&args.metadata_directory)?;
+    let migrations_url = dir_url(&args.migration_directory)?;
     let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
         root: File::open(&args.root_path).context(error::OpenRoot {
             path: args.root_path,
         })?,
         datastore: &repo_datastore,
-        metadata_base_url: dir_url(&args.metadata_directory)?.as_str(),
-        targets_base_url: dir_url(&args.migration_directory)?.as_str(),
+        metadata_base_url: metadata_url.as_str(),
+        targets_base_url: migrations_url.as_str(),
         limits: Default::default(),
     })
         .context(error::RepoLoad)?;
@@ -168,7 +178,7 @@ fn get_current_version<P>(datastore_dir: P) -> Result<Version>
 /// TODO: This does not yet handle migrations that have been replaced by newer versions - we only
 /// look in one fixed location. We need to get the list of migrations from update metadata, and
 /// only return those.  That may also obviate the need for select_migrations.
-fn find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
+fn _find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
     where
         P: AsRef<Path>,
 {
@@ -201,9 +211,10 @@ fn find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
     Ok(result)
 }
 
+// TODO - it is likely that some logic is still needed from this now dead function
 /// Returns the sublist of the given migrations that should be run, in the returned order, to move
 /// from the 'from' version to the 'to' version.
-fn select_migrations<P: AsRef<Path>>(
+fn _select_migrations<P: AsRef<Path>>(
     from: &Version,
     to: &Version,
     paths: &[P],
@@ -304,17 +315,17 @@ fn select_migrations<P: AsRef<Path>>(
     Ok(result)
 }
 
-/// Given the versions we're migrating from and to, this will return an ordered list of paths to
-/// migration binaries we should run to complete the migration on a data store.
-// This separation allows for easy testing of select_migrations.
-fn find_migrations<P>(path: P, from: &Version, to: &Version) -> Result<Vec<PathBuf>>
-    where
-        P: AsRef<Path>,
-{
-    let mut candidates = Vec::new();
-    candidates.extend(find_migrations_on_disk(path)?);
-    select_migrations(from, to, &candidates)
-}
+// /// Given the versions we're migrating from and to, this will return an ordered list of paths to
+// /// migration binaries we should run to complete the migration on a data store.
+// // This separation allows for easy testing of select_migrations.
+// fn find_migrations<P>(path: P, from: &Version, to: &Version) -> Result<Vec<PathBuf>>
+//     where
+//         P: AsRef<Path>,
+// {
+//     let mut candidates = Vec::new();
+//     candidates.extend(find_migrations_on_disk(path)?);
+//     select_migrations(from, to, &candidates)
+// }
 
 /// Generates a random ID, affectionately known as a 'rando', that can be used to avoid timing
 /// issues and identify unique migration attempts.
@@ -352,7 +363,7 @@ fn new_datastore_location<P>(from: P, new_version: &Version) -> Result<PathBuf>
 /// The given data store is used as a starting point; each migration is given the output of the
 /// previous migration, and the final output becomes the new data store.
 fn run_migrations<P>(
-    repository: &tough::Repository<tough::FilesystemTransport>,
+    repository: &tough::Repository<'_, tough::FilesystemTransport>,
     direction: Direction,
     migrations: &[String],
     source_datastore: P,
@@ -374,18 +385,34 @@ fn run_migrations<P>(
     for migration in migrations {
 
 
-        // TODO - get the migration from the repo
-        // TODO - deflate
-        // TODO - temporary until pentacle, save it somewere and fix permissions
-        let exec_path = PathBuf::from(migration);
-        // Ensure the migration is executable.
-        // fs::set_permissions(migration.as_ref(), Permissions::from_mode(0o755)).context(
-        //     error::SetPermissions {
-        //         path: migration.as_ref(),
-        //     },
-        // )?;
+        // get the migration from the repo
+        let lz4_bytes = repository
+            .read_target(migration.as_str())
+            .context(error::LoadMigration { migration: migration.to_owned() })?
+            .context(error::MigrationNotFound { migration: migration.to_owned() })?;
 
-        let mut command = Command::new(exec_path.as_ref());
+        // deflate with an lz4 decoder read
+        let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { target: migration })?;
+
+        // TODO - remove this use of the filesystem when we add pentacle
+        let exec_path = PathBuf::from(TODO_DONT_USE_MIGRATIONS_RUNDIR).join(&migration);
+        {
+            let mut f = OpenOptions::new()
+                .write(true)
+                .create(true)
+                .open(&exec_path)
+                .context(error::MigrationSave { path: exec_path.clone() })?;
+            let _ = std::io::copy(&mut reader, &mut f).context(error::MigrationSave { path: &exec_path })?;
+        }
+
+        // Ensure the migration is executable.
+        fs::set_permissions(&exec_path, Permissions::from_mode(0o755)).context(
+            error::SetPermissions {
+                path: &exec_path,
+            },
+        )?;
+
+        let mut command = Command::new(&exec_path);
 
         // Point each migration in the right direction, and at the given data store.
         command.arg(direction.to_string());
