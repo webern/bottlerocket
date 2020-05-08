@@ -15,7 +15,7 @@ fn usage() -> ! {
     eprintln!(
         r"Usage: {}
             --datastore-path PATH
-            --migration-directory PATH[:PATH:PATH...]
+            --migration-directory PATH
             --root-path PATH
             --metadata-directory PATH
             (--migrate-to-version x.y | --migrate-to-version-from-os-release)
