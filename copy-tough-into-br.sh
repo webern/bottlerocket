@@ -23,3 +23,11 @@ rm "${TOUGH_DST}/Cargo.lock"
 rm -rf "${TOUGH_DST}/tuftool"
 sudo chown -R "$(whoami)" "${TOUGH_DST}"
 ls -al "${IGNORED}"
+
+# annoying
+sed 's/mockito = "0.25"/#mockito = "0.25"/g' \
+    "${TOUGH_DST}/tough/Cargo.toml" > \
+    "${TOUGH_DST}/tough/Cargo.toml.new"
+
+mv "${TOUGH_DST}/tough/Cargo.toml" "${TOUGH_DST}/tough/Cargo.toml.orig"
+mv "${TOUGH_DST}/tough/Cargo.toml.new" "${TOUGH_DST}/tough/Cargo.toml"
