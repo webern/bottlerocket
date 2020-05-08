@@ -12,7 +12,16 @@
     <cargoProject FILE="$PROJECT_DIR$/Cargo.toml" />
   </component>
   <component name="ChangeListManager">
-    <list default="true" id="76199d5d-3795-4b44-8936-8eba0dcd9d59" name="Default Changelist" comment="" />
+    <list default="true" id="76199d5d-3795-4b44-8936-8eba0dcd9d59" name="Default Changelist" comment="">
+      <change beforePath="$PROJECT_DIR$/../copy-tough-into-br.sh" beforeDir="false" afterPath="$PROJECT_DIR$/../copy-tough-into-br.sh" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/runConfigurations/updog_build_musl.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/runConfigurations/updog_build_musl.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/sources.iml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/sources.iml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/Cargo.lock" beforeDir="false" afterPath="$PROJECT_DIR$/Cargo.lock" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/api/migration/migrator/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/api/migration/migrator/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/updater/update_metadata/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/updater/update_metadata/Cargo.toml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/updater/updog/Cargo.toml" beforeDir="false" afterPath="$PROJECT_DIR$/updater/updog/Cargo.toml" afterDir="false" />
+    </list>
     <option name="SHOW_DIALOG" value="false" />
     <option name="HIGHLIGHT_CONFLICTS" value="true" />
     <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
@@ -72,9 +81,9 @@
       </method>
     </configuration>
     <list>
-      <item itemvalue="Cargo Command.migrator build musl" />
       <item itemvalue="Cargo Command.updog build musl" />
       <item itemvalue="Cargo Command.update_metadata build musl" />
+      <item itemvalue="Cargo Command.migrator build musl" />
     </list>
   </component>
   <component name="RustProjectSettings">
@@ -93,6 +102,7 @@
       <updated>1588874895481</updated>
       <workItem from="1588874896605" duration="656000" />
       <workItem from="1588875999545" duration="14618000" />
+      <workItem from="1588962562837" duration="1335000" />
     </task>
     <servers />
   </component>
@@ -100,30 +110,30 @@
     <option name="version" value="1" />
   </component>
   <component name="WindowStateProjectService">
-    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588878564882">
+    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog" timestamp="1588964636441">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588878564882" />
-    <state x="1121" y="553" key="EnvironmentVariablesDialog" timestamp="1588876838122">
+    <state x="831" y="445" key="#com.intellij.execution.impl.EditConfigurationsDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588964636441" />
+    <state x="1121" y="553" key="EnvironmentVariablesDialog" timestamp="1588964635082">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state x="1121" y="553" key="EnvironmentVariablesDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588876838122" />
-    <state width="2147" height="309" key="GridCell.Tab.0.bottom" timestamp="1588899470188">
+    <state x="1121" y="553" key="EnvironmentVariablesDialog/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588964635082" />
+    <state width="1873" height="301" key="GridCell.Tab.0.bottom" timestamp="1588964637651">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.bottom/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470188" />
-    <state width="2147" height="309" key="GridCell.Tab.0.center" timestamp="1588899470187">
+    <state width="1873" height="301" key="GridCell.Tab.0.bottom/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588964637651" />
+    <state width="1873" height="301" key="GridCell.Tab.0.center" timestamp="1588964637650">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.center/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470187" />
-    <state width="2147" height="309" key="GridCell.Tab.0.left" timestamp="1588899470187">
+    <state width="1873" height="301" key="GridCell.Tab.0.center/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588964637650" />
+    <state width="1873" height="301" key="GridCell.Tab.0.left" timestamp="1588964637649">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.left/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470187" />
-    <state width="2147" height="309" key="GridCell.Tab.0.right" timestamp="1588899470188">
+    <state width="1873" height="301" key="GridCell.Tab.0.left/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588964637649" />
+    <state width="1873" height="301" key="GridCell.Tab.0.right" timestamp="1588964637650">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>
-    <state width="2147" height="309" key="GridCell.Tab.0.right/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588899470188" />
+    <state width="1873" height="301" key="GridCell.Tab.0.right/0.23.2560.1577/2560.-342.1600.2537/-1792.284.1792.1097@0.23.2560.1577" timestamp="1588964637650" />
     <state x="875" y="421" key="SettingsEditor" timestamp="1588877713071">
       <screen x="0" y="23" width="2560" height="1577" />
     </state>

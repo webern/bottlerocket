@@ -33,6 +33,9 @@
       <sourceFolder url="file://$MODULE_DIR$/api/sundog/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/api/migration/migrator/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/api/bork/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ignored/tough/olpc-cjson/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ignored/tough/tough/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/ignored/tough/tough/tests" isTestSource="true" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />

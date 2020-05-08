@@ -19,7 +19,7 @@ simplelog = "0.7"
 snafu = "0.6"
 update_metadata = { path = "../../../updater/update_metadata" }
 # TODO - remove the path reference once tough is updated
-tough = { path = "../../../../../tough/tough", version = "0.5.0" }
+tough = { path = "../../../ignored/tough/tough", version = "0.5.0" }
 url = "2.1.0"
 lz4 = "1.23.1"
 
