@@ -89,6 +89,13 @@ fn run() -> Result<()> {
             process::exit(0);
         });
 
+    // Check for the presence of timestamp.json. If it's not where expected then there is nothing
+    // for migrator to do because there is no valid tuf repo for us to load (i.e. no migrations).
+    if !Path::new(args.metadata_directory.as_os_str()).is_file() {
+        info!("Migrator did not find repository metadata, nothing to do");
+        process::exit(0);
+    }
+
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
     let repo_datastore = Path::new(REPOSITORY_DATASTORE);
