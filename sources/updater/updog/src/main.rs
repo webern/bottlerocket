@@ -124,11 +124,6 @@ fn load_repository<'a>(
         .context(error::Metadata)
 }
 
-fn running_version() -> Result<(Version, String)> {
-    let br = BottlerocketRelease::new().context(error::ReleaseVersion)?;
-    Ok((br.version_id, br.variant_id))
-}
-
 fn applicable_updates<'a>(manifest: &'a Manifest, variant: &str) -> Vec<&'a Update> {
     let mut updates: Vec<&Update> = manifest
         .updates
@@ -199,14 +194,13 @@ fn retrieve_migrations(
     transport: &HttpQueryTransport,
     manifest: &Manifest,
     update: &Update,
+    current_version: &Version,
 ) -> Result<()> {
-    let (version_current, _) = running_version()?;
-
     // the migrations required for foo to bar and bar to foo are
     // the same; we can pretend we're always upgrading from foo to
     // bar and use the same logic to obtain the migrations
-    let target = std::cmp::max(&update.version, &version_current);
-    let start = std::cmp::min(&update.version, &version_current);
+    let target = std::cmp::max(&update.version, &current_version);
+    let start = std::cmp::min(&update.version, &current_version);
 
     let dir = Path::new(MIGRATION_PATH);
     if !dir.exists() {
@@ -310,6 +304,7 @@ struct Arguments {
     all: bool,
     reboot: bool,
     timestamp: Option<DateTime<Utc>>,
+    variant: Option<String>,
 }
 
 /// Parse the command line arguments to get the user-specified values
@@ -322,6 +317,7 @@ fn parse_args(args: std::env::Args) -> Arguments {
     let mut all = false;
     let mut reboot = false;
     let mut timestamp = None;
+    let mut variant = None;
 
     let mut iter = args.skip(1);
     while let Some(arg) = iter.next() {
@@ -341,6 +337,12 @@ fn parse_args(args: std::env::Args) -> Arguments {
                 },
                 _ => usage(),
             },
+            "--variant" => {
+                variant = Some(
+                    iter.next()
+                        .unwrap_or_else(|| usage_msg("Did not give argument to --variant")),
+                );
+            }
             "-n" | "--now" | "--ignore-waves" => {
                 ignore_waves = true;
             }
@@ -380,6 +382,7 @@ fn parse_args(args: std::env::Args) -> Arguments {
         all,
         reboot,
         timestamp,
+        variant,
     }
 }
 
@@ -439,9 +442,10 @@ fn main_inner() -> Result<()> {
         serde_plain::from_str::<Command>(&arguments.subcommand).unwrap_or_else(|_| usage());
 
     let config = load_config()?;
-    let (current_version, variant) = running_version()?;
+    let current_release = BottlerocketRelease::new().context(error::ReleaseVersion)?;
+    let variant = arguments.variant.unwrap_or(current_release.variant_id);
     let transport = HttpQueryTransport::new();
-    set_common_query_params(&transport, &current_version, &config)?;
+    set_common_query_params(&transport, &current_release.version_id, &config)?;
     let repository = load_repository(&transport, &config)?;
     let manifest = load_manifest(&repository)?;
 
@@ -454,7 +458,7 @@ fn main_inner() -> Result<()> {
             let update = update_required(
                 &config,
                 &manifest,
-                &current_version,
+                &current_release.version_id,
                 &variant,
                 arguments.force_version,
             )
@@ -474,7 +478,7 @@ fn main_inner() -> Result<()> {
             if let Some(u) = update_required(
                 &config,
                 &manifest,
-                &current_version,
+                &current_release.version_id,
                 &variant,
                 arguments.force_version,
             ) {
@@ -503,7 +507,13 @@ fn main_inner() -> Result<()> {
                         .context(error::TransportBorrow)?
                         .push((String::from("target"), u.version.to_string()));
 
-                    retrieve_migrations(&repository, &transport, &manifest, u)?;
+                    retrieve_migrations(
+                        &repository,
+                        &transport,
+                        &manifest,
+                        u,
+                        &current_release.version_id,
+                    )?;
                     update_image(u, &repository)?;
                     if command == Command::Update {
                         update_flags()?;
