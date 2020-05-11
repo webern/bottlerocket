@@ -131,17 +131,17 @@ impl Args {
                     trace!("Given --metadata-path: {}", path_str);
                     metadata_path = Some(PathBuf::from(path_str));
                 }
-                _ => usage(),
+                _ => usage_msg(format!("Unable to parse input '{}'", arg)),
             }
         }
 
         Self {
-            datastore_path: datastore_path.unwrap_or_else(|| usage()),
+            datastore_path: datastore_path.unwrap_or_else(|| usage_msg("datastore_path is none")),
             log_level: log_level.unwrap_or_else(|| LevelFilter::Info),
-            migration_directory: migration_directory.unwrap_or_else(|| usage()),
-            migrate_to_version: migrate_to_version.unwrap_or_else(|| usage()),
-            root_path: root_path.unwrap_or_else(|| usage()),
-            metadata_directory: metadata_path.unwrap_or_else(|| usage()),
+            migration_directory: migration_directory.unwrap_or_else(|| usage_msg("migration_directory is none")),
+            migrate_to_version: migrate_to_version.unwrap_or_else(|| usage_msg("migrate_to_version is none")),
+            root_path: root_path.unwrap_or_else(|| usage_msg("root_path is none")),
+            metadata_directory: metadata_path.unwrap_or_else(|| usage_msg("metadata_path is none")),
         }
     }
 }
