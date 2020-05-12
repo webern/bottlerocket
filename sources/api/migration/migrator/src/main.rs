@@ -56,18 +56,23 @@ const TODO_DONT_USE_MIGRATIONS_RUNDIR: &str = "/var/lib/bottlerocket/migrationru
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
 // https://github.com/shepmaster/snafu/issues/110
 fn main() {
+    println!("migrator - {}:{} program starting", file!(), line!());
     if let Err(e) = run() {
         eprintln!("{}", e);
         process::exit(1);
     }
+    println!("migrator - {}:{}", file!(), line!());
 }
 
 fn run() -> Result<()> {
+    println!("migrator - {}:{}", file!(), line!());
     let args = Args::from_env(env::args());
 
     // TerminalMode::Mixed will send errors to stderr and anything less to stdout.
     TermLogger::init(args.log_level, LogConfig::default(), TerminalMode::Mixed)
         .context(error::Logger)?;
+
+    println!("migrator - {}:{}", file!(), line!());
 
     // Get the directory we're working in.
     let datastore_dir = args
@@ -77,8 +82,10 @@ fn run() -> Result<()> {
             path: &args.datastore_path,
         })?;
 
+    println!("migrator - {}:{}", file!(), line!());
     let current_version = get_current_version(&datastore_dir)?;
 
+    println!("migrator - {}:{}", file!(), line!());
     let direction = Direction::from_versions(&current_version, &args.migrate_to_version)
         .unwrap_or_else(|| {
             info!(
@@ -89,22 +96,27 @@ fn run() -> Result<()> {
             process::exit(0);
         });
 
+    println!("migrator - {}:{}", file!(), line!());
     // Check for the presence of timestamp.json. If it's not where expected then there is nothing
     // for migrator to do because there is no valid tuf repo for us to load (i.e. no migrations).
     if !Path::new(args.metadata_directory.as_os_str()).is_file() {
         info!("Migrator did not find repository metadata, nothing to do");
+        println!("migrator - {}:{}", file!(), line!());
         process::exit(0);
     }
 
+    println!("migrator - {}:{}", file!(), line!());
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
     let repo_datastore = Path::new(REPOSITORY_DATASTORE);
     fs::create_dir_all(&repo_datastore).context(error::CreateDirectory { path: &repo_datastore })?;
 
+    println!("migrator - {}:{}", file!(), line!());
     // TODO - either don't do this when we use pentacle or give it its own error type.
     let migrations_rundir = PathBuf::from(&TODO_DONT_USE_MIGRATIONS_RUNDIR);
     fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory { path: &migrations_rundir })?;
 
+    println!("migrator - {}:{}", file!(), line!());
     // TODO - ignore expiration dates https://github.com/awslabs/tough/issues/112
     let metadata_url = dir_url(&args.metadata_directory)?;
     let migrations_url = dir_url(&args.migration_directory)?;
@@ -119,6 +131,7 @@ fn run() -> Result<()> {
     })
         .context(error::RepoLoad)?;
 
+    println!("migrator - {}:{}", file!(), line!());
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
     let mut migrations = update_metadata::migration_targets(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
     migrations.sort();
@@ -129,13 +142,16 @@ fn run() -> Result<()> {
     //     &args.migrate_to_version,
     // )?;
 
+    println!("migrator - {}:{}", file!(), line!());
     if migrations.is_empty() {
+        println!("migrator - {}:{}", file!(), line!());
         // Not all new OS versions need to change the data store format.  If there's been no
         // change, we can just link to the last version rather than making a copy.
         // (Note: we link to the fully resolved directory, args.datastore_path,  so we don't
         // have a chain of symlinks that could go past the maximum depth.)
         flip_to_new_version(&args.migrate_to_version, &args.datastore_path)?;
     } else {
+        println!("migrator - {}:{}", file!(), line!());
         let copy_path = run_migrations(
             &repo,
             direction,
@@ -143,9 +159,12 @@ fn run() -> Result<()> {
             &args.datastore_path,
             &args.migrate_to_version,
         )?;
+        println!("migrator - {}:{}", file!(), line!());
         flip_to_new_version(&args.migrate_to_version, &copy_path)?;
+        println!("migrator - {}:{}", file!(), line!());
     }
 
+    println!("migrator - {}:{}", file!(), line!());
     Ok(())
 }
 
