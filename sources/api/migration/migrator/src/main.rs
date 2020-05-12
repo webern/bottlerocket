@@ -410,17 +410,18 @@ fn run_migrations<P>(
     let mut intermediate_datastores = HashSet::new();
 
     for migration in migrations {
-
-
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // get the migration from the repo
         let lz4_bytes = repository
             .read_target(migration.as_str())
             .context(error::LoadMigration { migration: migration.to_owned() })?
             .context(error::MigrationNotFound { migration: migration.to_owned() })?;
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // deflate with an lz4 decoder read
         let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { target: migration })?;
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // TODO - remove this use of the filesystem when we add pentacle
         let exec_path = PathBuf::from(TODO_DONT_USE_MIGRATIONS_RUNDIR).join(&migration);
         {
@@ -432,6 +433,7 @@ fn run_migrations<P>(
             let _ = std::io::copy(&mut reader, &mut f).context(error::MigrationSave { path: &exec_path })?;
         }
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // Ensure the migration is executable.
         fs::set_permissions(&exec_path, Permissions::from_mode(0o755)).context(
             error::SetPermissions {
@@ -439,6 +441,7 @@ fn run_migrations<P>(
             },
         )?;
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         let mut command = Command::new(&exec_path);
 
         // Point each migration in the right direction, and at the given data store.
@@ -459,29 +462,39 @@ fn run_migrations<P>(
 
         info!("Running migration command: {:?}", command);
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         let output = command
             .output()
             .context(error::StartMigration { command })?;
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         if !output.stdout.is_empty() {
+            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             debug!(
                 "Migration stdout: {}",
                 std::str::from_utf8(&output.stdout).unwrap_or("<invalid UTF-8>")
             );
         } else {
+            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             debug!("No migration stdout");
         }
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         if !output.stderr.is_empty() {
+            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             let stderr = std::str::from_utf8(&output.stderr).unwrap_or("<invalid UTF-8>");
             // We want to see migration stderr on the console, so log at error level.
             error!("Migration stderr: {}", stderr);
         } else {
+            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             debug!("No migration stderr");
         }
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         ensure!(output.status.success(), error::MigrationFailure { output });
 
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         source_datastore = &target_datastore;
+        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
     }
 
     // Remove the intermediate data stores
