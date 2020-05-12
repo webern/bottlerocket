@@ -99,8 +99,9 @@ fn run() -> Result<()> {
     println!("migrator - {}:{}", file!(), line!());
     // Check for the presence of timestamp.json. If it's not where expected then there is nothing
     // for migrator to do because there is no valid tuf repo for us to load (i.e. no migrations).
-    if !Path::new(args.metadata_directory.as_os_str()).is_file() {
-        info!("Migrator did not find repository metadata, nothing to do");
+    let timestamp_path = args.metadata_directory.join("timestamp.json");
+    if !Path::new(timestamp_path.as_os_str()).is_file() {
+        info!("Migrator did not find repository metadata at '{}', nothing to do", timestamp_path.display());
         println!("migrator - {}:{}", file!(), line!());
         process::exit(0);
     }
