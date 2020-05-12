@@ -124,11 +124,11 @@ impl Args {
                     root_path = Some(PathBuf::from(path_str));
                 }
 
-                "--metadata-path" => {
+                "--metadata-directory" => {
                     let path_str = iter
                         .next()
-                        .unwrap_or_else(|| usage_msg("Did not give argument to --metadata-path"));
-                    trace!("Given --metadata-path: {}", path_str);
+                        .unwrap_or_else(|| usage_msg("Did not give argument to --metadata-directory"));
+                    trace!("Given --metadata-directory: {}", path_str);
                     metadata_path = Some(PathBuf::from(path_str));
                 }
                 _ => usage_msg(format!("Unable to parse input '{}'", arg)),

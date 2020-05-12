@@ -36,6 +36,8 @@
       <sourceFolder url="file://$MODULE_DIR$/ignored/tough/olpc-cjson/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ignored/tough/tough/src" isTestSource="false" />
       <sourceFolder url="file://$MODULE_DIR$/ignored/tough/tough/tests" isTestSource="true" />
+      <sourceFolder url="file://$MODULE_DIR$/api/migration/migrations/v0.99.1/add-foo/src" isTestSource="false" />
+      <sourceFolder url="file://$MODULE_DIR$/api/migration/migrations/v0.99.1/remove-motd/src" isTestSource="false" />
       <excludeFolder url="file://$MODULE_DIR$/target" />
     </content>
     <orderEntry type="inheritedJdk" />
