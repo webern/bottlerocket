@@ -133,7 +133,7 @@ fn run(args: &Args) -> Result<()> {
     println!("migrator - {}:{}", file!(), line!());
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
     let mut migrations = update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
-    migrations.sort();
+    // migrations.sort(); // TODO - remember to explain why i don't think we should do this
 
     // let migrations = find_migrations(
     //     &args.migration_directory,
