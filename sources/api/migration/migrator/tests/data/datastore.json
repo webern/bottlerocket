@@ -1,0 +1,13 @@
+{
+  "settings": {
+    "motd": "Welcome to Migrator!",
+    "foo": "bar"
+  },
+  "os": {
+    "pretty_name": "Bottlerocket OS 0.99.1",
+    "variant_id": "aws-k8s-1.15",
+    "version_id": "0.99.1",
+    "build_id": "270d867a",
+    "arch": "x86_64"
+  }
+}

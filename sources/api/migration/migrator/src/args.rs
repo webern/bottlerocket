@@ -40,6 +40,7 @@ pub(crate) struct Args {
     pub(crate) migrate_to_version: Version,
     pub(crate) root_path: PathBuf,
     pub(crate) metadata_directory: PathBuf,
+    pub(crate) working_directory: PathBuf,
 }
 
 impl Args {
@@ -52,6 +53,7 @@ impl Args {
         let mut migrate_to_version = None;
         let mut root_path = None;
         let mut metadata_path = None;
+        let mut working_directory = None;
 
         let mut iter = args.skip(1);
         while let Some(arg) = iter.next() {
@@ -131,6 +133,14 @@ impl Args {
                     trace!("Given --metadata-directory: {}", path_str);
                     metadata_path = Some(PathBuf::from(path_str));
                 }
+
+                "--working-directory" => {
+                    let path_str = iter
+                        .next()
+                        .unwrap_or_else(|| usage_msg("Did not give argument to --working-directory"));
+                    trace!("Given --working-directory: {}", path_str);
+                    working_directory = Some(PathBuf::from(path_str));
+                }
                 _ => usage_msg(format!("Unable to parse input '{}'", arg)),
             }
         }
@@ -142,6 +152,7 @@ impl Args {
             migrate_to_version: migrate_to_version.unwrap_or_else(|| usage_msg("migrate_to_version is none")),
             root_path: root_path.unwrap_or_else(|| usage_msg("root_path is none")),
             metadata_directory: metadata_path.unwrap_or_else(|| usage_msg("metadata_path is none")),
+            working_directory: working_directory.unwrap_or_else(|| usage_msg("working_directory is none")),
         }
     }
 }

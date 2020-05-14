@@ -22,7 +22,7 @@ use std::process;
 use std::str::FromStr;
 use std::thread;
 use tough::{Repository, Settings};
-use update_metadata::{load_manifest, migration_targets, Manifest, Update, REPOSITORY_LIMITS};
+use update_metadata::{load_manifest, find_migrations, Manifest, Update, REPOSITORY_LIMITS};
 
 
 #[cfg(target_arch = "x86_64")]
@@ -209,7 +209,7 @@ fn retrieve_migrations(
 
     // download each migration, making sure they are executable and removing
     // known extensions from our compression, e.g. .lz4
-    let mut targets = migration_targets(start, target, &manifest)?;
+    let mut targets = find_migrations(start, target, &manifest)?;
     targets.sort();
     targets.push("manifest.json".to_owned());
 

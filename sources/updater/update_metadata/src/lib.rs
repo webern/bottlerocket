@@ -3,7 +3,9 @@
 mod de;
 pub mod error;
 mod se;
+mod direction;
 
+pub use direction::Direction;
 use crate::error::Result;
 use chrono::{DateTime, Duration, Utc};
 use lazy_static::lazy_static;
@@ -395,7 +397,38 @@ impl Update {
     }
 }
 
-pub fn migration_targets(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+    let mut targets = Vec::new();
+    // early exit if there is no work to do.
+    if from == to {
+        return Ok(targets);
+    }
+    // determine if the migration direction is up or down
+    let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
+    let mut version = from;
+    let mut destination = to;
+    // if the direction is backward, switch to to and from to get the migrations in forward order.
+    if direction == Direction::Backward {
+        version = to;
+        destination = from;
+    }
+    let mut migrations = find_migrations_impl(from, to, manifest)?;
+    // if the direction is backward, reverse the order of the migrations.
+    if direction == Direction::Backward {
+        targets = targets.into_iter().rev().collect();
+    }
+    Ok(targets)
+}
+
+struct MigrationGroup {
+    to_version: Version,
+    migrations: Vec<String>,
+}
+
+/// Finds the migration from one version to another. The migration direction must be forward, that
+/// is, `from` *must* be a lower version than `to`. The caller may reverse the Vec returned by this
+/// function in order to migrate backward.
+fn find_migrations_impl(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
     let mut targets = Vec::new();
     let mut version = from;
     while version != to {
@@ -446,7 +479,7 @@ fn test_migrations() {
     let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
     let from = Version::parse("1.0.0").unwrap();
     let to = Version::parse("1.5.0").unwrap();
-    let targets = migration_targets(&from, &to, &manifest).unwrap();
+    let targets = find_migrations(&from, &to, &manifest).unwrap();
 
     assert!(targets.len() == 3);
     let mut i = targets.iter();

@@ -36,38 +36,35 @@ use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
-use update_metadata::{MIGRATION_FILENAME_RE, load_manifest};
+use update_metadata::{MIGRATION_FILENAME_RE, load_manifest, Direction};
 
 mod args;
-mod direction;
 mod error;
 
 use args::Args;
-use direction::Direction;
 use error::Result;
 use url::Url;
 
-const REPOSITORY_DATASTORE: &str = "/var/lib/bottlerocket/migrator";
+// const REPOSITORY_DATASTORE: &str = "/var/lib/bottlerocket/migrator";
 
 // TODO - remove this when we use pentacle
-const TODO_DONT_USE_MIGRATIONS_RUNDIR: &str = "/var/lib/bottlerocket/migrationrundir";
+// const TODO_DONT_USE_MIGRATIONS_RUNDIR: &str = "/var/lib/bottlerocket/migrationrundir";
 
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
 // https://github.com/shepmaster/snafu/issues/110
 fn main() {
     println!("migrator - {}:{} program starting", file!(), line!());
-    if let Err(e) = run() {
+    let args = Args::from_env(env::args());
+    println!("migrator - {}:{}", file!(), line!());
+    if let Err(e) = run(&args) {
         eprintln!("{}", e);
         process::exit(1);
     }
     println!("migrator - {}:{}", file!(), line!());
 }
 
-fn run() -> Result<()> {
-    println!("migrator - {}:{}", file!(), line!());
-    let args = Args::from_env(env::args());
-
+fn run(args: &Args) -> Result<()> {
     // TerminalMode::Mixed will send errors to stderr and anything less to stdout.
     TermLogger::init(args.log_level, LogConfig::default(), TerminalMode::Mixed)
         .context(error::Logger)?;
@@ -93,28 +90,29 @@ fn run() -> Result<()> {
                 args.migrate_to_version,
                 args.datastore_path.display()
             );
+            // TODO - find a nice way to return Ok(()) instead
             process::exit(0);
         });
 
     println!("migrator - {}:{}", file!(), line!());
     // Check for the presence of timestamp.json. If it's not where expected then there is nothing
     // for migrator to do because there is no valid tuf repo for us to load (i.e. no migrations).
-    let timestamp_path = args.metadata_directory.join("timestamp.json");
-    if !Path::new(timestamp_path.as_os_str()).is_file() {
-        info!("Migrator did not find repository metadata at '{}', nothing to do", timestamp_path.display());
-        println!("migrator - {}:{}", file!(), line!());
-        process::exit(0);
-    }
+    // let timestamp_path = args.metadata_directory.join("timestamp.json");
+    // if !Path::new(timestamp_path.as_os_str()).is_file() {
+    //     info!("Migrator did not find repository metadata at '{}', nothing to do", timestamp_path.display());
+    //     println!("migrator - {}:{}", file!(), line!());
+    //     return Ok(());
+    // }
 
     println!("migrator - {}:{}", file!(), line!());
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
-    let repo_datastore = Path::new(REPOSITORY_DATASTORE);
-    fs::create_dir_all(&repo_datastore).context(error::CreateDirectory { path: &repo_datastore })?;
+    let tough_workdir = args.working_directory.join("tough_workdir");
+    fs::create_dir_all(&tough_workdir).context(error::CreateDirectory { path: &tough_workdir })?;
 
     println!("migrator - {}:{}", file!(), line!());
     // TODO - either don't do this when we use pentacle or give it its own error type.
-    let migrations_rundir = PathBuf::from(&TODO_DONT_USE_MIGRATIONS_RUNDIR);
+    let migrations_rundir = args.working_directory.join("migrations_rundir");
     fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory { path: &migrations_rundir })?;
 
     println!("migrator - {}:{}", file!(), line!());
@@ -123,9 +121,9 @@ fn run() -> Result<()> {
     let migrations_url = dir_url(&args.migration_directory)?;
     let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
         root: File::open(&args.root_path).context(error::OpenRoot {
-            path: args.root_path,
+            path: args.root_path.clone(),
         })?,
-        datastore: &repo_datastore,
+        datastore: &tough_workdir,
         metadata_base_url: metadata_url.as_str(),
         targets_base_url: migrations_url.as_str(),
         limits: Default::default(),
@@ -134,7 +132,7 @@ fn run() -> Result<()> {
 
     println!("migrator - {}:{}", file!(), line!());
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
-    let mut migrations = update_metadata::migration_targets(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
+    let mut migrations = update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
     migrations.sort();
 
     // let migrations = find_migrations(
@@ -159,6 +157,7 @@ fn run() -> Result<()> {
             &migrations,
             &args.datastore_path,
             &args.migrate_to_version,
+            &migrations_rundir,
         )?;
         println!("migrator - {}:{}", file!(), line!());
         flip_to_new_version(&args.migrate_to_version, &copy_path)?;
@@ -395,6 +394,7 @@ fn run_migrations<P>(
     migrations: &[String],
     source_datastore: P,
     new_version: &Version,
+    migrations_rundir: &PathBuf, // TODO remove with pentacle
 ) -> Result<PathBuf>
     where
         P: AsRef<Path>,
@@ -423,7 +423,7 @@ fn run_migrations<P>(
 
         println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // TODO - remove this use of the filesystem when we add pentacle
-        let exec_path = PathBuf::from(TODO_DONT_USE_MIGRATIONS_RUNDIR).join(&migration);
+        let exec_path = migrations_rundir.join(&migration);
         {
             let mut f = OpenOptions::new()
                 .write(true)
@@ -693,6 +693,7 @@ fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use tempfile::TempDir;
 
     #[test]
     #[allow(unused_variables)]
@@ -717,33 +718,154 @@ mod test {
 
         // Test going forward one minor version
         assert_eq!(
-            select_migrations(&v01, &v02, &all_migrations).unwrap(),
+            _select_migrations(&v01, &v02, &all_migrations).unwrap(),
             vec![m02_1]
         );
 
         // Test going backward one minor version
         assert_eq!(
-            select_migrations(&v02, &v01, &all_migrations).unwrap(),
+            _select_migrations(&v02, &v01, &all_migrations).unwrap(),
             vec![m02_1]
         );
 
         // Test going forward a few minor versions
         assert_eq!(
-            select_migrations(&v01, &v04, &all_migrations).unwrap(),
+            _select_migrations(&v01, &v04, &all_migrations).unwrap(),
             vec![m02_1, m03_1, m04_1, m04_2]
         );
 
         // Test going backward a few minor versions
         assert_eq!(
-            select_migrations(&v04, &v01, &all_migrations).unwrap(),
+            _select_migrations(&v04, &v01, &all_migrations).unwrap(),
             vec![m04_2, m04_1, m03_1, m02_1]
         );
 
         // Test no matching migrations
-        assert!(select_migrations(&v04, &v05, &all_migrations)
+        assert!(_select_migrations(&v04, &v05, &all_migrations)
             .unwrap()
             .is_empty());
     }
+
+    pub fn test_data() -> PathBuf {
+        let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
+        p.pop();
+        p.join("migrator").join("tests").join("data")
+    }
+
+    struct MigrationTestInfo {
+        tmp: TempDir,
+        from_version: Version,
+        to_version: Version,
+        datastore: PathBuf,
+    }
+
+    impl MigrationTestInfo {
+        fn new(from_version: Version, to_version: Version) -> Self {
+            MigrationTestInfo {
+                tmp: TempDir::new().unwrap(),
+                from_version,
+                to_version,
+                datastore: PathBuf::default(),
+            }
+        }
+    }
+
+    fn create_datastore_links(info: &mut MigrationTestInfo) {
+        info.datastore = info.tmp.path().join(
+            format!("v{}.{}.{}_xyz",
+                    info.from_version.major,
+                    info.from_version.minor,
+                    info.from_version.patch)
+        );
+        let datastore_version = info.tmp.path().join(
+            format!("v{}.{}.{}",
+                    info.from_version.major,
+                    info.from_version.minor,
+                    info.from_version.patch)
+        );
+        let datastore_minor = info.tmp.path().join(
+            format!("v{}.{}",
+                    info.from_version.major,
+                    info.from_version.minor)
+        );
+        let datastore_major = info.tmp.path().join(
+            format!("v{}", info.from_version.major)
+        );
+        let datastore_current = info.tmp.path().join("current");
+        fs::create_dir_all(&info.datastore).unwrap();
+        std::os::unix::fs::symlink(&info.datastore, &datastore_version).unwrap();
+        std::os::unix::fs::symlink(&datastore_version, &datastore_minor).unwrap();
+        std::os::unix::fs::symlink(&datastore_minor, &datastore_major).unwrap();
+        std::os::unix::fs::symlink(&datastore_major, &datastore_current).unwrap();
+    }
+
+    fn root() -> PathBuf {
+        test_data().join("root.json")
+    }
+
+    fn tuf_metadata() -> PathBuf {
+        test_data().join("repository").join("metadata")
+    }
+
+    fn tuf_targets() -> PathBuf {
+        test_data().join("repository").join("targets")
+    }
+
+    #[test]
+    fn migrate_forward() {
+        let from_version = Version::parse("0.99.0").unwrap();
+        let to_version = Version::parse("0.99.1").unwrap();
+        let mut info = MigrationTestInfo::new(from_version, to_version);
+        create_datastore_links(&mut info);
+        let args = Args {
+            datastore_path: info.datastore.clone(),
+            log_level: log::LevelFilter::Info,
+            migration_directory: tuf_targets(),
+            migrate_to_version: info.to_version.clone(),
+            root_path: root(),
+            metadata_directory: tuf_metadata(),
+            working_directory: info.tmp.path().join("wrk"),
+        };
+        run(&args).unwrap();
+        let output_file = info.tmp.path().join("result.txt");
+        let contents = std::fs::read_to_string(&output_file).unwrap();
+        let lines: Vec<&str> = contents.split('\n').collect();
+        assert_eq!(lines.len(), 3); // newline at the end?
+        let first_line = *lines.get(0).unwrap();
+        // TODO - better messages on failure
+        println!("first_line: {}", first_line); // TODO - remove
+        assert!(first_line.contains("x-first-migration --forward"));
+        let second_line = *lines.get(0).unwrap();
+        println!("second_line: {}", second_line); // TODO - remove
+        assert!(second_line.contains("a-second-migration: --forward"));
+    }
+
+    #[test]
+    fn migrate_backward() {
+        let from_version = Version::parse("0.99.1").unwrap();
+        let to_version = Version::parse("0.99.0").unwrap();
+        let mut info = MigrationTestInfo::new(from_version, to_version);
+        create_datastore_links(&mut info);
+        let args = Args {
+            datastore_path: info.datastore.clone(),
+            log_level: log::LevelFilter::Info,
+            migration_directory: tuf_targets(),
+            migrate_to_version: info.to_version.clone(),
+            root_path: root(),
+            metadata_directory: tuf_metadata(),
+            working_directory: info.tmp.path().join("wrk"),
+        };
+        run(&args).unwrap();
+        let output_file = info.tmp.path().join("result.txt");
+        let contents = std::fs::read_to_string(&output_file).unwrap();
+        let lines: Vec<&str> = contents.split('\n').collect();
+        assert_eq!(lines.len(), 3); // newline at the end?
+        let first_line = *lines.get(0).unwrap();
+        // TODO - better messages on failure
+        println!("first_line: {}", first_line); // TODO - remove
+        assert!(first_line.contains("a-second-migration: --backward"));
+        let second_line = *lines.get(0).unwrap();
+        println!("second_line: {}", second_line); // TODO - remove
+        assert!(second_line.contains("x-first-migration --backward"));
+    }
 }
-
-
