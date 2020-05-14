@@ -694,6 +694,8 @@ fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
 mod test {
     use super::*;
     use tempfile::TempDir;
+    use std::sync::{Arc, Mutex};
+    use std::thread;
 
     #[test]
     #[allow(unused_variables)]
@@ -811,7 +813,6 @@ mod test {
         test_data().join("repository").join("targets")
     }
 
-    #[test]
     fn migrate_forward() {
         let from_version = Version::parse("0.99.0").unwrap();
         let to_version = Version::parse("0.99.1").unwrap();
@@ -840,7 +841,6 @@ mod test {
         assert!(second_line.contains("a-second-migration: --forward"));
     }
 
-    #[test]
     fn migrate_backward() {
         let from_version = Version::parse("0.99.1").unwrap();
         let to_version = Version::parse("0.99.0").unwrap();
@@ -867,5 +867,12 @@ mod test {
         let second_line = *lines.get(1).unwrap();
         println!("second_line: {}", second_line); // TODO - remove
         assert!(second_line.contains("x-first-migration: --backward"));
+    }
+
+    #[test]
+    fn migrate_forwards_and_backwards() {
+        // it seems these two tests cannot run in parallel, so we serialize them here
+        migrate_forward();
+        migrate_backward();
     }
 }
