@@ -398,10 +398,9 @@ impl Update {
 }
 
 pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
-    let mut targets = Vec::new();
     // early exit if there is no work to do.
     if from == to {
-        return Ok(targets);
+        return Ok(Vec::new());
     }
     // determine if the migration direction is up or down
     let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
@@ -415,9 +414,9 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
     let mut migrations = find_migrations_impl(from, to, manifest)?;
     // if the direction is backward, reverse the order of the migrations.
     if direction == Direction::Backward {
-        targets = targets.into_iter().rev().collect();
+        migrations = migrations.into_iter().rev().collect();
     }
-    Ok(targets)
+    Ok(migrations)
 }
 
 struct MigrationGroup {
@@ -429,6 +428,7 @@ struct MigrationGroup {
 /// is, `from` *must* be a lower version than `to`. The caller may reverse the Vec returned by this
 /// function in order to migrate backward.
 fn find_migrations_impl(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+    println!("{}:{} from: {}, to {}", file!(), line!(), from, to); // TODO - remove
     let mut targets = Vec::new();
     let mut version = from;
     while version != to {
@@ -486,4 +486,20 @@ fn test_migrations() {
     assert!(i.next().unwrap() == "migration_1.1.0_a");
     assert!(i.next().unwrap() == "migration_1.1.0_b");
     assert!(i.next().unwrap() == "migration_1.5.0_shortcut");
+}
+
+#[test]
+fn test_migrations_backward() {
+    // The same manifest as `test_migrations` but this time we will migrate backward.
+    let path = "./tests/data/migrations.json";
+    let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
+    let from = Version::parse("1.5.0").unwrap();
+    let to = Version::parse("1.0.0").unwrap();
+    let targets = find_migrations(&from, &to, &manifest).unwrap();
+
+    assert!(targets.len() == 3);
+    let mut i = targets.iter();
+    assert!(i.next().unwrap() == "migration_1.5.0_shortcut");
+    assert!(i.next().unwrap() == "migration_1.1.0_b");
+    assert!(i.next().unwrap() == "migration_1.1.0_a");
 }
