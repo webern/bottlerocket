@@ -404,14 +404,14 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
     }
     // determine if the migration direction is up or down
     let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
-    let mut version = from;
-    let mut destination = to;
+    let mut start = from;
+    let mut end = to;
     // if the direction is backward, switch to to and from to get the migrations in forward order.
     if direction == Direction::Backward {
-        version = to;
-        destination = from;
+        start = to;
+        end = from;
     }
-    let mut migrations = find_migrations_impl(from, to, manifest)?;
+    let mut migrations = find_migrations_impl(start, end, manifest)?;
     // if the direction is backward, reverse the order of the migrations.
     if direction == Direction::Backward {
         migrations = migrations.into_iter().rev().collect();
