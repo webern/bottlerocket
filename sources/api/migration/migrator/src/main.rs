@@ -834,7 +834,7 @@ mod test {
         let first_line = *lines.get(0).unwrap();
         // TODO - better messages on failure
         println!("first_line: {}", first_line); // TODO - remove
-        assert!(first_line.contains("x-first-migration --forward"));
+        assert!(first_line.contains("x-first-migration: --forward"));
         let second_line = *lines.get(1).unwrap();
         println!("second_line: {}", second_line); // TODO - remove
         assert!(second_line.contains("a-second-migration: --forward"));
@@ -866,6 +866,6 @@ mod test {
         assert!(first_line.contains("a-second-migration: --backward"));
         let second_line = *lines.get(1).unwrap();
         println!("second_line: {}", second_line); // TODO - remove
-        assert!(second_line.contains("x-first-migration --backward"));
+        assert!(second_line.contains("x-first-migration: --backward"));
     }
 }
