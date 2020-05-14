@@ -66,8 +66,9 @@ fn main() {
 
 fn run(args: &Args) -> Result<()> {
     // TerminalMode::Mixed will send errors to stderr and anything less to stdout.
-    TermLogger::init(args.log_level, LogConfig::default(), TerminalMode::Mixed)
-        .context(error::Logger)?;
+    if let Err(e) = TermLogger::init(args.log_level, LogConfig::default(), TerminalMode::Mixed) {
+        info!("Term logger init returned an error: {}", e)
+    }
 
     println!("migrator - {}:{}", file!(), line!());
 
