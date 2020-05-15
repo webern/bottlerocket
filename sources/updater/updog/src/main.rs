@@ -21,7 +21,7 @@ use std::path::Path;
 use std::process;
 use std::str::FromStr;
 use std::thread;
-use tough::{Repository, Settings};
+use tough::{Repository, Settings, ExpirationEnforcement};
 use update_metadata::{load_manifest, find_migrations, Manifest, Update, REPOSITORY_LIMITS};
 
 
@@ -119,6 +119,7 @@ fn load_repository<'a>(
             metadata_base_url: &config.metadata_base_url,
             targets_base_url: &config.targets_base_url,
             limits: REPOSITORY_LIMITS,
+            expiration_enforcement: ExpirationEnforcement::Safe,
         },
     )
         .context(error::Metadata)

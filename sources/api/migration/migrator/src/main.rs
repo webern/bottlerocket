@@ -44,6 +44,7 @@ mod error;
 use args::Args;
 use error::Result;
 use url::Url;
+use tough::ExpirationEnforcement;
 
 // const REPOSITORY_DATASTORE: &str = "/var/lib/bottlerocket/migrator";
 
@@ -128,6 +129,9 @@ fn run(args: &Args) -> Result<()> {
         metadata_base_url: metadata_url.as_str(),
         targets_base_url: migrations_url.as_str(),
         limits: Default::default(),
+        // if metadata has expired since the time that updog downloaded them, we do not want to
+        // fail the migration process, so we set expiration enforcement to unsafe.
+        expiration_enforcement: ExpirationEnforcement::Unsafe,
     })
         .context(error::RepoLoad)?;
 
@@ -773,6 +777,8 @@ mod test {
         }
     }
 
+    /// Migrator relies on the datastore symlink structure to determine the 'from' version.
+    /// This function sets up the directory and symlinks to mock the datastore for migrator.
     fn create_datastore_links(info: &mut MigrationTestInfo) {
         info.datastore = info.tmp.path().join(
             format!("v{}.{}.{}_xyz",
@@ -814,6 +820,35 @@ mod test {
         test_data().join("repository").join("targets")
     }
 
+    /// Tests the migrator program end-to-end using the `run` function.
+    /// The test uses a locally stored tuf repo at `migrator/tests/data/repository`.
+    /// In the `manifest.json` we have specified the following migrations:
+    /// ```
+    ///     "(0.99.0, 0.99.1)": [
+    ///       "x-first-migration.lz4",
+    ///       "a-second-migration.lz4"
+    ///     ]
+    /// ```
+    ///
+    /// The two 'migrations' are bash scripts with content like this:
+    ///
+    /// ```
+    /// #!/bin/bash
+    /// set -eo pipefail
+    /// migration_name="x-first-migration"
+    /// datastore_parent_dir="$(dirname "${3}")"
+    /// outfile="${datastore_parent_dir}/result.txt"
+    /// echo "${migration_name}: writing a message to '${outfile}'"
+    /// echo "${migration_name}:" "${@}" >> "${outfile}"
+    /// ```
+    ///
+    /// These 'migrations' use the --source-datastore path and take its parent.
+    /// Into this parent directory they write lines to a file named result.txt.
+    /// In the test we read the result.txt file to see that the migrations have been run in the
+    /// expected order.
+    ///
+    /// This test ensures that migrations run when migrating from an older to a newer version.
+    #[test]
     fn migrate_forward() {
         let from_version = Version::parse("0.99.0").unwrap();
         let to_version = Version::parse("0.99.1").unwrap();
@@ -829,19 +864,28 @@ mod test {
             working_directory: info.tmp.path().join("wrk"),
         };
         run(&args).unwrap();
+        // the migrations should write to a file named result.txt.
         let output_file = info.tmp.path().join("result.txt");
         let contents = std::fs::read_to_string(&output_file).unwrap();
         let lines: Vec<&str> = contents.split('\n').collect();
-        assert_eq!(lines.len(), 3); // newline at the end?
+        assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        // TODO - better messages on failure
-        println!("first_line: {}", first_line); // TODO - remove
-        assert!(first_line.contains("x-first-migration: --forward"));
+        if !first_line.contains("x-first-migration: --forward") {
+            panic!(format!("Expected the migration 'x-first-migration.sh' to run first and write \
+            a message containing 'x-first-migration: --forward' to the output file. Instead found \
+            '{}'", first_line));
+        }
         let second_line = *lines.get(1).unwrap();
-        println!("second_line: {}", second_line); // TODO - remove
-        assert!(second_line.contains("a-second-migration: --forward"));
+        if !second_line.contains("a-second-migration: --forward") {
+            panic!(format!("Expected the migration 'a-second-migration.sh' to run second and write \
+            a message containing 'a-second-migration: --forward' to the output file. Instead found \
+            '{}'", second_line));
+        }
     }
 
+    /// This test ensures that migrations run when migrating from an older to a newer version.
+    /// See `migrate_forward` for a description of how these tests work.
+    #[test]
     fn migrate_backward() {
         let from_version = Version::parse("0.99.1").unwrap();
         let to_version = Version::parse("0.99.0").unwrap();
@@ -860,20 +904,18 @@ mod test {
         let output_file = info.tmp.path().join("result.txt");
         let contents = std::fs::read_to_string(&output_file).unwrap();
         let lines: Vec<&str> = contents.split('\n').collect();
-        assert_eq!(lines.len(), 3); // newline at the end?
+        assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        // TODO - better messages on failure
-        println!("first_line: {}", first_line); // TODO - remove
-        assert!(first_line.contains("a-second-migration: --backward"));
+        if !first_line.contains("a-second-migration: --backward") {
+            panic!(format!("Expected the migration 'a-second-migration.sh' to run first and write \
+            a message containing 'a-second-migration: --backward' to the output file. Instead \
+            found '{}'", first_line));
+        }
         let second_line = *lines.get(1).unwrap();
-        println!("second_line: {}", second_line); // TODO - remove
-        assert!(second_line.contains("x-first-migration: --backward"));
-    }
-
-    #[test]
-    fn migrate_forwards_and_backwards() {
-        // it seems these two tests cannot run in parallel, so we serialize them here
-        migrate_forward();
-        migrate_backward();
+        if !second_line.contains("x-first-migration: --backward") {
+            panic!(format!("Expected the migration 'x-first-migration.sh' to run second and write \
+            a message containing 'x-first-migration: --backward' to the output file. Instead \
+            found '{}'", first_line));
+        }
     }
 }
