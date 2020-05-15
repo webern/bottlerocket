@@ -404,7 +404,7 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
     if from == to {
         return Ok(Vec::new());
     }
-    // determine if the migration direction is up or down
+    // determine if the migration direction is up or down.
     let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
     let mut start = from;
     let mut end = to;
@@ -413,7 +413,7 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
         start = to;
         end = from;
     }
-    let mut migrations = find_migrations_impl(start, end, manifest)?;
+    let mut migrations = find_migrations_forward(start, end, manifest)?;
     // if the direction is backward, reverse the order of the migrations.
     if direction == Direction::Backward {
         migrations = migrations.into_iter().rev().collect();
@@ -424,7 +424,7 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
 /// Finds the migration from one version to another. The migration direction must be forward, that
 /// is, `from` *must* be a lower version than `to`. The caller may reverse the Vec returned by this
 /// function in order to migrate backward.
-fn find_migrations_impl(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+fn find_migrations_forward(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
     let mut targets = Vec::new();
     let mut version = from;
     while version != to {
@@ -468,7 +468,7 @@ pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> 
 }
 
 #[test]
-fn test_migrations() {
+fn test_migrations_forward() {
     // A manifest with four migration tuples starting at 1.0 and ending at 1.3.
     // There is a shortcut from 1.1 to 1.3, skipping 1.2
     let path = "./tests/data/migrations.json";
