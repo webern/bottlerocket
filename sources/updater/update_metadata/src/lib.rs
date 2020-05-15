@@ -425,7 +425,6 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
 /// is, `from` *must* be a lower version than `to`. The caller may reverse the Vec returned by this
 /// function in order to migrate backward.
 fn find_migrations_impl(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
-    println!("{}:{} from: {}, to {}", file!(), line!(), from, to); // TODO - remove
     let mut targets = Vec::new();
     let mut version = from;
     while version != to {
