@@ -36,7 +36,7 @@ use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
-use update_metadata::{MIGRATION_FILENAME_RE, load_manifest, Direction};
+use update_metadata::{load_manifest, Direction};
 
 mod args;
 mod error;
@@ -55,14 +55,11 @@ use tough::ExpirationEnforcement;
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
 // https://github.com/shepmaster/snafu/issues/110
 fn main() {
-    println!("migrator - {}:{} program starting", file!(), line!());
     let args = Args::from_env(env::args());
-    println!("migrator - {}:{}", file!(), line!());
     if let Err(e) = run(&args) {
         eprintln!("{}", e);
         process::exit(1);
     }
-    println!("migrator - {}:{}", file!(), line!());
 }
 
 fn run(args: &Args) -> Result<()> {
@@ -70,8 +67,6 @@ fn run(args: &Args) -> Result<()> {
     if let Err(e) = TermLogger::init(args.log_level, LogConfig::default(), TerminalMode::Mixed) {
         info!("Term logger init returned an error: {}", e)
     }
-
-    println!("migrator - {}:{}", file!(), line!());
 
     // Get the directory we're working in.
     let datastore_dir = args
@@ -81,10 +76,7 @@ fn run(args: &Args) -> Result<()> {
             path: &args.datastore_path,
         })?;
 
-    println!("migrator - {}:{}", file!(), line!());
     let current_version = get_current_version(&datastore_dir)?;
-
-    println!("migrator - {}:{}", file!(), line!());
     let direction = Direction::from_versions(&current_version, &args.migrate_to_version)
         .unwrap_or_else(|| {
             info!(
@@ -96,29 +88,24 @@ fn run(args: &Args) -> Result<()> {
             process::exit(0);
         });
 
-    println!("migrator - {}:{}", file!(), line!());
+    // TODO - need to do this after a repo load failure to ensure that it isn't simply that there are no migrations
     // Check for the presence of timestamp.json. If it's not where expected then there is nothing
     // for migrator to do because there is no valid tuf repo for us to load (i.e. no migrations).
     // let timestamp_path = args.metadata_directory.join("timestamp.json");
     // if !Path::new(timestamp_path.as_os_str()).is_file() {
     //     info!("Migrator did not find repository metadata at '{}', nothing to do", timestamp_path.display());
-    //     println!("migrator - {}:{}", file!(), line!());
     //     return Ok(());
     // }
 
-    println!("migrator - {}:{}", file!(), line!());
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
     let tough_workdir = args.working_directory.join("tough_workdir");
     fs::create_dir_all(&tough_workdir).context(error::CreateDirectory { path: &tough_workdir })?;
 
-    println!("migrator - {}:{}", file!(), line!());
     // TODO - either don't do this when we use pentacle or give it its own error type.
     let migrations_rundir = args.working_directory.join("migrations_rundir");
     fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory { path: &migrations_rundir })?;
 
-    println!("migrator - {}:{}", file!(), line!());
-    // TODO - ignore expiration dates https://github.com/awslabs/tough/issues/112
     let metadata_url = dir_url(&args.metadata_directory)?;
     let migrations_url = dir_url(&args.migration_directory)?;
     let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
@@ -135,27 +122,15 @@ fn run(args: &Args) -> Result<()> {
     })
         .context(error::RepoLoad)?;
 
-    println!("migrator - {}:{}", file!(), line!());
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
-    let mut migrations = update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
-    // migrations.sort(); // TODO - remember to explain why i don't think we should do this
-
-    // let migrations = find_migrations(
-    //     &args.migration_directory,
-    //     &current_version,
-    //     &args.migrate_to_version,
-    // )?;
-
-    println!("migrator - {}:{}", file!(), line!());
+    let migrations = update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
     if migrations.is_empty() {
-        println!("migrator - {}:{}", file!(), line!());
         // Not all new OS versions need to change the data store format.  If there's been no
         // change, we can just link to the last version rather than making a copy.
         // (Note: we link to the fully resolved directory, args.datastore_path,  so we don't
         // have a chain of symlinks that could go past the maximum depth.)
         flip_to_new_version(&args.migrate_to_version, &args.datastore_path)?;
     } else {
-        println!("migrator - {}:{}", file!(), line!());
         let copy_path = run_migrations(
             &repo,
             direction,
@@ -164,12 +139,9 @@ fn run(args: &Args) -> Result<()> {
             &args.migrate_to_version,
             &migrations_rundir,
         )?;
-        println!("migrator - {}:{}", file!(), line!());
         flip_to_new_version(&args.migrate_to_version, &copy_path)?;
-        println!("migrator - {}:{}", file!(), line!());
     }
 
-    println!("migrator - {}:{}", file!(), line!());
     Ok(())
 }
 
@@ -204,147 +176,147 @@ fn get_current_version<P>(datastore_dir: P) -> Result<Version>
     Version::parse(version_str).context(error::InvalidDataStoreVersion { path: &patch })
 }
 
-/// Returns a list of all migrations found on disk.
-///
-/// TODO: This does not yet handle migrations that have been replaced by newer versions - we only
-/// look in one fixed location. We need to get the list of migrations from update metadata, and
-/// only return those.  That may also obviate the need for select_migrations.
-fn _find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
-    where
-        P: AsRef<Path>,
-{
-    let dir = dir.as_ref();
-    let mut result = Vec::new();
+// /// Returns a list of all migrations found on disk.
+// ///
+// /// TODO: This does not yet handle migrations that have been replaced by newer versions - we only
+// /// look in one fixed location. We need to get the list of migrations from update metadata, and
+// /// only return those.  That may also obviate the need for select_migrations.
+// fn _find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
+//     where
+//         P: AsRef<Path>,
+// {
+//     let dir = dir.as_ref();
+//     let mut result = Vec::new();
+//
+//     trace!("Looking for potential migrations in {}", dir.display());
+//     let entries = fs::read_dir(dir).context(error::ListMigrations { dir })?;
+//     for entry in entries {
+//         let entry = entry.context(error::ReadMigrationEntry)?;
+//         let path = entry.path();
+//
+//         // Just check that it's a file; other checks to determine whether we should actually run
+//         // a file we find are done by select_migrations.
+//         let file_type = entry
+//             .file_type()
+//             .context(error::PathMetadata { path: &path })?;
+//         if !file_type.is_file() {
+//             debug!(
+//                 "Skipping non-file in migration directory: {}",
+//                 path.display()
+//             );
+//             continue;
+//         }
+//
+//         trace!("Found potential migration: {}", path.display());
+//         result.push(path);
+//     }
+//
+//     Ok(result)
+// }
 
-    trace!("Looking for potential migrations in {}", dir.display());
-    let entries = fs::read_dir(dir).context(error::ListMigrations { dir })?;
-    for entry in entries {
-        let entry = entry.context(error::ReadMigrationEntry)?;
-        let path = entry.path();
-
-        // Just check that it's a file; other checks to determine whether we should actually run
-        // a file we find are done by select_migrations.
-        let file_type = entry
-            .file_type()
-            .context(error::PathMetadata { path: &path })?;
-        if !file_type.is_file() {
-            debug!(
-                "Skipping non-file in migration directory: {}",
-                path.display()
-            );
-            continue;
-        }
-
-        trace!("Found potential migration: {}", path.display());
-        result.push(path);
-    }
-
-    Ok(result)
-}
-
-// TODO - it is likely that some logic is still needed from this now dead function
-/// Returns the sublist of the given migrations that should be run, in the returned order, to move
-/// from the 'from' version to the 'to' version.
-fn _select_migrations<P: AsRef<Path>>(
-    from: &Version,
-    to: &Version,
-    paths: &[P],
-) -> Result<Vec<PathBuf>> {
-    // Intermediate result where we also store the version and name, needed for sorting
-    let mut sortable: Vec<(Version, String, PathBuf)> = Vec::new();
-
-    for path in paths {
-        let path = path.as_ref();
-
-        // We pull the applicable version and the migration name out of the filename.
-        let file_name = path
-            .file_name()
-            .context(error::Internal {
-                msg: "Found '/' as migration",
-            })?
-            .to_str()
-            .context(error::MigrationNameNotUTF8 { path: &path })?;
-        let captures = match MIGRATION_FILENAME_RE.captures(&file_name) {
-            Some(captures) => captures,
-            None => {
-                debug!(
-                    "Skipping non-migration (bad name) in migration directory: {}",
-                    path.display()
-                );
-                continue;
-            }
-        };
-
-        let version_match = captures.name("version").context(error::Internal {
-            msg: "Migration name matched regex but we don't have a 'version' capture",
-        })?;
-        let version = Version::parse(version_match.as_str())
-            .context(error::InvalidMigrationVersion { path: &path })?;
-
-        let name_match = captures.name("name").context(error::Internal {
-            msg: "Migration name matched regex but we don't have a 'name' capture",
-        })?;
-        let name = name_match.as_str().to_string();
-
-        // We don't want to include migrations for the "from" version we're already on.
-        // Note on possible confusion: when going backward it's the higher version that knows
-        // how to undo its changes and take you to the lower version.  For example, the v2
-        // migration knows what changes it made to go from v1 to v2 and therefore how to go
-        // back from v2 to v1.  See tests.
-        let applicable = if to > from && version > *from && version <= *to {
-            info!(
-                "Found applicable forward migration '{}': {} < ({}) <= {}",
-                file_name, from, version, to
-            );
-            true
-        } else if to < from && version > *to && version <= *from {
-            info!(
-                "Found applicable backward migration '{}': {} >= ({}) > {}",
-                file_name, from, version, to
-            );
-            true
-        } else {
-            debug!(
-                "Migration '{}' doesn't apply when going from {} to {}",
-                file_name, from, to
-            );
-            false
-        };
-
-        if applicable {
-            sortable.push((version, name, path.to_path_buf()));
-        }
-    }
-
-    // Sort the migrations using the metadata we stored -- version first, then name so that
-    // authors have some ordering control if necessary.
-    sortable.sort_unstable();
-
-    // For a Backward migration process, reverse the order.
-    if to < from {
-        sortable.reverse();
-    }
-
-    debug!(
-        "Sorted migrations: {:?}",
-        sortable
-            .iter()
-            // Want filename, which always applies for us, but fall back to name just in case
-            .map(|(_version, name, path)| path
-                .file_name()
-                .map(|osstr| osstr.to_string_lossy().into_owned())
-                .unwrap_or_else(|| name.to_string()))
-            .collect::<Vec<String>>()
-    );
-
-    // Get rid of the name; only needed it as a separate component for sorting
-    let result: Vec<PathBuf> = sortable
-        .into_iter()
-        .map(|(_version, _name, path)| path)
-        .collect();
-
-    Ok(result)
-}
+// TODO - remember to explain that it is no longer alphabetical
+// /// Returns the sublist of the given migrations that should be run, in the returned order, to move
+// /// from the 'from' version to the 'to' version.
+// fn _select_migrations<P: AsRef<Path>>(
+//     from: &Version,
+//     to: &Version,
+//     paths: &[P],
+// ) -> Result<Vec<PathBuf>> {
+//     // Intermediate result where we also store the version and name, needed for sorting
+//     let mut sortable: Vec<(Version, String, PathBuf)> = Vec::new();
+//
+//     for path in paths {
+//         let path = path.as_ref();
+//
+//         // We pull the applicable version and the migration name out of the filename.
+//         let file_name = path
+//             .file_name()
+//             .context(error::Internal {
+//                 msg: "Found '/' as migration",
+//             })?
+//             .to_str()
+//             .context(error::MigrationNameNotUTF8 { path: &path })?;
+//         let captures = match MIGRATION_FILENAME_RE.captures(&file_name) {
+//             Some(captures) => captures,
+//             None => {
+//                 debug!(
+//                     "Skipping non-migration (bad name) in migration directory: {}",
+//                     path.display()
+//                 );
+//                 continue;
+//             }
+//         };
+//
+//         let version_match = captures.name("version").context(error::Internal {
+//             msg: "Migration name matched regex but we don't have a 'version' capture",
+//         })?;
+//         let version = Version::parse(version_match.as_str())
+//             .context(error::InvalidMigrationVersion { path: &path })?;
+//
+//         let name_match = captures.name("name").context(error::Internal {
+//             msg: "Migration name matched regex but we don't have a 'name' capture",
+//         })?;
+//         let name = name_match.as_str().to_string();
+//
+//         // We don't want to include migrations for the "from" version we're already on.
+//         // Note on possible confusion: when going backward it's the higher version that knows
+//         // how to undo its changes and take you to the lower version.  For example, the v2
+//         // migration knows what changes it made to go from v1 to v2 and therefore how to go
+//         // back from v2 to v1.  See tests.
+//         let applicable = if to > from && version > *from && version <= *to {
+//             info!(
+//                 "Found applicable forward migration '{}': {} < ({}) <= {}",
+//                 file_name, from, version, to
+//             );
+//             true
+//         } else if to < from && version > *to && version <= *from {
+//             info!(
+//                 "Found applicable backward migration '{}': {} >= ({}) > {}",
+//                 file_name, from, version, to
+//             );
+//             true
+//         } else {
+//             debug!(
+//                 "Migration '{}' doesn't apply when going from {} to {}",
+//                 file_name, from, to
+//             );
+//             false
+//         };
+//
+//         if applicable {
+//             sortable.push((version, name, path.to_path_buf()));
+//         }
+//     }
+//
+//     // Sort the migrations using the metadata we stored -- version first, then name so that
+//     // authors have some ordering control if necessary.
+//     sortable.sort_unstable();
+//
+//     // For a Backward migration process, reverse the order.
+//     if to < from {
+//         sortable.reverse();
+//     }
+//
+//     debug!(
+//         "Sorted migrations: {:?}",
+//         sortable
+//             .iter()
+//             // Want filename, which always applies for us, but fall back to name just in case
+//             .map(|(_version, name, path)| path
+//                 .file_name()
+//                 .map(|osstr| osstr.to_string_lossy().into_owned())
+//                 .unwrap_or_else(|| name.to_string()))
+//             .collect::<Vec<String>>()
+//     );
+//
+//     // Get rid of the name; only needed it as a separate component for sorting
+//     let result: Vec<PathBuf> = sortable
+//         .into_iter()
+//         .map(|(_version, _name, path)| path)
+//         .collect();
+//
+//     Ok(result)
+// }
 
 // /// Given the versions we're migrating from and to, this will return an ordered list of paths to
 // /// migration binaries we should run to complete the migration on a data store.
@@ -415,18 +387,15 @@ fn run_migrations<P>(
     let mut intermediate_datastores = HashSet::new();
 
     for migration in migrations {
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // get the migration from the repo
         let lz4_bytes = repository
             .read_target(migration.as_str())
             .context(error::LoadMigration { migration: migration.to_owned() })?
             .context(error::MigrationNotFound { migration: migration.to_owned() })?;
 
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // deflate with an lz4 decoder read
         let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { target: migration })?;
 
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // TODO - remove this use of the filesystem when we add pentacle
         let exec_path = migrations_rundir.join(&migration);
         {
@@ -438,7 +407,6 @@ fn run_migrations<P>(
             let _ = std::io::copy(&mut reader, &mut f).context(error::MigrationSave { path: &exec_path })?;
         }
 
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         // Ensure the migration is executable.
         fs::set_permissions(&exec_path, Permissions::from_mode(0o755)).context(
             error::SetPermissions {
@@ -446,7 +414,6 @@ fn run_migrations<P>(
             },
         )?;
 
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         let mut command = Command::new(&exec_path);
 
         // Point each migration in the right direction, and at the given data store.
@@ -467,39 +434,28 @@ fn run_migrations<P>(
 
         info!("Running migration command: {:?}", command);
 
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         let output = command
             .output()
             .context(error::StartMigration { command })?;
 
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         if !output.stdout.is_empty() {
-            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             debug!(
                 "Migration stdout: {}",
                 std::str::from_utf8(&output.stdout).unwrap_or("<invalid UTF-8>")
             );
         } else {
-            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             debug!("No migration stdout");
         }
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         if !output.stderr.is_empty() {
-            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             let stderr = std::str::from_utf8(&output.stderr).unwrap_or("<invalid UTF-8>");
             // We want to see migration stderr on the console, so log at error level.
             error!("Migration stderr: {}", stderr);
         } else {
-            println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
             debug!("No migration stderr");
         }
 
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         ensure!(output.status.success(), error::MigrationFailure { output });
-
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
         source_datastore = &target_datastore;
-        println!("migrator - {}:{}, migration: {}", file!(), line!(), migration);
     }
 
     // Remove the intermediate data stores
@@ -699,59 +655,59 @@ fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
 mod test {
     use super::*;
     use tempfile::TempDir;
-    use std::sync::{Arc, Mutex};
-    use std::thread;
+    // use std::sync::{Arc, Mutex};
+    // use std::thread;
 
-    #[test]
-    #[allow(unused_variables)]
-    fn select_migrations_works() {
-        // Migration paths for use in testing
-        let m00_1 = Path::new("migrate_v0.0.0_001");
-        let m01_1 = Path::new("migrate_v0.0.1_001");
-        let m01_2 = Path::new("migrate_v0.0.1_002");
-        let m02_1 = Path::new("migrate_v0.0.2_001");
-        let m03_1 = Path::new("migrate_v0.0.3_001");
-        let m04_1 = Path::new("migrate_v0.0.4_001");
-        let m04_2 = Path::new("migrate_v0.0.4_002");
-        let all_migrations = vec![&m00_1, &m01_1, &m01_2, &m02_1, &m03_1, &m04_1, &m04_2];
-
-        // Versions for use in testing
-        let v00 = Version::new(0, 0, 0);
-        let v01 = Version::new(0, 0, 1);
-        let v02 = Version::new(0, 0, 2);
-        let v03 = Version::new(0, 0, 3);
-        let v04 = Version::new(0, 0, 4);
-        let v05 = Version::new(0, 0, 5);
-
-        // Test going forward one minor version
-        assert_eq!(
-            _select_migrations(&v01, &v02, &all_migrations).unwrap(),
-            vec![m02_1]
-        );
-
-        // Test going backward one minor version
-        assert_eq!(
-            _select_migrations(&v02, &v01, &all_migrations).unwrap(),
-            vec![m02_1]
-        );
-
-        // Test going forward a few minor versions
-        assert_eq!(
-            _select_migrations(&v01, &v04, &all_migrations).unwrap(),
-            vec![m02_1, m03_1, m04_1, m04_2]
-        );
-
-        // Test going backward a few minor versions
-        assert_eq!(
-            _select_migrations(&v04, &v01, &all_migrations).unwrap(),
-            vec![m04_2, m04_1, m03_1, m02_1]
-        );
-
-        // Test no matching migrations
-        assert!(_select_migrations(&v04, &v05, &all_migrations)
-            .unwrap()
-            .is_empty());
-    }
+    // #[test]
+    // #[allow(unused_variables)]
+    // fn select_migrations_works() {
+    //     // Migration paths for use in testing
+    //     let m00_1 = Path::new("migrate_v0.0.0_001");
+    //     let m01_1 = Path::new("migrate_v0.0.1_001");
+    //     let m01_2 = Path::new("migrate_v0.0.1_002");
+    //     let m02_1 = Path::new("migrate_v0.0.2_001");
+    //     let m03_1 = Path::new("migrate_v0.0.3_001");
+    //     let m04_1 = Path::new("migrate_v0.0.4_001");
+    //     let m04_2 = Path::new("migrate_v0.0.4_002");
+    //     let all_migrations = vec![&m00_1, &m01_1, &m01_2, &m02_1, &m03_1, &m04_1, &m04_2];
+    //
+    //     // Versions for use in testing
+    //     let v00 = Version::new(0, 0, 0);
+    //     let v01 = Version::new(0, 0, 1);
+    //     let v02 = Version::new(0, 0, 2);
+    //     let v03 = Version::new(0, 0, 3);
+    //     let v04 = Version::new(0, 0, 4);
+    //     let v05 = Version::new(0, 0, 5);
+    //
+    //     // Test going forward one minor version
+    //     assert_eq!(
+    //         _select_migrations(&v01, &v02, &all_migrations).unwrap(),
+    //         vec![m02_1]
+    //     );
+    //
+    //     // Test going backward one minor version
+    //     assert_eq!(
+    //         _select_migrations(&v02, &v01, &all_migrations).unwrap(),
+    //         vec![m02_1]
+    //     );
+    //
+    //     // Test going forward a few minor versions
+    //     assert_eq!(
+    //         _select_migrations(&v01, &v04, &all_migrations).unwrap(),
+    //         vec![m02_1, m03_1, m04_1, m04_2]
+    //     );
+    //
+    //     // Test going backward a few minor versions
+    //     assert_eq!(
+    //         _select_migrations(&v04, &v01, &all_migrations).unwrap(),
+    //         vec![m04_2, m04_1, m03_1, m02_1]
+    //     );
+    //
+    //     // Test no matching migrations
+    //     assert!(_select_migrations(&v04, &v05, &all_migrations)
+    //         .unwrap()
+    //         .is_empty());
+    // }
 
     pub fn test_data() -> PathBuf {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));

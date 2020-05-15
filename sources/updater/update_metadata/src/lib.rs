@@ -26,6 +26,7 @@ use tough::Limits;
 
 pub const MAX_SEED: u32 = 2048;
 
+// TODO - this is probably dead code, remove.
 lazy_static! {
     /// Regular expression that will match migration file names and allow retrieving the
     /// version and name components.
@@ -418,11 +419,6 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
         migrations = migrations.into_iter().rev().collect();
     }
     Ok(migrations)
-}
-
-struct MigrationGroup {
-    to_version: Version,
-    migrations: Vec<String>,
 }
 
 /// Finds the migration from one version to another. The migration direction must be forward, that
