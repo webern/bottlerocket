@@ -9,7 +9,7 @@ pub use direction::Direction;
 use crate::error::Result;
 use chrono::{DateTime, Duration, Utc};
 use lazy_static::lazy_static;
-use parse_datetime::parse_datetime;
+use parse_datetime::parse_offset;
 use rand::{thread_rng, Rng};
 use regex::Regex;
 use semver::Version;
@@ -304,6 +304,7 @@ impl Manifest {
         variant: String,
         arch: String,
         image_version: Version,
+        start_at: DateTime<Utc>,
         waves: &UpdateWaves,
     ) -> Result<usize> {
         let matching = self.get_matching_updates(variant, arch, image_version);
@@ -322,10 +323,10 @@ impl Manifest {
                     }
                 );
 
-                let start_time = parse_datetime(&wave.start_after).context(error::BadDateTime {
-                    datetime: &wave.start_after,
+                let offset = parse_offset(&wave.start_after).context(error::BadOffset {
+                    offset: &wave.start_after,
                 })?;
-                update.waves.insert(seed, start_time);
+                update.waves.insert(seed, start_at + offset);
 
                 // Get the appropriate seed from the percentage given
                 // First get the percentage as a decimal,
