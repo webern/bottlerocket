@@ -82,7 +82,6 @@ fn run(args: &Args) -> Result<()> {
                 args.migrate_to_version,
                 args.datastore_path.display()
             );
-            // TODO - find a nice way to return Ok(()) instead
             process::exit(0);
         });
 
@@ -222,7 +221,7 @@ fn run_migrations<P>(
     migrations: &[String],
     source_datastore: P,
     new_version: &Version,
-    migrations_rundir: &PathBuf, // TODO remove with pentacle
+    migrations_rundir: &PathBuf,
 ) -> Result<PathBuf>
 where
     P: AsRef<Path>,
