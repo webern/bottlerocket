@@ -1,13 +1,13 @@
 #![warn(clippy::pedantic)]
 
 mod de;
+mod direction;
 pub mod error;
 mod se;
-mod direction;
 
-pub use direction::Direction;
 use crate::error::Result;
 use chrono::{DateTime, Duration, Utc};
+pub use direction::Direction;
 use lazy_static::lazy_static;
 use parse_datetime::parse_offset;
 use rand::{thread_rng, Rng};
@@ -27,21 +27,21 @@ use tough::Limits;
 pub const MAX_SEED: u32 = 2048;
 
 // TODO - this is probably dead code, remove.
-lazy_static! {
-    /// Regular expression that will match migration file names and allow retrieving the
-    /// version and name components.
-    // Note: the version component is a simplified semver regex; we don't use any of the
-    // extensions, just a simple x.y.z, so this isn't as strict as it could be.
-    pub static ref MIGRATION_FILENAME_RE: Regex =
-        Regex::new(r"(?x)^
-                   migrate
-                   _
-                   v?  # optional 'v' prefix for humans
-                   (?P<version>[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z+-]*)
-                   _
-                   (?P<name>[a-zA-Z0-9-]+)
-                   $").unwrap();
-}
+// lazy_static! {
+//     /// Regular expression that will match migration file names and allow retrieving the
+//     /// version and name components.
+//     // Note: the version component is a simplified semver regex; we don't use any of the
+//     // extensions, just a simple x.y.z, so this isn't as strict as it could be.
+//     pub static ref MIGRATION_FILENAME_RE: Regex =
+//         Regex::new(r"(?x)^
+//                    migrate
+//                    _
+//                    v?  # optional 'v' prefix for humans
+//                    (?P<version>[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z+-]*)
+//                    _
+//                    (?P<name>[a-zA-Z0-9-]+)
+//                    $").unwrap();
+// }
 
 /// These are the limits that Bottlerocket will use for `tough` repositories.
 pub const REPOSITORY_LIMITS: Limits = Limits {
@@ -179,7 +179,7 @@ impl Manifest {
                 .get_mut(&(from.clone(), to.clone()))
                 .context(error::MigrationMutable { from, to })?;
             migrations.extend_from_slice(&migration_list);
-            // Otherwise just overwrite the existing migrations
+        // Otherwise just overwrite the existing migrations
         } else {
             self.migrations.insert((from, to), migration_list);
         }
@@ -424,7 +424,11 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
 /// Finds the migration from one version to another. The migration direction must be forward, that
 /// is, `from` *must* be a lower version than `to`. The caller may reverse the Vec returned by this
 /// function in order to migrate backward.
-fn find_migrations_forward(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+fn find_migrations_forward(
+    from: &Version,
+    to: &Version,
+    manifest: &Manifest,
+) -> Result<Vec<String>> {
     let mut targets = Vec::new();
     let mut version = from;
     while version != to {
@@ -450,7 +454,7 @@ fn find_migrations_forward(from: &Version, to: &Version, manifest: &Manifest) ->
                 current: version.clone(),
                 target: to.clone(),
             }
-                .fail();
+            .fail();
         }
     }
     Ok(targets)
@@ -464,7 +468,7 @@ pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> 
             .context(error::ManifestLoad)?
             .context(error::ManifestNotFound)?,
     )
-        .context(error::ManifestParse)
+    .context(error::ManifestParse)
 }
 
 #[test]
