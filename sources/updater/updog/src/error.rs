@@ -38,7 +38,11 @@ pub(crate) enum Error {
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Failed to create directory for repository datastore '{}': {}", path, source))]
+    #[snafu(display(
+        "Failed to create directory for repository datastore '{}': {}",
+        path,
+        source
+    ))]
     CreateRepoStore {
         path: &'static str,
         source: std::io::Error,
@@ -245,9 +249,7 @@ pub(crate) enum Error {
     },
 
     #[snafu(display("Failed to store migrations: {}", source))]
-    RepoCacheMigrations {
-        source: tough::error::Error,
-    },
+    RepoCacheMigrations { source: tough::error::Error },
 }
 
 impl std::convert::From<update_metadata::error::Error> for Error {
