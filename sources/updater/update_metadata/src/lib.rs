@@ -342,7 +342,7 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
     if from == to {
         return Ok(Vec::new());
     }
-    // determine if the migration direction is up or down.
+    // determine if the migration direction is forward or backward.
     let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
     let mut start = from;
     let mut end = to;
