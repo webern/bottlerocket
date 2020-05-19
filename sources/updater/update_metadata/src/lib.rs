@@ -344,19 +344,24 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
     }
     // determine if the migration direction is forward or backward.
     let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
-    let mut start = from;
-    let mut end = to;
-    // if the direction is backward, switch to to and from to get the migrations in forward order.
-    if direction == Direction::Backward {
-        start = to;
-        end = from;
-    }
-    let mut migrations = find_migrations_forward(start, end, manifest)?;
-    // if the direction is backward, reverse the order of the migrations.
+    // express the versions in ascending order
+    let (lower_version, higher_version) = order_versions(from, to);
+    let mut migrations = find_migrations_forward(&lower_version, &higher_version, manifest)?;
+    // if the direction is backward, reverse the order of the migration list.
     if direction == Direction::Backward {
         migrations = migrations.into_iter().rev().collect();
     }
     Ok(migrations)
+}
+
+// returns two version with the lower version first.
+fn order_versions(a: &Version, b: &Version) -> (Version, Version) {
+    if let Some(direction) = Direction::from_versions(&a, &b) {
+        if direction == Direction::Backward {
+            return (b.clone(), b.clone());
+        }
+    }
+    (a.clone(), b.clone())
 }
 
 /// Finds the migration from one version to another. The migration direction must be forward, that
