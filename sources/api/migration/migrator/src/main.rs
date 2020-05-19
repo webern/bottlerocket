@@ -46,6 +46,9 @@ use error::Result;
 use tough::ExpirationEnforcement;
 use url::Url;
 
+const RUNDIR: &str = "rundir";
+const TOUGH_DATASTORE: &str = "tough";
+
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
 // https://github.com/shepmaster/snafu/issues/110
@@ -84,28 +87,23 @@ fn run(args: &Args) -> Result<()> {
         });
 
     // Prepare to load the locally cached tough repository to obtain the manifest.
-    let tough_workdir = args.working_directory.join("tough_workdir");
-    fs::create_dir_all(&tough_workdir).context(error::CreateDirectory {
-        path: &tough_workdir,
+    let tough_datastore = args.working_directory.join(TOUGH_DATASTORE);
+    fs::create_dir_all(&tough_datastore).context(error::CreateDirectory {
+        path: &tough_datastore,
     })?;
     let metadata_url = dir_url(&args.metadata_directory)?;
     let migrations_url = dir_url(&args.migration_directory)?;
 
-    // Prepare directory to save migrations to before running them.
-    // TODO - use pentacle instead of saving the migration binaries to disk before running them.
-    let migrations_rundir = args.working_directory.join("migrations_rundir");
-    fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory {
-        path: &migrations_rundir,
-    })?;
-
-    // TODO - only error if timestamp.json is there, otherwise there are no migrations to run.
+    // Failure to load the tough repo at the expected location is a serious issue because updog
+    // should always create a tough repo that contains at least the manifest, even if there are no
+    // migrations.
     let repo = tough::Repository::load(
         &tough::FilesystemTransport {},
         tough::Settings {
             root: File::open(&args.root_path).context(error::OpenRoot {
                 path: args.root_path.clone(),
             })?,
-            datastore: &tough_workdir,
+            datastore: &tough_datastore,
             metadata_base_url: metadata_url.as_str(),
             targets_base_url: migrations_url.as_str(),
             limits: Default::default(),
@@ -115,7 +113,6 @@ fn run(args: &Args) -> Result<()> {
         },
     )
     .context(error::RepoLoad)?;
-
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
     let migrations =
         update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest)
@@ -128,17 +125,28 @@ fn run(args: &Args) -> Result<()> {
         // have a chain of symlinks that could go past the maximum depth.)
         flip_to_new_version(&args.migrate_to_version, &args.datastore_path)?;
     } else {
+        // Prepare directory to save migrations to before running them.
+        // TODO - use pentacle instead of saving the migration binaries to disk before running them.
+        let rundir = args.working_directory.join(RUNDIR);
+        fs::create_dir_all(&rundir).context(error::CreateDirectory { path: &rundir })?;
         let copy_path = run_migrations(
             &repo,
             direction,
             &migrations,
             &args.datastore_path,
             &args.migrate_to_version,
-            &migrations_rundir,
+            &rundir,
         )?;
         flip_to_new_version(&args.migrate_to_version, &copy_path)?;
+        std::fs::remove_dir_all(args.working_directory.join(RUNDIR)).context(
+            error::DeleteDirectory {
+                path: args.working_directory.join(RUNDIR),
+            },
+        )?;
     }
-
+    std::fs::remove_dir_all(&tough_datastore).context(error::DeleteDirectory {
+        path: tough_datastore,
+    })?;
     Ok(())
 }
 
@@ -563,7 +571,10 @@ mod test {
     }
 
     fn root() -> PathBuf {
-        test_data().join("root.json")
+        test_data()
+            .join("repository")
+            .join("metadata")
+            .join("1.root.json")
     }
 
     fn tuf_metadata() -> PathBuf {

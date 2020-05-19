@@ -21,9 +21,8 @@ use std::path::Path;
 use std::process;
 use std::str::FromStr;
 use std::thread;
-use tough::{Repository, Settings, ExpirationEnforcement};
-use update_metadata::{load_manifest, find_migrations, Manifest, Update, REPOSITORY_LIMITS};
-
+use tough::{ExpirationEnforcement, Repository, Settings};
+use update_metadata::{find_migrations, load_manifest, Manifest, Update, REPOSITORY_LIMITS};
 
 #[cfg(target_arch = "x86_64")]
 const TARGET_ARCH: &str = "x86_64";
@@ -107,8 +106,12 @@ fn load_repository<'a>(
     transport: &'a HttpQueryTransport,
     config: &'a Config,
 ) -> Result<HttpQueryRepo<'a>> {
-    fs::create_dir_all(METADATA_PATH).context(error::CreateMetadataCache { path: METADATA_PATH })?;
-    fs::create_dir_all(DATASTORE_PATH).context(error::CreateRepoStore { path: DATASTORE_PATH })?;
+    fs::create_dir_all(METADATA_PATH).context(error::CreateMetadataCache {
+        path: METADATA_PATH,
+    })?;
+    fs::create_dir_all(DATASTORE_PATH).context(error::CreateRepoStore {
+        path: DATASTORE_PATH,
+    })?;
     Repository::load(
         transport,
         Settings {
@@ -122,7 +125,7 @@ fn load_repository<'a>(
             expiration_enforcement: ExpirationEnforcement::Safe,
         },
     )
-        .context(error::Metadata)
+    .context(error::Metadata)
 }
 
 fn applicable_updates<'a>(manifest: &'a Manifest, variant: &str) -> Vec<&'a Update> {
@@ -211,21 +214,12 @@ fn retrieve_migrations(
     // download each migration, making sure they are executable and removing
     // known extensions from our compression, e.g. .lz4
     let mut targets = find_migrations(start, target, &manifest)?;
-    targets.sort();
+    // Even if there are no migrations, we need to make sure that we store the manifest so that
+    // migrator can independent and securely determine that there are no migrations.
     targets.push("manifest.json".to_owned());
-
-    repository.cache(METADATA_PATH, MIGRATION_PATH, Some(&targets), true).context(error::RepoCacheMigrations)?;
-
-    // for name in &targets {
-    //     let mut destination = dir.join(&name);
-    //     if destination.extension() == Some("lz4".as_ref()) {
-    //         destination.set_extension("");
-    //     }
-    //     write_target_to_disk(repository, &name, &destination)?;
-    //     fs::set_permissions(&destination, Permissions::from_mode(0o755))
-    //         .context(error::SetPermissions { path: destination })?;
-    // }
-
+    repository
+        .cache(METADATA_PATH, MIGRATION_PATH, Some(&targets), true)
+        .context(error::RepoCacheMigrations)?;
     // Set a query parameter listing the required migrations
     transport
         .queries_get_mut()
@@ -437,7 +431,7 @@ fn main_inner() -> Result<()> {
         LogConfig::default(),
         TerminalMode::Mixed,
     )
-        .context(error::Logger)?;
+    .context(error::Logger)?;
 
     let command =
         serde_plain::from_str::<Command>(&arguments.subcommand).unwrap_or_else(|_| usage());
@@ -463,7 +457,7 @@ fn main_inner() -> Result<()> {
                 &variant,
                 arguments.force_version,
             )
-                .context(error::UpdateNotAvailable)?;
+            .context(error::UpdateNotAvailable)?;
 
             if !arguments.ignore_waves {
                 ensure!(
@@ -798,7 +792,7 @@ mod tests {
         assert!(serde_json::from_str::<Manifest>(include_str!(
             "../tests/data/duplicate-bound.json"
         ))
-            .is_err());
+        .is_err());
     }
 
     #[test]
@@ -858,9 +852,9 @@ mod tests {
         assert!(
             u.update_wave(150).unwrap()
                 == Wave::General {
-                start: first_bound,
-                end: second_bound,
-            },
+                    start: first_bound,
+                    end: second_bound,
+                },
             "Expected to be some bounded wave"
         );
         assert!(
@@ -871,8 +865,8 @@ mod tests {
         assert!(
             u.update_wave(201).unwrap()
                 == Wave::Last {
-                start: second_bound
-            },
+                    start: second_bound
+                },
             "Expected to be final wave"
         );
         assert!(u.jitter(201).is_none(), "Expected immediate update");

@@ -29,6 +29,12 @@ pub(crate) enum Error {
     #[snafu(display("Data store link '{}' points to /", path.display()))]
     DataStoreLinkToRoot { path: PathBuf },
 
+    #[snafu(display("Unable to delete directory '{}': {}", path.display(), source))]
+    DeleteDirectory {
+        path: PathBuf,
+        source: std::io::Error,
+    },
+
     #[snafu(display("Failed to convert '{}' to a URL", path.display()))]
     DirectoryUrl { path: PathBuf, backtrace: Backtrace },
 
