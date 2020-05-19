@@ -30,7 +30,7 @@ use simplelog::{Config as LogConfig, TermLogger, TerminalMode};
 use snafu::{ensure, OptionExt, ResultExt};
 use std::collections::HashSet;
 use std::env;
-use std::fs::{self, Permissions, File, OpenOptions};
+use std::fs::{self, File, OpenOptions, Permissions};
 use std::os::unix::fs::{symlink, PermissionsExt};
 use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
@@ -43,8 +43,8 @@ mod error;
 
 use args::Args;
 use error::Result;
-use url::Url;
 use tough::ExpirationEnforcement;
+use url::Url;
 
 // const REPOSITORY_DATASTORE: &str = "/var/lib/bottlerocket/migrator";
 
@@ -100,30 +100,39 @@ fn run(args: &Args) -> Result<()> {
     // We need the signed manifest.json file to determine which migrations are needed.
     // Load the locally cached tough repository to obtain the manifest.
     let tough_workdir = args.working_directory.join("tough_workdir");
-    fs::create_dir_all(&tough_workdir).context(error::CreateDirectory { path: &tough_workdir })?;
+    fs::create_dir_all(&tough_workdir).context(error::CreateDirectory {
+        path: &tough_workdir,
+    })?;
 
     // TODO - either don't do this when we use pentacle or give it its own error type.
     let migrations_rundir = args.working_directory.join("migrations_rundir");
-    fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory { path: &migrations_rundir })?;
+    fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory {
+        path: &migrations_rundir,
+    })?;
 
     let metadata_url = dir_url(&args.metadata_directory)?;
     let migrations_url = dir_url(&args.migration_directory)?;
-    let repo = tough::Repository::load(&tough::FilesystemTransport {}, tough::Settings {
-        root: File::open(&args.root_path).context(error::OpenRoot {
-            path: args.root_path.clone(),
-        })?,
-        datastore: &tough_workdir,
-        metadata_base_url: metadata_url.as_str(),
-        targets_base_url: migrations_url.as_str(),
-        limits: Default::default(),
-        // if metadata has expired since the time that updog downloaded them, we do not want to
-        // fail the migration process, so we set expiration enforcement to unsafe.
-        expiration_enforcement: ExpirationEnforcement::Unsafe,
-    })
-        .context(error::RepoLoad)?;
+    let repo = tough::Repository::load(
+        &tough::FilesystemTransport {},
+        tough::Settings {
+            root: File::open(&args.root_path).context(error::OpenRoot {
+                path: args.root_path.clone(),
+            })?,
+            datastore: &tough_workdir,
+            metadata_base_url: metadata_url.as_str(),
+            targets_base_url: migrations_url.as_str(),
+            limits: Default::default(),
+            // if metadata has expired since the time that updog downloaded them, we do not want to
+            // fail the migration process, so we set expiration enforcement to unsafe.
+            expiration_enforcement: ExpirationEnforcement::Unsafe,
+        },
+    )
+    .context(error::RepoLoad)?;
 
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
-    let migrations = update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest).context(error::FindMigrations)?;
+    let migrations =
+        update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest)
+            .context(error::FindMigrations)?;
     if migrations.is_empty() {
         // Not all new OS versions need to change the data store format.  If there's been no
         // change, we can just link to the last version rather than making a copy.
@@ -148,8 +157,8 @@ fn run(args: &Args) -> Result<()> {
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     let datastore_dir = datastore_dir.as_ref();
 
@@ -185,8 +194,8 @@ fn rando() -> String {
 /// Generates a path for a new data store, given the path of the existing data store,
 /// the new version number, and a random "copy id" to append.
 fn new_datastore_location<P>(from: P, new_version: &Version) -> Result<PathBuf>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     let to = from
         .as_ref()
@@ -219,8 +228,8 @@ fn run_migrations<P>(
     new_version: &Version,
     migrations_rundir: &PathBuf, // TODO remove with pentacle
 ) -> Result<PathBuf>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     // We start with the given source_datastore, updating this after each migration to point to the
     // output of the previous one.
@@ -236,11 +245,15 @@ fn run_migrations<P>(
         // get the migration from the repo
         let lz4_bytes = repository
             .read_target(migration.as_str())
-            .context(error::LoadMigration { migration: migration.to_owned() })?
-            .context(error::MigrationNotFound { migration: migration.to_owned() })?;
+            .context(error::LoadMigration {
+                migration: migration.to_owned(),
+            })?
+            .context(error::MigrationNotFound {
+                migration: migration.to_owned(),
+            })?;
 
         // deflate with an lz4 decoder read
-        let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { target: migration })?;
+        let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { migration })?;
 
         // TODO - remove this use of the filesystem when we add pentacle
         let exec_path = migrations_rundir.join(&migration);
@@ -249,16 +262,16 @@ fn run_migrations<P>(
                 .write(true)
                 .create(true)
                 .open(&exec_path)
-                .context(error::MigrationSave { path: exec_path.clone() })?;
-            let _ = std::io::copy(&mut reader, &mut f).context(error::MigrationSave { path: &exec_path })?;
+                .context(error::MigrationSave {
+                    path: exec_path.clone(),
+                })?;
+            let _ = std::io::copy(&mut reader, &mut f)
+                .context(error::MigrationSave { path: &exec_path })?;
         }
 
         // Ensure the migration is executable.
-        fs::set_permissions(&exec_path, Permissions::from_mode(0o755)).context(
-            error::SetPermissions {
-                path: &exec_path,
-            },
-        )?;
+        fs::set_permissions(&exec_path, Permissions::from_mode(0o755))
+            .context(error::SetPermissions { path: &exec_path })?;
 
         let mut command = Command::new(&exec_path);
 
@@ -310,7 +323,10 @@ fn run_migrations<P>(
         // Even if we fail to remove an intermediate data store, we've still migrated
         // successfully, and we don't want to fail the upgrade - just let someone know for
         // later cleanup.
-        trace!("Removing intermediate data store at {}", intermediate_datastore.display());
+        trace!(
+            "Removing intermediate data store at {}",
+            intermediate_datastore.display()
+        );
         if let Err(e) = fs::remove_dir_all(&intermediate_datastore) {
             error!(
                 "Failed to remove intermediate data store at '{}': {}",
@@ -332,8 +348,8 @@ fn run_migrations<P>(
 /// * pointing the 'current' link to the major version
 /// * fsyncing the directory to disk
 fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     // Get the directory we're working in.
     let to_dir = to_datastore
@@ -350,7 +366,7 @@ fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
         // (mode doesn't matter for opening a directory)
         Mode::empty(),
     )
-        .context(error::DataStoreDirOpen { path: &to_dir })?;
+    .context(error::DataStoreDirOpen { path: &to_dir })?;
 
     // Get a unique temporary path in the directory; we need this to atomically swap.
     let temp_link = to_dir.join(rando());
@@ -491,7 +507,12 @@ fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
         Ok(u) => return Ok(u.to_string()),
         _ => {}
     }
-    ensure!(false, error::DirectoryUrl { path: path.as_ref() });
+    ensure!(
+        false,
+        error::DirectoryUrl {
+            path: path.as_ref()
+        }
+    );
     Ok("unreachable".to_string())
 }
 
@@ -529,26 +550,22 @@ mod test {
     /// Migrator relies on the datastore symlink structure to determine the 'from' version.
     /// This function sets up the directory and symlinks to mock the datastore for migrator.
     fn create_datastore_links(info: &mut MigrationTestInfo) {
-        info.datastore = info.tmp.path().join(
-            format!("v{}.{}.{}_xyz",
-                    info.from_version.major,
-                    info.from_version.minor,
-                    info.from_version.patch)
-        );
-        let datastore_version = info.tmp.path().join(
-            format!("v{}.{}.{}",
-                    info.from_version.major,
-                    info.from_version.minor,
-                    info.from_version.patch)
-        );
-        let datastore_minor = info.tmp.path().join(
-            format!("v{}.{}",
-                    info.from_version.major,
-                    info.from_version.minor)
-        );
-        let datastore_major = info.tmp.path().join(
-            format!("v{}", info.from_version.major)
-        );
+        info.datastore = info.tmp.path().join(format!(
+            "v{}.{}.{}_xyz",
+            info.from_version.major, info.from_version.minor, info.from_version.patch
+        ));
+        let datastore_version = info.tmp.path().join(format!(
+            "v{}.{}.{}",
+            info.from_version.major, info.from_version.minor, info.from_version.patch
+        ));
+        let datastore_minor = info.tmp.path().join(format!(
+            "v{}.{}",
+            info.from_version.major, info.from_version.minor
+        ));
+        let datastore_major = info
+            .tmp
+            .path()
+            .join(format!("v{}", info.from_version.major));
         let datastore_current = info.tmp.path().join("current");
         fs::create_dir_all(&info.datastore).unwrap();
         std::os::unix::fs::symlink(&info.datastore, &datastore_version).unwrap();
@@ -620,15 +637,21 @@ mod test {
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
         if !first_line.contains("x-first-migration: --forward") {
-            panic!(format!("Expected the migration 'x-first-migration.sh' to run first and write \
+            panic!(format!(
+                "Expected the migration 'x-first-migration.sh' to run first and write \
             a message containing 'x-first-migration: --forward' to the output file. Instead found \
-            '{}'", first_line));
+            '{}'",
+                first_line
+            ));
         }
         let second_line = *lines.get(1).unwrap();
         if !second_line.contains("a-second-migration: --forward") {
-            panic!(format!("Expected the migration 'a-second-migration.sh' to run second and write \
+            panic!(format!(
+                "Expected the migration 'a-second-migration.sh' to run second and write \
             a message containing 'a-second-migration: --forward' to the output file. Instead found \
-            '{}'", second_line));
+            '{}'",
+                second_line
+            ));
         }
     }
 
@@ -656,15 +679,21 @@ mod test {
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
         if !first_line.contains("a-second-migration: --backward") {
-            panic!(format!("Expected the migration 'a-second-migration.sh' to run first and write \
+            panic!(format!(
+                "Expected the migration 'a-second-migration.sh' to run first and write \
             a message containing 'a-second-migration: --backward' to the output file. Instead \
-            found '{}'", first_line));
+            found '{}'",
+                first_line
+            ));
         }
         let second_line = *lines.get(1).unwrap();
         if !second_line.contains("x-first-migration: --backward") {
-            panic!(format!("Expected the migration 'x-first-migration.sh' to run second and write \
+            panic!(format!(
+                "Expected the migration 'x-first-migration.sh' to run second and write \
             a message containing 'x-first-migration: --backward' to the output file. Instead \
-            found '{}'", first_line));
+            found '{}'",
+                first_line
+            ));
         }
     }
 }

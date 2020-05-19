@@ -30,10 +30,7 @@ pub(crate) enum Error {
     DataStoreLinkToRoot { path: PathBuf },
 
     #[snafu(display("Failed to convert '{}' to a URL", path.display()))]
-    DirectoryUrl {
-        path: PathBuf,
-        backtrace: Backtrace,
-    },
+    DirectoryUrl { path: PathBuf, backtrace: Backtrace },
 
     #[snafu(display("Error finding migration: {}", source))]
     FindMigrations {
@@ -91,9 +88,9 @@ pub(crate) enum Error {
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Failed to decode LZ4-compressed target {}: {}", target, source))]
+    #[snafu(display("Failed to decode LZ4-compressed migration {}: {}", migration, source))]
     Lz4Decode {
-        target: String,
+        migration: String,
         source: std::io::Error,
         backtrace: Backtrace,
     },
