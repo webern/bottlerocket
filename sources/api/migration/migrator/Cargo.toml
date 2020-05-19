@@ -26,7 +26,6 @@ lz4 = "1.23.1"
 cargo-readme = "3.1"
 
 [dev-dependencies]
-assert_cmd = "1.0"
 tempfile = "3.1"
 
 [[bin]]
