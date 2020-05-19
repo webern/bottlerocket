@@ -92,7 +92,7 @@ pub enum Error {
     },
 
     #[snafu(display(
-    "Migration {} given for {} but name implies it is for {}",
+        "Migration {} given for {} but name implies it is for {}",
         name,
         to,
         version
