@@ -16,7 +16,6 @@ use simplelog::{Config as LogConfig, LevelFilter, TermLogger, TerminalMode};
 use snafu::{ensure, ErrorCompat, OptionExt, ResultExt};
 use std::fs::{self, File, OpenOptions};
 use std::io;
-// use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
 use std::str::FromStr;
