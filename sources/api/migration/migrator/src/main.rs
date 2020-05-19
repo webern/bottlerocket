@@ -46,11 +46,6 @@ use error::Result;
 use tough::ExpirationEnforcement;
 use url::Url;
 
-// const REPOSITORY_DATASTORE: &str = "/var/lib/bottlerocket/migrator";
-
-// TODO - remove this when we use pentacle
-// const TODO_DONT_USE_MIGRATIONS_RUNDIR: &str = "/var/lib/bottlerocket/migrationrundir";
-
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
 // https://github.com/shepmaster/snafu/issues/110
