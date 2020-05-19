@@ -358,7 +358,7 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
 fn order_versions(a: &Version, b: &Version) -> (Version, Version) {
     if let Some(direction) = Direction::from_versions(&a, &b) {
         if direction == Direction::Backward {
-            return (b.clone(), b.clone());
+            return (b.clone(), a.clone());
         }
     }
     (a.clone(), b.clone())
