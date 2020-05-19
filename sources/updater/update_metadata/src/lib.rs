@@ -144,47 +144,47 @@ pub fn write_file(path: &Path, manifest: &Manifest) -> Result<()> {
 }
 
 impl Manifest {
-    pub fn add_migration(
-        &mut self,
-        append: bool,
-        from: Version,
-        to: Version,
-        migration_list: Vec<String>,
-    ) -> Result<()> {
-        // Check each migration matches the filename conventions used by the migrator
-        for name in &migration_list {
-            let captures = MIGRATION_FILENAME_RE
-                .captures(&name)
-                .context(error::MigrationNaming)?;
-
-            let version_match = captures
-                .name("version")
-                .context(error::BadRegexVersion { name })?;
-            let version = Version::from_str(version_match.as_str())
-                .context(error::BadVersion { key: name })?;
-            ensure!(
-                version == to,
-                error::MigrationInvalidTarget { name, to, version }
-            );
-
-            let _ = captures
-                .name("name")
-                .context(error::BadRegexName { name })?;
-        }
-
-        // If append is true, append the new migrations to the existing vec.
-        if append && self.migrations.contains_key(&(from.clone(), to.clone())) {
-            let migrations = self
-                .migrations
-                .get_mut(&(from.clone(), to.clone()))
-                .context(error::MigrationMutable { from, to })?;
-            migrations.extend_from_slice(&migration_list);
-        // Otherwise just overwrite the existing migrations
-        } else {
-            self.migrations.insert((from, to), migration_list);
-        }
-        Ok(())
-    }
+    // pub fn add_migration(
+    //     &mut self,
+    //     append: bool,
+    //     from: Version,
+    //     to: Version,
+    //     migration_list: Vec<String>,
+    // ) -> Result<()> {
+    //     // Check each migration matches the filename conventions used by the migrator
+    //     for name in &migration_list {
+    //         let captures = MIGRATION_FILENAME_RE
+    //             .captures(&name)
+    //             .context(error::MigrationNaming)?;
+    //
+    //         let version_match = captures
+    //             .name("version")
+    //             .context(error::BadRegexVersion { name })?;
+    //         let version = Version::from_str(version_match.as_str())
+    //             .context(error::BadVersion { key: name })?;
+    //         ensure!(
+    //             version == to,
+    //             error::MigrationInvalidTarget { name, to, version }
+    //         );
+    //
+    //         let _ = captures
+    //             .name("name")
+    //             .context(error::BadRegexName { name })?;
+    //     }
+    //
+    //     // If append is true, append the new migrations to the existing vec.
+    //     if append && self.migrations.contains_key(&(from.clone(), to.clone())) {
+    //         let migrations = self
+    //             .migrations
+    //             .get_mut(&(from.clone(), to.clone()))
+    //             .context(error::MigrationMutable { from, to })?;
+    //         migrations.extend_from_slice(&migration_list);
+    //     // Otherwise just overwrite the existing migrations
+    //     } else {
+    //         self.migrations.insert((from, to), migration_list);
+    //     }
+    //     Ok(())
+    // }
 
     pub fn add_update(
         &mut self,
