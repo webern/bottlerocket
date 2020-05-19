@@ -354,7 +354,7 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
     Ok(migrations)
 }
 
-// returns two version with the lower version first.
+// returns the versions with the lower version first.
 fn order_versions(a: &Version, b: &Version) -> (Version, Version) {
     if let Some(direction) = Direction::from_versions(&a, &b) {
         if direction == Direction::Backward {
