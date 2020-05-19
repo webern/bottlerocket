@@ -8,10 +8,8 @@ mod se;
 use crate::error::Result;
 use chrono::{DateTime, Duration, Utc};
 pub use direction::Direction;
-use lazy_static::lazy_static;
 use parse_datetime::parse_offset;
 use rand::{thread_rng, Rng};
-use regex::Regex;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use snafu::{ensure, OptionExt, ResultExt};
@@ -20,28 +18,10 @@ use std::fs;
 use std::fs::File;
 use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
-use std::str::FromStr;
 use tough;
 use tough::Limits;
 
 pub const MAX_SEED: u32 = 2048;
-
-// TODO - this is probably dead code, remove.
-// lazy_static! {
-//     /// Regular expression that will match migration file names and allow retrieving the
-//     /// version and name components.
-//     // Note: the version component is a simplified semver regex; we don't use any of the
-//     // extensions, just a simple x.y.z, so this isn't as strict as it could be.
-//     pub static ref MIGRATION_FILENAME_RE: Regex =
-//         Regex::new(r"(?x)^
-//                    migrate
-//                    _
-//                    v?  # optional 'v' prefix for humans
-//                    (?P<version>[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z+-]*)
-//                    _
-//                    (?P<name>[a-zA-Z0-9-]+)
-//                    $").unwrap();
-// }
 
 /// These are the limits that Bottlerocket will use for `tough` repositories.
 pub const REPOSITORY_LIMITS: Limits = Limits {
@@ -144,48 +124,6 @@ pub fn write_file(path: &Path, manifest: &Manifest) -> Result<()> {
 }
 
 impl Manifest {
-    // pub fn add_migration(
-    //     &mut self,
-    //     append: bool,
-    //     from: Version,
-    //     to: Version,
-    //     migration_list: Vec<String>,
-    // ) -> Result<()> {
-    //     // Check each migration matches the filename conventions used by the migrator
-    //     for name in &migration_list {
-    //         let captures = MIGRATION_FILENAME_RE
-    //             .captures(&name)
-    //             .context(error::MigrationNaming)?;
-    //
-    //         let version_match = captures
-    //             .name("version")
-    //             .context(error::BadRegexVersion { name })?;
-    //         let version = Version::from_str(version_match.as_str())
-    //             .context(error::BadVersion { key: name })?;
-    //         ensure!(
-    //             version == to,
-    //             error::MigrationInvalidTarget { name, to, version }
-    //         );
-    //
-    //         let _ = captures
-    //             .name("name")
-    //             .context(error::BadRegexName { name })?;
-    //     }
-    //
-    //     // If append is true, append the new migrations to the existing vec.
-    //     if append && self.migrations.contains_key(&(from.clone(), to.clone())) {
-    //         let migrations = self
-    //             .migrations
-    //             .get_mut(&(from.clone(), to.clone()))
-    //             .context(error::MigrationMutable { from, to })?;
-    //         migrations.extend_from_slice(&migration_list);
-    //     // Otherwise just overwrite the existing migrations
-    //     } else {
-    //         self.migrations.insert((from, to), migration_list);
-    //     }
-    //     Ok(())
-    // }
-
     pub fn add_update(
         &mut self,
         image_version: Version,
