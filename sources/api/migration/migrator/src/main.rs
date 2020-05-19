@@ -83,30 +83,22 @@ fn run(args: &Args) -> Result<()> {
             process::exit(0);
         });
 
-    // TODO - need to do this after a repo load failure to ensure that it isn't simply that there are no migrations
-    // Check for the presence of timestamp.json. If it's not where expected then there is nothing
-    // for migrator to do because there is no valid tuf repo for us to load (i.e. no migrations).
-    // let timestamp_path = args.metadata_directory.join("timestamp.json");
-    // if !Path::new(timestamp_path.as_os_str()).is_file() {
-    //     info!("Migrator did not find repository metadata at '{}', nothing to do", timestamp_path.display());
-    //     return Ok(());
-    // }
-
-    // We need the signed manifest.json file to determine which migrations are needed.
-    // Load the locally cached tough repository to obtain the manifest.
+    // Prepare to load the locally cached tough repository to obtain the manifest.
     let tough_workdir = args.working_directory.join("tough_workdir");
     fs::create_dir_all(&tough_workdir).context(error::CreateDirectory {
         path: &tough_workdir,
     })?;
+    let metadata_url = dir_url(&args.metadata_directory)?;
+    let migrations_url = dir_url(&args.migration_directory)?;
 
-    // TODO - either don't do this when we use pentacle or give it its own error type.
+    // Prepare directory to save migrations to before running them.
+    // TODO - use pentacle instead of saving the migration binaries to disk before running them.
     let migrations_rundir = args.working_directory.join("migrations_rundir");
     fs::create_dir_all(&migrations_rundir).context(error::CreateDirectory {
         path: &migrations_rundir,
     })?;
 
-    let metadata_url = dir_url(&args.metadata_directory)?;
-    let migrations_url = dir_url(&args.migration_directory)?;
+    // TODO - only error if timestamp.json is there, otherwise there are no migrations to run.
     let repo = tough::Repository::load(
         &tough::FilesystemTransport {},
         tough::Settings {
@@ -128,6 +120,7 @@ fn run(args: &Args) -> Result<()> {
     let migrations =
         update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest)
             .context(error::FindMigrations)?;
+
     if migrations.is_empty() {
         // Not all new OS versions need to change the data store format.  If there's been no
         // change, we can just link to the last version rather than making a copy.
