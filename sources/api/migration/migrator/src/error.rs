@@ -1,7 +1,7 @@
 //! This module owns the error type used by the migrator.
 
 use semver::Version;
-use snafu::{Snafu, Backtrace};
+use snafu::{Backtrace, Snafu};
 use std::io;
 use std::path::PathBuf;
 use std::process::{Command, Output};
