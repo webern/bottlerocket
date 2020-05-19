@@ -248,7 +248,7 @@ pub(crate) enum Error {
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Failed to store migrations: {}", source))]
+    #[snafu(display("Failed to store manifest and migrations: {}", source))]
     RepoCacheMigrations { source: tough::error::Error },
 }
 
