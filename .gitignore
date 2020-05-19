@@ -5,7 +5,3 @@
 /.cargo
 /.gomodcache
 /html
-
-# TODO remove this
-/sources/ignored
-/sources/.idea/workspace.xml
