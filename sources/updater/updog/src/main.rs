@@ -215,7 +215,7 @@ fn retrieve_migrations(
     // known extensions from our compression, e.g. .lz4
     let mut targets = find_migrations(start, target, &manifest)?;
     // Even if there are no migrations, we need to make sure that we store the manifest so that
-    // migrator can independent and securely determine that there are no migrations.
+    // migrator can independently and securely determine that there are no migrations.
     targets.push("manifest.json".to_owned());
     repository
         .cache(METADATA_PATH, MIGRATION_PATH, Some(&targets), true)
