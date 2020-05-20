@@ -2,13 +2,13 @@
 //! is moving forward to a new version or rolling back to a previous version.
 
 use semver::Version;
-use std::cmp::Ordering;
+use std::cmp::{Ordering, Ord};
 use std::fmt;
 
 /// Direction represents whether we're moving forward toward a newer version, or rolling back to
 /// an older version.
 #[derive(Debug, Copy, Clone, PartialEq, Eq)]
-pub(crate) enum Direction {
+pub enum Direction {
     Forward,
     Backward,
 }
@@ -25,7 +25,7 @@ impl fmt::Display for Direction {
 impl Direction {
     /// Determines the migration direction, given the outgoing ("from') and incoming ("to")
     /// versions.
-    pub(crate) fn from_versions(from: &Version, to: &Version) -> Option<Self> {
+    pub fn from_versions(from: &Version, to: &Version) -> Option<Self> {
         match from.cmp(&to) {
             Ordering::Less => Some(Direction::Forward),
             Ordering::Greater => Some(Direction::Backward),

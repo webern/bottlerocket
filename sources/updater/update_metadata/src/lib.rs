@@ -1,15 +1,15 @@
 #![warn(clippy::pedantic)]
 
 mod de;
+mod direction;
 pub mod error;
 mod se;
 
 use crate::error::Result;
 use chrono::{DateTime, Duration, Utc};
-use lazy_static::lazy_static;
+pub use direction::Direction;
 use parse_datetime::parse_offset;
 use rand::{thread_rng, Rng};
-use regex::Regex;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use snafu::{ensure, OptionExt, ResultExt};
@@ -18,26 +18,18 @@ use std::fs;
 use std::fs::File;
 use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
-use std::str::FromStr;
 use tough;
+use tough::Limits;
 
 pub const MAX_SEED: u32 = 2048;
 
-lazy_static! {
-    /// Regular expression that will match migration file names and allow retrieving the
-    /// version and name components.
-    // Note: the version component is a simplified semver regex; we don't use any of the
-    // extensions, just a simple x.y.z, so this isn't as strict as it could be.
-    pub static ref MIGRATION_FILENAME_RE: Regex =
-        Regex::new(r"(?x)^
-                   migrate
-                   _
-                   v?  # optional 'v' prefix for humans
-                   (?P<version>[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z+-]*)
-                   _
-                   (?P<name>[a-zA-Z0-9-]+)
-                   $").unwrap();
-}
+/// These are the limits that Bottlerocket will use for `tough` repositories.
+pub const REPOSITORY_LIMITS: Limits = Limits {
+    max_root_size: 1024 * 1024,         // 1 MiB
+    max_targets_size: 1024 * 1024 * 10, // 10 MiB
+    max_timestamp_size: 1024 * 1024,    // 1 MiB
+    max_root_updates: 1024,
+};
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum Wave {
@@ -132,48 +124,6 @@ pub fn write_file(path: &Path, manifest: &Manifest) -> Result<()> {
 }
 
 impl Manifest {
-    pub fn add_migration(
-        &mut self,
-        append: bool,
-        from: Version,
-        to: Version,
-        migration_list: Vec<String>,
-    ) -> Result<()> {
-        // Check each migration matches the filename conventions used by the migrator
-        for name in &migration_list {
-            let captures = MIGRATION_FILENAME_RE
-                .captures(&name)
-                .context(error::MigrationNaming)?;
-
-            let version_match = captures
-                .name("version")
-                .context(error::BadRegexVersion { name })?;
-            let version = Version::from_str(version_match.as_str())
-                .context(error::BadVersion { key: name })?;
-            ensure!(
-                version == to,
-                error::MigrationInvalidTarget { name, to, version }
-            );
-
-            let _ = captures
-                .name("name")
-                .context(error::BadRegexName { name })?;
-        }
-
-        // If append is true, append the new migrations to the existing vec.
-        if append && self.migrations.contains_key(&(from.clone(), to.clone())) {
-            let migrations = self
-                .migrations
-                .get_mut(&(from.clone(), to.clone()))
-                .context(error::MigrationMutable { from, to })?;
-            migrations.extend_from_slice(&migration_list);
-        // Otherwise just overwrite the existing migrations
-        } else {
-            self.migrations.insert((from, to), migration_list);
-        }
-        Ok(())
-    }
-
     pub fn add_update(
         &mut self,
         image_version: Version,
@@ -387,7 +337,41 @@ impl Update {
     }
 }
 
-pub fn migration_targets(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Result<Vec<String>> {
+    // early exit if there is no work to do.
+    if from == to {
+        return Ok(Vec::new());
+    }
+    // determine if the migration direction is forward or backward.
+    let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
+    // express the versions in ascending order
+    let (lower_version, higher_version) = order_versions(from, to);
+    let mut migrations = find_migrations_forward(&lower_version, &higher_version, manifest)?;
+    // if the direction is backward, reverse the order of the migration list.
+    if direction == Direction::Backward {
+        migrations = migrations.into_iter().rev().collect();
+    }
+    Ok(migrations)
+}
+
+// returns the versions with the lower version first.
+fn order_versions(a: &Version, b: &Version) -> (Version, Version) {
+    if let Some(direction) = Direction::from_versions(&a, &b) {
+        if direction == Direction::Backward {
+            return (b.clone(), a.clone());
+        }
+    }
+    (a.clone(), b.clone())
+}
+
+/// Finds the migration from one version to another. The migration direction must be forward, that
+/// is, `from` must be less than or equal to `to`. The caller may reverse the Vec returned by this
+/// function to migrate backward.
+fn find_migrations_forward(
+    from: &Version,
+    to: &Version,
+    manifest: &Manifest,
+) -> Result<Vec<String>> {
     let mut targets = Vec::new();
     let mut version = from;
     while version != to {
@@ -431,18 +415,34 @@ pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> 
 }
 
 #[test]
-fn test_migrations() {
+fn test_migrations_forward() {
     // A manifest with four migration tuples starting at 1.0 and ending at 1.3.
     // There is a shortcut from 1.1 to 1.3, skipping 1.2
     let path = "./tests/data/migrations.json";
     let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
     let from = Version::parse("1.0.0").unwrap();
     let to = Version::parse("1.5.0").unwrap();
-    let targets = migration_targets(&from, &to, &manifest).unwrap();
+    let targets = find_migrations(&from, &to, &manifest).unwrap();
 
     assert!(targets.len() == 3);
     let mut i = targets.iter();
     assert!(i.next().unwrap() == "migration_1.1.0_a");
     assert!(i.next().unwrap() == "migration_1.1.0_b");
     assert!(i.next().unwrap() == "migration_1.5.0_shortcut");
+}
+
+#[test]
+fn test_migrations_backward() {
+    // The same manifest as `test_migrations` but this time we will migrate backward.
+    let path = "./tests/data/migrations.json";
+    let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
+    let from = Version::parse("1.5.0").unwrap();
+    let to = Version::parse("1.0.0").unwrap();
+    let targets = find_migrations(&from, &to, &manifest).unwrap();
+
+    assert!(targets.len() == 3);
+    let mut i = targets.iter();
+    assert!(i.next().unwrap() == "migration_1.5.0_shortcut");
+    assert!(i.next().unwrap() == "migration_1.1.0_b");
+    assert!(i.next().unwrap() == "migration_1.1.0_a");
 }
