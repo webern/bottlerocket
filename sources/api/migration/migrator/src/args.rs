@@ -154,7 +154,7 @@ impl Args {
                 .unwrap_or_else(|| usage_msg("migrate_to_version is empty")),
             root_path: root_path.unwrap_or_else(|| usage_msg("root_path is empty")),
             metadata_directory: metadata_path
-                .unwrap_or_else(|| usage_msg("metadata_path is empty")),
+                .unwrap_or_else(|| usage_msg("metadata_directory is empty")),
             working_directory: working_directory
                 .unwrap_or_else(|| usage_msg("working_directory is empty")),
         }
