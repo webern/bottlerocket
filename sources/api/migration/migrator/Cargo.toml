@@ -18,9 +18,14 @@ semver = "0.9"
 simplelog = "0.7"
 snafu = "0.6"
 update_metadata = { path = "../../../updater/update_metadata" }
+tough = { version = "0.5.0" }
+lz4 = "1.23.1"
 
 [build-dependencies]
 cargo-readme = "3.1"
+
+[dev-dependencies]
+tempfile = "3.1"
 
 [[bin]]
 name = "migrator"
