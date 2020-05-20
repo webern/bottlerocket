@@ -211,7 +211,6 @@ fn retrieve_migrations(
     }
 
     // find the list of migrations in the manifest based on our from and to versions.
-    // known extensions from our compression, e.g. .lz4
     let mut targets = find_migrations(start, target, &manifest)?;
     // Even if there are no migrations, we need to make sure that we store the manifest so that
     // migrator can independently and securely determine that there are no migrations.
