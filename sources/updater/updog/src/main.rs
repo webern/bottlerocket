@@ -14,23 +14,28 @@ use signal_hook::{iterator::Signals, SIGTERM};
 use signpost::State;
 use simplelog::{Config as LogConfig, LevelFilter, TermLogger, TerminalMode};
 use snafu::{ensure, ErrorCompat, OptionExt, ResultExt};
-use std::fs::{self, File, OpenOptions, Permissions};
+use std::fs::{self, File, OpenOptions};
 use std::io;
-use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
 use std::str::FromStr;
 use std::thread;
-use tough::{Limits, ExpirationEnforcement, Repository, Settings};
-use update_metadata::{load_manifest, migration_targets, Manifest, Update};
+use tempfile::TempDir;
+use tough::{ExpirationEnforcement, Repository, Settings};
+use update_metadata::{find_migrations, load_manifest, Manifest, Update, REPOSITORY_LIMITS};
 
 #[cfg(target_arch = "x86_64")]
 const TARGET_ARCH: &str = "x86_64";
 #[cfg(target_arch = "aarch64")]
 const TARGET_ARCH: &str = "aarch64";
 
+/// The root.json file as required by TUF.
 const TRUSTED_ROOT_PATH: &str = "/usr/share/updog/root.json";
+
+/// This is where we store the TUF targets used by migrator after reboot.
 const MIGRATION_PATH: &str = "/var/lib/bottlerocket-migrations";
+
+/// This is where we store the TUF metadata used by migrator after reboot.
 const METADATA_PATH: &str = "/var/cache/bottlerocket-metadata";
 
 #[derive(Debug, Deserialize, PartialEq)]
@@ -104,23 +109,21 @@ fn load_config() -> Result<Config> {
 fn load_repository<'a>(
     transport: &'a HttpQueryTransport,
     config: &'a Config,
+    tough_datastore: &'a Path,
 ) -> Result<HttpQueryRepo<'a>> {
-    fs::create_dir_all(METADATA_PATH).context(error::CreateMetadataCache)?;
+    fs::create_dir_all(METADATA_PATH).context(error::CreateMetadataCache {
+        path: METADATA_PATH,
+    })?;
     Repository::load(
         transport,
         Settings {
             root: File::open(TRUSTED_ROOT_PATH).context(error::OpenRoot {
                 path: TRUSTED_ROOT_PATH,
             })?,
-            datastore: Path::new(METADATA_PATH),
+            datastore: tough_datastore,
             metadata_base_url: &config.metadata_base_url,
             targets_base_url: &config.targets_base_url,
-            limits: Limits {
-                max_root_size: 1024 * 1024,         // 1 MiB
-                max_targets_size: 1024 * 1024 * 10, // 10 MiB
-                max_timestamp_size: 1024 * 1024,    // 1 MiB
-                max_root_updates: 1024,
-            },
+            limits: REPOSITORY_LIMITS,
             expiration_enforcement: ExpirationEnforcement::Safe,
         },
     )
@@ -210,20 +213,14 @@ fn retrieve_migrations(
         fs::create_dir(&dir).context(error::DirCreate { path: &dir })?;
     }
 
-    // download each migration, making sure they are executable and removing
-    // known extensions from our compression, e.g. .lz4
-    let mut targets = migration_targets(start, target, &manifest)?;
-    targets.sort();
-    for name in &targets {
-        let mut destination = dir.join(&name);
-        if destination.extension() == Some("lz4".as_ref()) {
-            destination.set_extension("");
-        }
-        write_target_to_disk(repository, &name, &destination)?;
-        fs::set_permissions(&destination, Permissions::from_mode(0o755))
-            .context(error::SetPermissions { path: destination })?;
-    }
-
+    // find the list of migrations in the manifest based on our from and to versions.
+    let mut targets = find_migrations(start, target, &manifest)?;
+    // Even if there are no migrations, we need to make sure that we store the manifest so that
+    // migrator can independently and securely determine that there are no migrations.
+    targets.push("manifest.json".to_owned());
+    repository
+        .cache(METADATA_PATH, MIGRATION_PATH, Some(&targets), true)
+        .context(error::RepoCacheMigrations)?;
     // Set a query parameter listing the required migrations
     transport
         .queries_get_mut()
@@ -445,7 +442,8 @@ fn main_inner() -> Result<()> {
     let variant = arguments.variant.unwrap_or(current_release.variant_id);
     let transport = HttpQueryTransport::new();
     set_common_query_params(&transport, &current_release.version_id, &config)?;
-    let repository = load_repository(&transport, &config)?;
+    let tough_datastore = TempDir::new().context(error::CreateTempDir)?;
+    let repository = load_repository(&transport, &config, tough_datastore.path())?;
     let manifest = load_manifest(&repository)?;
 
     match command {
