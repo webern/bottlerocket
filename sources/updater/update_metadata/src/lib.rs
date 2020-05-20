@@ -366,7 +366,7 @@ fn order_versions(a: &Version, b: &Version) -> (Version, Version) {
 
 /// Finds the migration from one version to another. The migration direction must be forward, that
 /// is, `from` must be less than or equal to `to`. The caller may reverse the Vec returned by this
-/// function in order to migrate backward.
+/// function to migrate backward.
 fn find_migrations_forward(
     from: &Version,
     to: &Version,
