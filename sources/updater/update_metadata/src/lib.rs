@@ -13,6 +13,7 @@ use rand::{thread_rng, Rng};
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use snafu::{ensure, OptionExt, ResultExt};
+use std::cmp::Ordering;
 use std::collections::BTreeMap;
 use std::fs;
 use std::fs::File;
@@ -342,26 +343,17 @@ pub fn find_migrations(from: &Version, to: &Version, manifest: &Manifest) -> Res
     if from == to {
         return Ok(Vec::new());
     }
-    // determine if the migration direction is forward or backward.
-    let direction = Direction::from_versions(from, to).unwrap_or(Direction::Forward);
     // express the versions in ascending order
-    let (lower_version, higher_version) = order_versions(from, to);
-    let mut migrations = find_migrations_forward(&lower_version, &higher_version, manifest)?;
+    let (lower, higher, is_reversed) = match from.cmp(to) {
+        Ordering::Less | Ordering::Equal => (from, to, false),
+        Ordering::Greater => (to, from, true),
+    };
+    let mut migrations = find_migrations_forward(&lower, &higher, manifest)?;
     // if the direction is backward, reverse the order of the migration list.
-    if direction == Direction::Backward {
+    if is_reversed {
         migrations = migrations.into_iter().rev().collect();
     }
     Ok(migrations)
-}
-
-// returns the versions with the lower version first.
-fn order_versions(a: &Version, b: &Version) -> (Version, Version) {
-    if let Some(direction) = Direction::from_versions(&a, &b) {
-        if direction == Direction::Backward {
-            return (b.clone(), a.clone());
-        }
-    }
-    (a.clone(), b.clone())
 }
 
 /// Finds the migration from one version to another. The migration direction must be forward, that
@@ -397,7 +389,7 @@ fn find_migrations_forward(
                 current: version.clone(),
                 target: to.clone(),
             }
-                .fail();
+            .fail();
         }
     }
     Ok(targets)
@@ -411,7 +403,7 @@ pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> 
             .context(error::ManifestLoad)?
             .context(error::ManifestNotFound)?,
     )
-        .context(error::ManifestParse)
+    .context(error::ManifestParse)
 }
 
 #[test]

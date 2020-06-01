@@ -18,6 +18,7 @@ fn usage() -> ! {
             --migration-directory PATH
             --root-path PATH
             --metadata-directory PATH
+            --working-directory PATH
             (--migrate-to-version x.y | --migrate-to-version-from-os-release)
             [ --no-color ]
             [ --log-level trace|debug|info|warn|error ]",
@@ -146,17 +147,18 @@ impl Args {
         }
 
         Self {
-            datastore_path: datastore_path.unwrap_or_else(|| usage_msg("datastore_path is empty")),
+            datastore_path: datastore_path
+                .unwrap_or_else(|| usage_msg("--datastore_path is empty")),
             log_level: log_level.unwrap_or_else(|| LevelFilter::Info),
             migration_directory: migration_directory
-                .unwrap_or_else(|| usage_msg("migration_directory is empty")),
+                .unwrap_or_else(|| usage_msg("--migration_directory is empty")),
             migrate_to_version: migrate_to_version
-                .unwrap_or_else(|| usage_msg("migrate_to_version is empty")),
-            root_path: root_path.unwrap_or_else(|| usage_msg("root_path is empty")),
+                .unwrap_or_else(|| usage_msg("--migrate_to_version is empty")),
+            root_path: root_path.unwrap_or_else(|| usage_msg("--root_path is empty")),
             metadata_directory: metadata_path
-                .unwrap_or_else(|| usage_msg("metadata_directory is empty")),
+                .unwrap_or_else(|| usage_msg("--metadata_directory is empty")),
             working_directory: working_directory
-                .unwrap_or_else(|| usage_msg("working_directory is empty")),
+                .unwrap_or_else(|| usage_msg("--working_directory is empty")),
         }
     }
 }
