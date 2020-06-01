@@ -111,7 +111,7 @@ fn run(args: &Args) -> Result<()> {
             expiration_enforcement: ExpirationEnforcement::Unsafe,
         },
     )
-    .context(error::RepoLoad)?;
+        .context(error::RepoLoad)?;
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
     let migrations =
         update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest)
@@ -152,8 +152,8 @@ fn run(args: &Args) -> Result<()> {
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     let datastore_dir = datastore_dir.as_ref();
 
@@ -189,8 +189,8 @@ fn rando() -> String {
 /// Generates a path for a new data store, given the path of the existing data store,
 /// the new version number, and a random "copy id" to append.
 fn new_datastore_location<P>(from: P, new_version: &Version) -> Result<PathBuf>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     let to = from
         .as_ref()
@@ -223,8 +223,8 @@ fn run_migrations<P>(
     new_version: &Version,
     migrations_rundir: &PathBuf,
 ) -> Result<PathBuf>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     // We start with the given source_datastore, updating this after each migration to point to the
     // output of the previous one.
@@ -343,8 +343,8 @@ where
 /// * pointing the 'current' link to the major version
 /// * fsyncing the directory to disk
 fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
-where
-    P: AsRef<Path>,
+    where
+        P: AsRef<Path>,
 {
     // Get the directory we're working in.
     let to_dir = to_datastore
@@ -361,7 +361,7 @@ where
         // (mode doesn't matter for opening a directory)
         Mode::empty(),
     )
-    .context(error::DataStoreDirOpen { path: &to_dir })?;
+        .context(error::DataStoreDirOpen { path: &to_dir })?;
 
     // Get a unique temporary path in the directory; we need this to atomically swap.
     let temp_link = to_dir.join(rando());
@@ -653,7 +653,7 @@ mod test {
         }
     }
 
-    /// This test ensures that migrations run when migrating from an older to a newer version.
+    /// This test ensures that migrations run when migrating from a newer to an older version.
     /// See `migrate_forward` for a description of how these tests work.
     #[test]
     fn migrate_backward() {
@@ -690,7 +690,7 @@ mod test {
                 "Expected the migration 'x-first-migration.sh' to run second and write \
             a message containing 'x-first-migration: --backward' to the output file. Instead \
             found '{}'",
-                first_line
+                second_line
             ));
         }
     }

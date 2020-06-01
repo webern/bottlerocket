@@ -397,7 +397,7 @@ fn find_migrations_forward(
                 current: version.clone(),
                 target: to.clone(),
             }
-            .fail();
+                .fail();
         }
     }
     Ok(targets)
@@ -411,7 +411,7 @@ pub fn load_manifest<T: tough::Transport>(repository: &tough::Repository<T>) -> 
             .context(error::ManifestLoad)?
             .context(error::ManifestNotFound)?,
     )
-    .context(error::ManifestParse)
+        .context(error::ManifestParse)
 }
 
 #[test]
@@ -433,7 +433,7 @@ fn test_migrations_forward() {
 
 #[test]
 fn test_migrations_backward() {
-    // The same manifest as `test_migrations` but this time we will migrate backward.
+    // The same manifest as `test_migrations_forward` but this time we will migrate backward.
     let path = "./tests/data/migrations.json";
     let manifest: Manifest = serde_json::from_reader(File::open(path).unwrap()).unwrap();
     let from = Version::parse("1.5.0").unwrap();
