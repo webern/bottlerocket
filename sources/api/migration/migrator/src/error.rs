@@ -65,7 +65,7 @@ pub(crate) enum Error {
     #[snafu(display("Migration returned '{}' - stderr: {}",
                     output.status.code()
                         .map(|i| i.to_string()).unwrap_or_else(|| "signal".to_string()),
-                    std::str::from_utf8(& output.stderr)
+                    std::str::from_utf8(&output.stderr)
                         .unwrap_or_else(|_e| "<invalid UTF-8>")))]
     MigrationFailure { output: Output },
 
