@@ -44,7 +44,6 @@ mod error;
 use args::Args;
 use error::Result;
 use tough::ExpirationEnforcement;
-use url::Url;
 
 const RUNDIR: &str = "rundir";
 const TOUGH_DATASTORE: &str = "tough";
@@ -111,7 +110,7 @@ fn run(args: &Args) -> Result<()> {
             expiration_enforcement: ExpirationEnforcement::Unsafe,
         },
     )
-        .context(error::RepoLoad)?;
+    .context(error::RepoLoad)?;
     let manifest = load_manifest(&repo).context(error::LoadManifest)?;
     let migrations =
         update_metadata::find_migrations(&current_version, &args.migrate_to_version, &manifest)
@@ -152,8 +151,8 @@ fn run(args: &Args) -> Result<()> {
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     let datastore_dir = datastore_dir.as_ref();
 
@@ -189,8 +188,8 @@ fn rando() -> String {
 /// Generates a path for a new data store, given the path of the existing data store,
 /// the new version number, and a random "copy id" to append.
 fn new_datastore_location<P>(from: P, new_version: &Version) -> Result<PathBuf>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     let to = from
         .as_ref()
@@ -223,8 +222,8 @@ fn run_migrations<P>(
     new_version: &Version,
     migrations_rundir: &PathBuf,
 ) -> Result<PathBuf>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     // We start with the given source_datastore, updating this after each migration to point to the
     // output of the previous one.
@@ -343,8 +342,8 @@ fn run_migrations<P>(
 /// * pointing the 'current' link to the major version
 /// * fsyncing the directory to disk
 fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
-    where
-        P: AsRef<Path>,
+where
+    P: AsRef<Path>,
 {
     // Get the directory we're working in.
     let to_dir = to_datastore
@@ -361,7 +360,7 @@ fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
         // (mode doesn't matter for opening a directory)
         Mode::empty(),
     )
-        .context(error::DataStoreDirOpen { path: &to_dir })?;
+    .context(error::DataStoreDirOpen { path: &to_dir })?;
 
     // Get a unique temporary path in the directory; we need this to atomically swap.
     let temp_link = to_dir.join(rando());
@@ -496,19 +495,10 @@ fn flip_to_new_version<P>(version: &Version, to_datastore: P) -> Result<()>
 
 /// Converts a filepath into a URI formatted string
 fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
-    let url_result = Url::from_directory_path(&path);
-    // TODO - I can't figure out how to use .context with this error type
-    match url_result {
-        Ok(u) => return Ok(u.to_string()),
-        _ => {}
-    }
-    ensure!(
-        false,
-        error::DirectoryUrl {
-            path: path.as_ref()
-        }
-    );
-    Ok("unreachable".to_string())
+    let path_str = path.as_ref().to_str().context(error::PathUrl {
+        path: path.as_ref(),
+    })?;
+    Ok(format!("file://{}", path_str))
 }
 
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=

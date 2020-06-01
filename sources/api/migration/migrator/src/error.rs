@@ -120,19 +120,28 @@ pub(crate) enum Error {
         source: std::io::Error,
         backtrace: Backtrace,
     },
+
+    #[snafu(display("Unable to create URL from path '{}'", path.display()))]
+    PathUrl { path: PathBuf, backtrace: Backtrace },
+
     #[snafu(display("Failed reading migration directory entry: {}", source))]
     ReadMigrationEntry { source: io::Error },
+
     #[snafu(display("Failed to load tough repo: {}", source))]
     RepoLoad {
         source: tough::error::Error,
         backtrace: Backtrace,
     },
+
     #[snafu(display("Failed reading metadata of '{}': {}", path.display(), source))]
     PathMetadata { path: PathBuf, source: io::Error },
+
     #[snafu(display("Failed setting permissions of '{}': {}", path.display(), source))]
     SetPermissions { path: PathBuf, source: io::Error },
+
     #[snafu(display("Migration path '{}' contains invalid UTF-8", path.display()))]
     MigrationNameNotUTF8 { path: PathBuf },
+
     #[snafu(display("Logger setup error: {}", source))]
     Logger { source: simplelog::TermLogError },
 }
