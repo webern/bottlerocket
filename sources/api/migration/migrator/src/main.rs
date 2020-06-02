@@ -214,16 +214,17 @@ where
 ///
 /// The given data store is used as a starting point; each migration is given the output of the
 /// previous migration, and the final output becomes the new data store.
-fn run_migrations<P>(
+fn run_migrations<P1, P2>(
     repository: &tough::Repository<'_, tough::FilesystemTransport>,
     direction: Direction,
     migrations: &[String],
-    source_datastore: P,
+    source_datastore: P1,
     new_version: &Version,
-    migrations_rundir: &PathBuf,
+    migrations_rundir: P2,
 ) -> Result<PathBuf>
 where
-    P: AsRef<Path>,
+    P1: AsRef<Path>,
+    P2: AsRef<Path>,
 {
     // We start with the given source_datastore, updating this after each migration to point to the
     // output of the previous one.
@@ -250,15 +251,14 @@ where
         let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { migration })?;
 
         // TODO - remove this use of the filesystem when we add pentacle
-        let exec_path = migrations_rundir.join(&migration);
+        let exec_path = migrations_rundir.as_ref().join(&migration);
         {
             let mut f = OpenOptions::new()
                 .write(true)
                 .create(true)
+                .truncate(true)
                 .open(&exec_path)
-                .context(error::MigrationSave {
-                    path: exec_path.clone(),
-                })?;
+                .context(error::MigrationSave { path: &exec_path })?;
             let _ = std::io::copy(&mut reader, &mut f)
                 .context(error::MigrationSave { path: &exec_path })?;
         }
