@@ -3,14 +3,8 @@
     "_type": "targets",
     "spec_version": "1.0.0",
     "version": 1589415932,
-    "expires": "2020-05-17T00:25:32.891804Z",
+    "expires": "2020-05-17T00:00:00Z",
     "targets": {
-      "manifest.json": {
-        "length": 217,
-        "hashes": {
-          "sha256": "e823375105cd38d5e0476a4e277bc61eef3c15bd0d8831e2f78bc9394b4f1335"
-        }
-      },
       "x-first-migration.lz4": {
         "length": 224,
         "hashes": {
@@ -22,13 +16,19 @@
         "hashes": {
           "sha256": "b0815d371a7536c104f06fb836be42911856989fa5be4bf01541fdcf8ad51095"
         }
+      },
+      "manifest.json": {
+        "length": 136,
+        "hashes": {
+          "sha256": "9da13a22f501fe0b436871cf925ef8170ca5a14dda90013eac67a5df8b10bee4"
+        }
       }
     }
   },
   "signatures": [
     {
-      "keyid": "cdc40862e61f29195ec351b81d0122485aaf4a196489526e70bb7baf84d3f33e",
-      "sig": "2b5cfd38df148dd23a65b00fc26a17ca138762dccbed117067433cd84f76c7d2b345d0d7a6b0fc80f4f76c4fb8488ae5374162f1063898883df0e9021bd5635fac7d1e6a840d92790440cdcbc760961db654b6c9fe7144783a6d143413b7e9837145cfe864b500b8ac1a2ae2e1c7650ea45d16db8b9ef9fd407a2a7ad3e58e052865da5947a7430d2ecb24d0bd10e77e3c62f4ca4963e013a38b3de83f41419ce0241c9d0dbb0f54bbff203627671666f98953c56614dca84979636d0255422c7c580a925f4854662d7f5994a5843a7a9928fbed97f8cf9dd431bb28fca9e7276ca63ef5519c6d0fbd793bed03b3e30b8ea9604a038c5b2ddc6fc4b15ab7f537"
+      "keyid": "5444ff6d392fc17e2b5bea23d2694570f98db5e15591e80144cecf20198ba0a2",
+      "sig": "2800a8880ff1faca821546dda95ec8d4ef43274a928fd2d4a5c6b1fabd24165c6d436e75af46e529542906b5072e84fe27bb707ec423a0618c86b258a0440d97fb4785dec3a94e6a1dc25c748ddbf4ee5b4d5d9b37d2029a3846b80dace9f20974dc22046a721e75765fe41ce2563ebaed517943e26e0c8f7a692db5456cd9dadd728a4bea63844ee29b4d86a7a015056af355933cfe5b26d7e6d3efe7f10ca9a7d5717a2dc39ea88324fa37b9e878bb233adf57ca5add9eac1338856b06ad587741edd33d95f6bfbe4b476515eb2db817a95daf2427765e739b80ead50cf6ac20a150924a3b2e34338935ae295059c3a891522e1a876c08da0ffe52937c71ee"
     }
   ]
 }
