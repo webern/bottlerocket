@@ -36,7 +36,7 @@ use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 
-use update_metadata::{load_manifest, Direction};
+use update_metadata::{load_manifest, Direction, REPOSITORY_LIMITS};
 
 mod args;
 mod error;
@@ -104,7 +104,7 @@ fn run(args: &Args) -> Result<()> {
             datastore: &tough_datastore,
             metadata_base_url: metadata_url.as_str(),
             targets_base_url: migrations_url.as_str(),
-            limits: Default::default(),
+            limits: REPOSITORY_LIMITS,
             // if metadata has expired since the time that updog downloaded them, we do not want to
             // fail the migration process, so we set expiration enforcement to unsafe.
             expiration_enforcement: ExpirationEnforcement::Unsafe,
@@ -136,15 +136,17 @@ fn run(args: &Args) -> Result<()> {
             &rundir,
         )?;
         flip_to_new_version(&args.migrate_to_version, &copy_path)?;
-        std::fs::remove_dir_all(args.working_directory.join(RUNDIR)).context(
-            error::DeleteDirectory {
-                path: args.working_directory.join(RUNDIR),
-            },
-        )?;
+        if let Err(err) = std::fs::remove_dir_all(&rundir) {
+            error!("Error deleting directory '{}': {}", rundir.display(), err)
+        }
     }
-    std::fs::remove_dir_all(&tough_datastore).context(error::DeleteDirectory {
-        path: tough_datastore,
-    })?;
+    if let Err(err) = std::fs::remove_dir_all(&tough_datastore) {
+        error!(
+            "Error deleting directory '{}': {}",
+            tough_datastore.display(),
+            err
+        )
+    }
     Ok(())
 }
 
