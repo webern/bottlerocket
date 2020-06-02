@@ -28,9 +28,16 @@ const TARGET_ARCH: &str = "x86_64";
 #[cfg(target_arch = "aarch64")]
 const TARGET_ARCH: &str = "aarch64";
 
+/// The root.json file as required by TUF.
 const TRUSTED_ROOT_PATH: &str = "/usr/share/updog/root.json";
+
+/// This is where we store the TUF targets that will be used after reboot by migrator.
 const MIGRATION_PATH: &str = "/var/lib/bottlerocket-migrations";
+
+/// This is where we store the TUF metadata that will be used after reboot by migrator.
 const METADATA_PATH: &str = "/var/cache/bottlerocket-metadata";
+
+/// This is where we store temporary data used by the tough library, discarded on program exit.
 const TOUGH_DATASTORE: &str = "/var/lib/bottlerocket/updog";
 
 #[derive(Debug, Deserialize, PartialEq)]

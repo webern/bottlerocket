@@ -127,7 +127,7 @@ pub(crate) enum Error {
     #[snafu(display("Failed reading migration directory entry: {}", source))]
     ReadMigrationEntry { source: io::Error },
 
-    #[snafu(display("Failed to load tough repo: {}", source))]
+    #[snafu(display("Failed to load TUF repo: {}", source))]
     RepoLoad {
         source: tough::error::Error,
         backtrace: Backtrace,

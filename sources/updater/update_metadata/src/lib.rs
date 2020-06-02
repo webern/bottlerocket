@@ -19,12 +19,11 @@ use std::fs;
 use std::fs::File;
 use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
-use tough;
-use tough::Limits;
+use tough::{self, Limits};
 
 pub const MAX_SEED: u32 = 2048;
 
-/// These are the limits that Bottlerocket will use for `tough` repositories.
+/// These are the limits that Bottlerocket will use for the `tough` library.
 pub const REPOSITORY_LIMITS: Limits = Limits {
     max_root_size: 1024 * 1024,         // 1 MiB
     max_targets_size: 1024 * 1024 * 10, // 10 MiB

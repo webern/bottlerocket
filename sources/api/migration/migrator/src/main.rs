@@ -84,7 +84,7 @@ fn run(args: &Args) -> Result<()> {
             process::exit(0);
         });
 
-    // Prepare to load the locally cached tough repository to obtain the manifest.
+    // Prepare to load the locally cached TUF repository to obtain the manifest.
     let tough_datastore = args.working_directory.join(TOUGH_DATASTORE);
     fs::create_dir_all(&tough_datastore).context(error::CreateDirectory {
         path: &tough_datastore,
@@ -92,9 +92,8 @@ fn run(args: &Args) -> Result<()> {
     let metadata_url = dir_url(&args.metadata_directory)?;
     let migrations_url = dir_url(&args.migration_directory)?;
 
-    // Failure to load the tough repo at the expected location is a serious issue because updog
-    // should always create a tough repo that contains at least the manifest, even if there are no
-    // migrations.
+    // Failure to load the TUF repo at the expected location is a serious issue because updog should
+    // always create a TUF repo that contains at least the manifest, even if there are no migrations.
     let repo = tough::Repository::load(
         &tough::FilesystemTransport,
         tough::Settings {
