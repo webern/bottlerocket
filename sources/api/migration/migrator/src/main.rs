@@ -35,6 +35,7 @@ use std::os::unix::fs::{symlink, PermissionsExt};
 use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
+use tempfile::TempDir;
 
 use update_metadata::{load_manifest, Direction, REPOSITORY_LIMITS};
 
@@ -44,9 +45,6 @@ mod error;
 use args::Args;
 use error::Result;
 use tough::ExpirationEnforcement;
-
-const RUNDIR: &str = "rundir";
-const TOUGH_DATASTORE: &str = "tough";
 
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
@@ -85,10 +83,7 @@ fn run(args: &Args) -> Result<()> {
         });
 
     // Prepare to load the locally cached TUF repository to obtain the manifest.
-    let tough_datastore = args.working_directory.join(TOUGH_DATASTORE);
-    fs::create_dir_all(&tough_datastore).context(error::CreateDirectory {
-        path: &tough_datastore,
-    })?;
+    let tough_datastore = TempDir::new().context(error::CreateToughTempDir)?;
     let metadata_url = dir_url(&args.metadata_directory)?;
     let migrations_url = dir_url(&args.migration_directory)?;
 
@@ -100,7 +95,7 @@ fn run(args: &Args) -> Result<()> {
             root: File::open(&args.root_path).context(error::OpenRoot {
                 path: args.root_path.clone(),
             })?,
-            datastore: &tough_datastore,
+            datastore: tough_datastore.path(),
             metadata_base_url: metadata_url.as_str(),
             targets_base_url: migrations_url.as_str(),
             limits: REPOSITORY_LIMITS,
@@ -124,8 +119,7 @@ fn run(args: &Args) -> Result<()> {
     } else {
         // Prepare directory to save migrations to before running them.
         // TODO - use pentacle instead of saving the migration binaries to disk before running them.
-        let rundir = args.working_directory.join(RUNDIR);
-        fs::create_dir_all(&rundir).context(error::CreateDirectory { path: &rundir })?;
+        let rundir = TempDir::new().context(error::CreateRunDir)?;
         let copy_path = run_migrations(
             &repo,
             direction,
@@ -135,16 +129,6 @@ fn run(args: &Args) -> Result<()> {
             &rundir,
         )?;
         flip_to_new_version(&args.migrate_to_version, &copy_path)?;
-        if let Err(err) = std::fs::remove_dir_all(&rundir) {
-            error!("Error deleting directory '{}': {}", rundir.display(), err)
-        }
-    }
-    if let Err(err) = std::fs::remove_dir_all(&tough_datastore) {
-        error!(
-            "Error deleting directory '{}': {}",
-            tough_datastore.display(),
-            err
-        )
     }
     Ok(())
 }
@@ -614,7 +598,6 @@ mod test {
             migrate_to_version: info.to_version.clone(),
             root_path: root(),
             metadata_directory: tuf_metadata(),
-            working_directory: info.tmp.path().join("wrk"),
         };
         run(&args).unwrap();
         // the migrations should write to a file named result.txt.
@@ -657,7 +640,6 @@ mod test {
             migrate_to_version: info.to_version.clone(),
             root_path: root(),
             metadata_directory: tuf_metadata(),
-            working_directory: info.tmp.path().join("wrk"),
         };
         run(&args).unwrap();
         let output_file = info.tmp.path().join("result.txt");
