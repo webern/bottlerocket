@@ -96,7 +96,7 @@ fn run(args: &Args) -> Result<()> {
     // should always create a tough repo that contains at least the manifest, even if there are no
     // migrations.
     let repo = tough::Repository::load(
-        &tough::FilesystemTransport {},
+        &tough::FilesystemTransport,
         tough::Settings {
             root: File::open(&args.root_path).context(error::OpenRoot {
                 path: args.root_path.clone(),
