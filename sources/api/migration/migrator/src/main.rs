@@ -216,10 +216,10 @@ where
 ///
 /// The given data store is used as a starting point; each migration is given the output of the
 /// previous migration, and the final output becomes the new data store.
-fn run_migrations<P1, P2>(
+fn run_migrations<P1, P2, S>(
     repository: &tough::Repository<'_, tough::FilesystemTransport>,
     direction: Direction,
-    migrations: &[String],
+    migrations: &[S],
     source_datastore: P1,
     new_version: &Version,
     migrations_rundir: P2,
@@ -227,6 +227,7 @@ fn run_migrations<P1, P2>(
 where
     P1: AsRef<Path>,
     P2: AsRef<Path>,
+    S: AsRef<str>,
 {
     // We start with the given source_datastore, updating this after each migration to point to the
     // output of the previous one.
@@ -239,15 +240,12 @@ where
     let mut intermediate_datastores = HashSet::new();
 
     for migration in migrations {
+        let migration = migration.as_ref();
         // get the migration from the repo
         let lz4_bytes = repository
-            .read_target(migration.as_str())
-            .context(error::LoadMigration {
-                migration: migration.to_owned(),
-            })?
-            .context(error::MigrationNotFound {
-                migration: migration.to_owned(),
-            })?;
+            .read_target(migration)
+            .context(error::LoadMigration { migration })?
+            .context(error::MigrationNotFound { migration })?;
 
         // deflate with an lz4 decoder read
         let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { migration })?;
