@@ -20,6 +20,7 @@ use std::path::Path;
 use std::process;
 use std::str::FromStr;
 use std::thread;
+use tempfile::TempDir;
 use tough::{ExpirationEnforcement, Repository, Settings};
 use update_metadata::{find_migrations, load_manifest, Manifest, Update, REPOSITORY_LIMITS};
 
@@ -31,14 +32,11 @@ const TARGET_ARCH: &str = "aarch64";
 /// The root.json file as required by TUF.
 const TRUSTED_ROOT_PATH: &str = "/usr/share/updog/root.json";
 
-/// This is where we store the TUF targets that will be used after reboot by migrator.
+/// This is where we store the TUF targets used by migrator after reboot.
 const MIGRATION_PATH: &str = "/var/lib/bottlerocket-migrations";
 
-/// This is where we store the TUF metadata that will be used after reboot by migrator.
+/// This is where we store the TUF metadata used by migrator after reboot.
 const METADATA_PATH: &str = "/var/cache/bottlerocket-metadata";
-
-/// This is where we store temporary data used by the tough library, discarded on program exit.
-const TOUGH_DATASTORE: &str = "/var/lib/bottlerocket/updog";
 
 #[derive(Debug, Deserialize, PartialEq)]
 #[serde(rename_all = "kebab-case")]
@@ -111,12 +109,10 @@ fn load_config() -> Result<Config> {
 fn load_repository<'a>(
     transport: &'a HttpQueryTransport,
     config: &'a Config,
+    tough_datastore: &'a Path,
 ) -> Result<HttpQueryRepo<'a>> {
     fs::create_dir_all(METADATA_PATH).context(error::CreateMetadataCache {
         path: METADATA_PATH,
-    })?;
-    fs::create_dir_all(TOUGH_DATASTORE).context(error::CreateRepoStore {
-        path: TOUGH_DATASTORE,
     })?;
     Repository::load(
         transport,
@@ -124,7 +120,7 @@ fn load_repository<'a>(
             root: File::open(TRUSTED_ROOT_PATH).context(error::OpenRoot {
                 path: TRUSTED_ROOT_PATH,
             })?,
-            datastore: Path::new(TOUGH_DATASTORE),
+            datastore: tough_datastore,
             metadata_base_url: &config.metadata_base_url,
             targets_base_url: &config.targets_base_url,
             limits: REPOSITORY_LIMITS,
@@ -446,7 +442,8 @@ fn main_inner() -> Result<()> {
     let variant = arguments.variant.unwrap_or(current_release.variant_id);
     let transport = HttpQueryTransport::new();
     set_common_query_params(&transport, &current_release.version_id, &config)?;
-    let repository = load_repository(&transport, &config)?;
+    let tough_datastore = TempDir::new().context(error::CreateTempDir)?;
+    let repository = load_repository(&transport, &config, tough_datastore.path())?;
     let manifest = load_manifest(&repository)?;
 
     match command {
