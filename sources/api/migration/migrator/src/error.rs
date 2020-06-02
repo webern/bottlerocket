@@ -141,9 +141,6 @@ pub(crate) enum Error {
 
     #[snafu(display("Migration path '{}' contains invalid UTF-8", path.display()))]
     MigrationNameNotUTF8 { path: PathBuf },
-
-    #[snafu(display("Logger setup error: {}", source))]
-    Logger { source: simplelog::TermLogError },
 }
 
 /// Result alias containing our Error type.

@@ -53,6 +53,11 @@ const TOUGH_DATASTORE: &str = "tough";
 // https://github.com/shepmaster/snafu/issues/110
 fn main() {
     let args = Args::from_env(env::args());
+    // TerminalMode::Mixed will send errors to stderr and anything less to stdout.
+    if let Err(e) = TermLogger::init(args.log_level, LogConfig::default(), TerminalMode::Mixed) {
+        eprintln!("{}", e);
+        process::exit(1);
+    }
     if let Err(e) = run(&args) {
         eprintln!("{}", e);
         process::exit(1);
@@ -60,11 +65,6 @@ fn main() {
 }
 
 fn run(args: &Args) -> Result<()> {
-    // TerminalMode::Mixed will send errors to stderr and anything less to stdout.
-    if let Err(e) = TermLogger::init(args.log_level, LogConfig::default(), TerminalMode::Mixed) {
-        info!("Term logger init returned an error: {}", e)
-    }
-
     // Get the directory we're working in.
     let datastore_dir = args
         .datastore_path
