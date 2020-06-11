@@ -35,6 +35,9 @@ lazy_static! {
     /// version and name components.
     // Note: the version component is a simplified semver regex; we don't use any of the
     // extensions, just a simple x.y.z, so this isn't as strict as it could be.
+    // Note: this regex will NOT match signed TUF targets because we use consistent snapshots in our
+    // TUF repository. We are relying on that behavior during the transition to signed migrations
+    // in which both signed an unsigned migrations are written in the same directory.
     pub static ref MIGRATION_FILENAME_RE: Regex =
         Regex::new(r"(?x)^
                    migrate

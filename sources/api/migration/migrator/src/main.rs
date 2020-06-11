@@ -61,6 +61,17 @@ fn main() {
     }
 }
 
+// TODO(brigmatt) - this may be problematic, maybe find another way.
+/// Checks for the presence of at least one file that has a sha prefix in the migrations directory.
+/// Since no unsigned migration can match this regex, the presence of such a file tells us that
+/// migrations are signed and we should proceed to load a TUF repo. Returns `true` in this case.
+/// This function is 'deprecated' out of the gate, and we should remove it when we no longer support
+/// backwards compatibility with unsigned migrations.
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
+fn are_migrations_signed<P: AsRef<Path>>(metadata_directory: P) -> bool {
+    metadata_directory.as_ref().join("timestamp.json").is_file()
+}
+
 fn run(args: &Args) -> Result<()> {
     // Get the directory we're working in.
     let datastore_dir = args
@@ -81,7 +92,15 @@ fn run(args: &Args) -> Result<()> {
             process::exit(0);
         });
 
-    // TODO(brigmatt) - check for the existence of metadata, if there: TUF, if not: unsigned.
+    // DEPRECATED CODE BEGIN ///////////////////////////////////////////////////////////////////////
+    // check for the presence of TUF metadata in a specific location. if it's not there, we assume
+    // migrations are unsigned and proceed to run the old, unsigned migration code path.
+    if !are_migrations_signed(&args.metadata_directory) {
+        // place something we can find in the system journal so we know what code path ran.
+        eprintln!("migrator: running unsigned migrations");
+        return run_unsigned_migrations(someargs);
+    }
+    // DEPRECATED CODE END /////////////////////////////////////////////////////////////////////////
 
     // Prepare to load the locally cached TUF repository to obtain the manifest.
     let tough_datastore = TempDir::new().context(error::CreateToughTempDir)?;
@@ -138,10 +157,7 @@ fn run(args: &Args) -> Result<()> {
 
 // TODO(brigmatt) - this is restored code, make it work /////////////////////////////////////////////////////
 /// Returns a list of all unsigned migrations found on disk.
-#[deprecated(
-    since = "0.3.5",
-    note = "For backward compatibility with unsigned migrations, to be removed after 0.4.0."
-)]
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
 fn find_unsigned_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
 where
     P: AsRef<Path>,
@@ -178,10 +194,7 @@ where
 
 /// Returns the sublist of the given migrations that should be run, in the returned order, to move
 /// from the 'from' version to the 'to' version.
-#[deprecated(
-    since = "0.3.5",
-    note = "For backward compatibility with unsigned migrations, to be removed after 0.4.0."
-)]
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
 fn select_unsigned_migrations<P: AsRef<Path>>(
     from: &Version,
     to: &Version,
@@ -286,10 +299,7 @@ fn select_unsigned_migrations<P: AsRef<Path>>(
 /// Given the versions we're migrating from and to, this will return an ordered list of paths to
 /// migration binaries we should run to complete the migration on a data store.
 /// This separation allows for easy testing of select_migrations.
-#[deprecated(
-    since = "0.3.5",
-    note = "For backward compatibility with unsigned migrations, to be removed after 0.4.0."
-)]
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
 fn find_unsigned_migrations<P>(paths: &[P], from: &Version, to: &Version) -> Result<Vec<PathBuf>>
 where
     P: AsRef<Path>,
