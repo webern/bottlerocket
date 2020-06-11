@@ -14,8 +14,9 @@ use signal_hook::{iterator::Signals, SIGTERM};
 use signpost::State;
 use simplelog::{Config as LogConfig, LevelFilter, TermLogger, TerminalMode};
 use snafu::{ensure, ErrorCompat, OptionExt, ResultExt};
-use std::fs::{self, File, OpenOptions};
+use std::fs::{self, File, OpenOptions, Permissions};
 use std::io;
+use std::os::unix::fs::PermissionsExt;
 use std::path::Path;
 use std::process;
 use std::str::FromStr;
@@ -213,12 +214,14 @@ fn retrieve_migrations(
         fs::create_dir(&dir).context(error::DirCreate { path: &dir })?;
     }
 
+    // find the list of migrations in the manifest based on our from and to versions.
+    let mut targets = find_migrations(start, target, &manifest)?;
 
-    // TODO(brigmatt) - restore this code ///////////////////////////////////////////////////////////////
+    // TODO(brigmatt) - restore this code //////////////////////////////////////////////////////////
     // download each migration, making sure they are executable and removing
     // known extensions from our compression, e.g. .lz4
-    let mut targets = migration_targets(start, target, &manifest)?; // TODO(brigmatt) restore this function
-    targets.sort();
+    // let mut targets = migration_targets(start, target, &manifest)?; // TODO(brigmatt) restore this function
+    // targets.sort();
     for name in &targets {
         let mut destination = dir.join(&name);
         if destination.extension() == Some("lz4".as_ref()) {
@@ -228,10 +231,8 @@ fn retrieve_migrations(
         fs::set_permissions(&destination, Permissions::from_mode(0o755))
             .context(error::SetPermissions { path: destination })?;
     }
-    // TODO(brigmatt) end of restored code ////////////////////////////////////////////////////////////////
+    // TODO(brigmatt) end of restored code /////////////////////////////////////////////////////////
 
-    // find the list of migrations in the manifest based on our from and to versions.
-    let mut targets = find_migrations(start, target, &manifest)?;
     // Even if there are no migrations, we need to make sure that we store the manifest so that
     // migrator can independently and securely determine that there are no migrations.
     targets.push("manifest.json".to_owned());

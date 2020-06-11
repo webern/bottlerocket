@@ -36,8 +36,7 @@ use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 use tempfile::TempDir;
-
-use update_metadata::{load_manifest, Direction, REPOSITORY_LIMITS};
+use update_metadata::{load_manifest, Direction, MIGRATION_FILENAME_RE, REPOSITORY_LIMITS};
 
 mod args;
 mod error;
@@ -81,6 +80,8 @@ fn run(args: &Args) -> Result<()> {
             );
             process::exit(0);
         });
+
+    // TODO(brigmatt) - check for the existence of metadata, if there: TUF, if not: unsigned.
 
     // Prepare to load the locally cached TUF repository to obtain the manifest.
     let tough_datastore = TempDir::new().context(error::CreateToughTempDir)?;
@@ -135,21 +136,20 @@ fn run(args: &Args) -> Result<()> {
 
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
-
 // TODO(brigmatt) - this is restored code, make it work /////////////////////////////////////////////////////
-
-/// Returns a list of all migrations found on disk.
-///
-/// TODO: This does not yet handle migrations that have been replaced by newer versions - we only
-/// look in one fixed location. We need to get the list of migrations from update metadata, and
-/// only return those.  That may also obviate the need for select_migrations.
-fn find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
+/// Returns a list of all unsigned migrations found on disk.
+#[deprecated(
+    since = "0.3.5",
+    note = "For backward compatibility with unsigned migrations, to be removed after 0.4.0."
+)]
+fn find_unsigned_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
 where
     P: AsRef<Path>,
 {
     let dir = dir.as_ref();
     let mut result = Vec::new();
 
+    // TODO(brigmatt) ignore migration files that have a sha prefix
     trace!("Looking for potential migrations in {}", dir.display());
     let entries = fs::read_dir(dir).context(error::ListMigrations { dir })?;
     for entry in entries {
@@ -178,7 +178,11 @@ where
 
 /// Returns the sublist of the given migrations that should be run, in the returned order, to move
 /// from the 'from' version to the 'to' version.
-fn select_migrations<P: AsRef<Path>>(
+#[deprecated(
+    since = "0.3.5",
+    note = "For backward compatibility with unsigned migrations, to be removed after 0.4.0."
+)]
+fn select_unsigned_migrations<P: AsRef<Path>>(
     from: &Version,
     to: &Version,
     paths: &[P],
@@ -281,20 +285,26 @@ fn select_migrations<P: AsRef<Path>>(
 
 /// Given the versions we're migrating from and to, this will return an ordered list of paths to
 /// migration binaries we should run to complete the migration on a data store.
-// This separation allows for easy testing of select_migrations.
-fn find_migrations<P>(paths: &[P], from: &Version, to: &Version) -> Result<Vec<PathBuf>>
+/// This separation allows for easy testing of select_migrations.
+#[deprecated(
+    since = "0.3.5",
+    note = "For backward compatibility with unsigned migrations, to be removed after 0.4.0."
+)]
+fn find_unsigned_migrations<P>(paths: &[P], from: &Version, to: &Version) -> Result<Vec<PathBuf>>
 where
     P: AsRef<Path>,
 {
     let mut candidates = Vec::new();
     for path in paths {
-        candidates.extend(find_migrations_on_disk(path)?);
+        #[allow(deprecated)]
+        candidates.extend(find_unsigned_migrations_on_disk(path)?);
     }
-    select_migrations(from, to, &candidates)
+
+    #[allow(deprecated)]
+    select_unsigned_migrations(from, to, &candidates)
 }
 
 // TODO(brigmatt) - this is the end of the restored code - make it work //////////////////////////////////
-
 
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
 where

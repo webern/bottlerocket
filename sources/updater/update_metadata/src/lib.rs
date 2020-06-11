@@ -10,6 +10,7 @@ use chrono::{DateTime, Duration, Utc};
 pub use direction::Direction;
 use parse_datetime::parse_offset;
 use rand::{thread_rng, Rng};
+use regex::Regex;
 use semver::Version;
 use serde::{Deserialize, Serialize};
 use snafu::{ensure, OptionExt, ResultExt};
@@ -21,10 +22,13 @@ use std::ops::Bound::{Excluded, Included};
 use std::path::Path;
 use tough::{self, Limits};
 
+#[macro_use]
+extern crate lazy_static;
+
 pub const MAX_SEED: u32 = 2048;
 
 // TODO(brigmatt) this is restored code.
-// the use of this regex is deperecated and only used for backward compatibility with
+// the use of this regex is deprecated and only used for backward compatibility with
 // unsigned migration
 lazy_static! {
     /// Regular expression that will match migration file names and allow retrieving the
