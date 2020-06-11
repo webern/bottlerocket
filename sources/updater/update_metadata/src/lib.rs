@@ -23,6 +23,25 @@ use tough::{self, Limits};
 
 pub const MAX_SEED: u32 = 2048;
 
+// TODO(brigmatt) this is restored code.
+// the use of this regex is deperecated and only used for backward compatibility with
+// unsigned migration
+lazy_static! {
+    /// Regular expression that will match migration file names and allow retrieving the
+    /// version and name components.
+    // Note: the version component is a simplified semver regex; we don't use any of the
+    // extensions, just a simple x.y.z, so this isn't as strict as it could be.
+    pub static ref MIGRATION_FILENAME_RE: Regex =
+        Regex::new(r"(?x)^
+                   migrate
+                   _
+                   v?  # optional 'v' prefix for humans
+                   (?P<version>[0-9]+\.[0-9]+\.[0-9]+[0-9a-zA-Z+-]*)
+                   _
+                   (?P<name>[a-zA-Z0-9-]+)
+                   $").unwrap();
+}
+
 /// These are the limits that Bottlerocket will use for the `tough` library.
 pub const REPOSITORY_LIMITS: Limits = Limits {
     max_root_size: 1024 * 1024,         // 1 MiB

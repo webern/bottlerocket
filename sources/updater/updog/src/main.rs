@@ -213,6 +213,23 @@ fn retrieve_migrations(
         fs::create_dir(&dir).context(error::DirCreate { path: &dir })?;
     }
 
+
+    // TODO(brigmatt) - restore this code ///////////////////////////////////////////////////////////////
+    // download each migration, making sure they are executable and removing
+    // known extensions from our compression, e.g. .lz4
+    let mut targets = migration_targets(start, target, &manifest)?; // TODO(brigmatt) restore this function
+    targets.sort();
+    for name in &targets {
+        let mut destination = dir.join(&name);
+        if destination.extension() == Some("lz4".as_ref()) {
+            destination.set_extension("");
+        }
+        write_target_to_disk(repository, &name, &destination)?;
+        fs::set_permissions(&destination, Permissions::from_mode(0o755))
+            .context(error::SetPermissions { path: destination })?;
+    }
+    // TODO(brigmatt) end of restored code ////////////////////////////////////////////////////////////////
+
     // find the list of migrations in the manifest based on our from and to versions.
     let mut targets = find_migrations(start, target, &manifest)?;
     // Even if there are no migrations, we need to make sure that we store the manifest so that

@@ -135,6 +135,167 @@ fn run(args: &Args) -> Result<()> {
 
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
+
+// TODO(brigmatt) - this is restored code, make it work /////////////////////////////////////////////////////
+
+/// Returns a list of all migrations found on disk.
+///
+/// TODO: This does not yet handle migrations that have been replaced by newer versions - we only
+/// look in one fixed location. We need to get the list of migrations from update metadata, and
+/// only return those.  That may also obviate the need for select_migrations.
+fn find_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
+where
+    P: AsRef<Path>,
+{
+    let dir = dir.as_ref();
+    let mut result = Vec::new();
+
+    trace!("Looking for potential migrations in {}", dir.display());
+    let entries = fs::read_dir(dir).context(error::ListMigrations { dir })?;
+    for entry in entries {
+        let entry = entry.context(error::ReadMigrationEntry)?;
+        let path = entry.path();
+
+        // Just check that it's a file; other checks to determine whether we should actually run
+        // a file we find are done by select_migrations.
+        let file_type = entry
+            .file_type()
+            .context(error::PathMetadata { path: &path })?;
+        if !file_type.is_file() {
+            debug!(
+                "Skipping non-file in migration directory: {}",
+                path.display()
+            );
+            continue;
+        }
+
+        trace!("Found potential migration: {}", path.display());
+        result.push(path);
+    }
+
+    Ok(result)
+}
+
+/// Returns the sublist of the given migrations that should be run, in the returned order, to move
+/// from the 'from' version to the 'to' version.
+fn select_migrations<P: AsRef<Path>>(
+    from: &Version,
+    to: &Version,
+    paths: &[P],
+) -> Result<Vec<PathBuf>> {
+    // Intermediate result where we also store the version and name, needed for sorting
+    let mut sortable: Vec<(Version, String, PathBuf)> = Vec::new();
+
+    for path in paths {
+        let path = path.as_ref();
+
+        // We pull the applicable version and the migration name out of the filename.
+        let file_name = path
+            .file_name()
+            .context(error::Internal {
+                msg: "Found '/' as migration",
+            })?
+            .to_str()
+            .context(error::MigrationNameNotUTF8 { path: &path })?;
+        let captures = match MIGRATION_FILENAME_RE.captures(&file_name) {
+            Some(captures) => captures,
+            None => {
+                debug!(
+                    "Skipping non-migration (bad name) in migration directory: {}",
+                    path.display()
+                );
+                continue;
+            }
+        };
+
+        let version_match = captures.name("version").context(error::Internal {
+            msg: "Migration name matched regex but we don't have a 'version' capture",
+        })?;
+        let version = Version::parse(version_match.as_str())
+            .context(error::InvalidMigrationVersion { path: &path })?;
+
+        let name_match = captures.name("name").context(error::Internal {
+            msg: "Migration name matched regex but we don't have a 'name' capture",
+        })?;
+        let name = name_match.as_str().to_string();
+
+        // We don't want to include migrations for the "from" version we're already on.
+        // Note on possible confusion: when going backward it's the higher version that knows
+        // how to undo its changes and take you to the lower version.  For example, the v2
+        // migration knows what changes it made to go from v1 to v2 and therefore how to go
+        // back from v2 to v1.  See tests.
+        let applicable = if to > from && version > *from && version <= *to {
+            info!(
+                "Found applicable forward migration '{}': {} < ({}) <= {}",
+                file_name, from, version, to
+            );
+            true
+        } else if to < from && version > *to && version <= *from {
+            info!(
+                "Found applicable backward migration '{}': {} >= ({}) > {}",
+                file_name, from, version, to
+            );
+            true
+        } else {
+            debug!(
+                "Migration '{}' doesn't apply when going from {} to {}",
+                file_name, from, to
+            );
+            false
+        };
+
+        if applicable {
+            sortable.push((version, name, path.to_path_buf()));
+        }
+    }
+
+    // Sort the migrations using the metadata we stored -- version first, then name so that
+    // authors have some ordering control if necessary.
+    sortable.sort_unstable();
+
+    // For a Backward migration process, reverse the order.
+    if to < from {
+        sortable.reverse();
+    }
+
+    debug!(
+        "Sorted migrations: {:?}",
+        sortable
+            .iter()
+            // Want filename, which always applies for us, but fall back to name just in case
+            .map(|(_version, name, path)| path
+                .file_name()
+                .map(|osstr| osstr.to_string_lossy().into_owned())
+                .unwrap_or_else(|| name.to_string()))
+            .collect::<Vec<String>>()
+    );
+
+    // Get rid of the name; only needed it as a separate component for sorting
+    let result: Vec<PathBuf> = sortable
+        .into_iter()
+        .map(|(_version, _name, path)| path)
+        .collect();
+
+    Ok(result)
+}
+
+/// Given the versions we're migrating from and to, this will return an ordered list of paths to
+/// migration binaries we should run to complete the migration on a data store.
+// This separation allows for easy testing of select_migrations.
+fn find_migrations<P>(paths: &[P], from: &Version, to: &Version) -> Result<Vec<PathBuf>>
+where
+    P: AsRef<Path>,
+{
+    let mut candidates = Vec::new();
+    for path in paths {
+        candidates.extend(find_migrations_on_disk(path)?);
+    }
+    select_migrations(from, to, &candidates)
+}
+
+// TODO(brigmatt) - this is the end of the restored code - make it work //////////////////////////////////
+
+
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
 where
     P: AsRef<Path>,
@@ -194,6 +355,7 @@ where
     Ok(to)
 }
 
+// TODO(brigmatt) - a version of this function needs to be restored for running unsigned migrations.
 /// Runs the given migrations in their given order.  The given direction is passed to each
 /// migration so it knows which direction we're migrating.
 ///
