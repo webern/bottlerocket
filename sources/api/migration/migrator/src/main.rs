@@ -23,6 +23,8 @@
 #[macro_use]
 extern crate log;
 
+use args::Args;
+use error::Result;
 use nix::{dir::Dir, fcntl::OFlag, sys::stat::Mode, unistd::fsync};
 use rand::{distributions::Alphanumeric, thread_rng, Rng};
 use semver::Version;
@@ -36,24 +38,19 @@ use std::os::unix::io::AsRawFd;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
 use tempfile::TempDir;
+use tough::ExpirationEnforcement;
 use update_metadata::{load_manifest, Direction, MIGRATION_FILENAME_RE, REPOSITORY_LIMITS};
+
+#[macro_use]
+extern crate lazy_static;
 
 mod args;
 mod error;
 
-use args::Args;
-use error::Result;
-use tough::ExpirationEnforcement;
-
-/// This is the last version of Bottlerocket that supports *only* unsigned migrations.
-#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
-pub const LAST_UNSIGNED_MIGRATIONS_VERSION: Version = Version {
-    major: 0,
-    minor: 3,
-    patch: 4,
-    pre: vec![],
-    build: vec![],
-};
+lazy_static! {
+    /// This is the last version of Bottlerocket that supports *only* unsigned migrations.
+    static ref LAST_UNSIGNED_MIGRATIONS_VERSION: Version = Version::new(0, 3, 4);
+}
 
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
