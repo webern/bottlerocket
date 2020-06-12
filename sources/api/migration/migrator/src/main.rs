@@ -61,15 +61,70 @@ fn main() {
     }
 }
 
-// TODO(brigmatt) - this may be problematic, maybe find another way.
-/// Checks for the presence of at least one file that has a sha prefix in the migrations directory.
-/// Since no unsigned migration can match this regex, the presence of such a file tells us that
-/// migrations are signed and we should proceed to load a TUF repo. Returns `true` in this case.
-/// This function is 'deprecated' out of the gate, and we should remove it when we no longer support
-/// backwards compatibility with unsigned migrations.
+/// Checks for the presence of a file ending with `manifest.json` in the migrations directory.
+/// The presence of the manifest tells us that migrations are signed and we should proceed to load a
+/// TUF repo. Returns `true` in this case. This function is 'deprecated' out of the gate, and we
+/// should remove it when we no longer support backwards compatibility with unsigned migrations.
 #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
-fn are_migrations_signed<P: AsRef<Path>>(metadata_directory: P) -> bool {
-    metadata_directory.as_ref().join("timestamp.json").is_file()
+fn are_migrations_signed<P: AsRef<Path>>(metadata_directory: P) -> Result<bool> {
+    let metadata_directory = metadata_directory.as_ref();
+    // TODO(brigmatt) - return true if dsfljksldkjhsdfljkhsdglj.manifest.json exists
+    // not sure if this is necessary. i want the function to infallibly return true or false and i'm
+    // not sure if there are valid cases where the directory does not exist. either way this should
+    // be harmless
+    fs::create_dir_all(&metadata_directory).context(error::UnsignedMigrationsCreateDir {
+        path: &metadata_directory,
+    })?;
+    let entries = fs::read_dir(&metadata_directory).context(error::UnsignedMigrationsListDir {
+        path: &metadata_directory,
+    })?;
+    for entry in entries {
+        let entry = entry.context(error::UnsignedMigrationsListDir {
+            path: &metadata_directory,
+        })?;
+        if entry.path().is_file() {
+            // to_string_lossy should be ok because we know our string ends with 'manifest.json'
+            if entry
+                .file_name()
+                .to_string_lossy()
+                .ends_with("manifest.json")
+            {
+                return Ok(true);
+            }
+        }
+    }
+    Ok(false)
+}
+
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
+fn find_and_run_unsigned_migrations<P1, P2>(
+    migrations_directory: P1,
+    datastore_path: P2,
+    current_version: &Version,
+    migrate_to_version: &Version,
+    direction: &Direction,
+) -> Result<()>
+where
+    P1: AsRef<Path>,
+    P2: AsRef<Path>,
+{
+    let migration_directories = vec![migrations_directory];
+    let migrations =
+        find_unsigned_migrations(&migration_directories, &current_version, migrate_to_version)?;
+
+    if migrations.is_empty() {
+        // Not all new OS versions need to change the data store format.  If there's been no
+        // change, we can just link to the last version rather than making a copy.
+        // (Note: we link to the fully resolved directory, args.datastore_path,  so we don't
+        // have a chain of symlinks that could go past the maximum depth.)
+        flip_to_new_version(migrate_to_version, datastore_path)?;
+    } else {
+        let copy_path =
+            run_unsigned_migrations(direction, &migrations, &datastore_path, &migrate_to_version)?;
+        flip_to_new_version(migrate_to_version, &copy_path)?;
+    }
+
+    Ok(())
 }
 
 fn run(args: &Args) -> Result<()> {
@@ -95,10 +150,16 @@ fn run(args: &Args) -> Result<()> {
     // DEPRECATED CODE BEGIN ///////////////////////////////////////////////////////////////////////
     // check for the presence of TUF metadata in a specific location. if it's not there, we assume
     // migrations are unsigned and proceed to run the old, unsigned migration code path.
-    if !are_migrations_signed(&args.metadata_directory) {
-        // place something we can find in the system journal so we know what code path ran.
+    if !are_migrations_signed(&args.metadata_directory)? {
+        // note in the system journal that the unsigned code path ran.
         eprintln!("migrator: running unsigned migrations");
-        return run_unsigned_migrations(someargs);
+        return find_and_run_unsigned_migrations(
+            &args.migration_directory,
+            &args.datastore_path, // TODO(brigmatt) make sure this is correct
+            &current_version,
+            &args.migrate_to_version,
+            &direction,
+        );
     }
     // DEPRECATED CODE END /////////////////////////////////////////////////////////////////////////
 
@@ -473,6 +534,107 @@ where
         }
 
         ensure!(output.status.success(), error::MigrationFailure { output });
+        source_datastore = &target_datastore;
+    }
+
+    // Remove the intermediate data stores
+    intermediate_datastores.remove(&target_datastore);
+    for intermediate_datastore in intermediate_datastores {
+        // Even if we fail to remove an intermediate data store, we've still migrated
+        // successfully, and we don't want to fail the upgrade - just let someone know for
+        // later cleanup.
+        trace!(
+            "Removing intermediate data store at {}",
+            intermediate_datastore.display()
+        );
+        if let Err(e) = fs::remove_dir_all(&intermediate_datastore) {
+            error!(
+                "Failed to remove intermediate data store at '{}': {}",
+                intermediate_datastore.display(),
+                e
+            );
+        }
+    }
+
+    Ok(target_datastore)
+}
+
+/// Runs the given migrations in their given order.  The given direction is passed to each
+/// migration so it knows which direction we're migrating.
+///
+/// The given data store is used as a starting point; each migration is given the output of the
+/// previous migration, and the final output becomes the new data store.
+/// #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
+fn run_unsigned_migrations<P1, P2>(
+    direction: &Direction,
+    migrations: &[P1],
+    source_datastore: P2,
+    new_version: &Version,
+) -> Result<PathBuf>
+where
+    P1: AsRef<Path>,
+    P2: AsRef<Path>,
+{
+    // We start with the given source_datastore, updating this after each migration to point to the
+    // output of the previous one.
+    let mut source_datastore = source_datastore.as_ref();
+    // We create a new data store (below) to serve as the target of each migration.  (Start at
+    // source just to have the right type; we know we have migrations at this point.)
+    let mut target_datastore = source_datastore.to_owned();
+    // Any data stores we create that aren't the final one, i.e. intermediate data stores, will be
+    // removed at the end.  (If we fail and return early, they're left for debugging purposes.)
+    let mut intermediate_datastores = HashSet::new();
+
+    for migration in migrations {
+        // Ensure the migration is executable.
+        fs::set_permissions(migration.as_ref(), Permissions::from_mode(0o755)).context(
+            error::SetPermissions {
+                path: migration.as_ref(),
+            },
+        )?;
+
+        let mut command = Command::new(migration.as_ref());
+
+        // Point each migration in the right direction, and at the given data store.
+        command.arg(direction.to_string());
+        command.args(&[
+            "--source-datastore".to_string(),
+            source_datastore.display().to_string(),
+        ]);
+
+        // Create a new output location for this migration.
+        target_datastore = new_datastore_location(&source_datastore, &new_version)?;
+        intermediate_datastores.insert(target_datastore.clone());
+
+        command.args(&[
+            "--target-datastore".to_string(),
+            target_datastore.display().to_string(),
+        ]);
+
+        info!("Running migration command: {:?}", command);
+
+        let output = command
+            .output()
+            .context(error::StartMigration { command })?;
+
+        if !output.stdout.is_empty() {
+            debug!(
+                "Migration stdout: {}",
+                std::str::from_utf8(&output.stdout).unwrap_or("<invalid UTF-8>")
+            );
+        } else {
+            debug!("No migration stdout");
+        }
+        if !output.stderr.is_empty() {
+            let stderr = std::str::from_utf8(&output.stderr).unwrap_or("<invalid UTF-8>");
+            // We want to see migration stderr on the console, so log at error level.
+            error!("Migration stderr: {}", stderr);
+        } else {
+            debug!("No migration stderr");
+        }
+
+        ensure!(output.status.success(), error::MigrationFailure { output });
+
         source_datastore = &target_datastore;
     }
 

@@ -140,6 +140,18 @@ pub(crate) enum Error {
 
     #[snafu(display("Migration path '{}' contains invalid UTF-8", path.display()))]
     MigrationNameNotUTF8 { path: PathBuf },
+
+    #[snafu(display("Unable to create directory '{}'", path.display()))]
+    UnsignedMigrationsCreateDir {
+        path: PathBuf,
+        source: std::io::Error,
+    },
+
+    #[snafu(display("Unable to list directory '{}'", path.display()))]
+    UnsignedMigrationsListDir {
+        path: PathBuf,
+        source: std::io::Error,
+    },
 }
 
 /// Result alias containing our Error type.
