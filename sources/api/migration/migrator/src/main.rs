@@ -45,6 +45,16 @@ use args::Args;
 use error::Result;
 use tough::ExpirationEnforcement;
 
+/// This is the last version of Bottlerocket that supports *only* unsigned migrations.
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
+pub const LAST_UNSIGNED_MIGRATIONS_VERSION: Version = Version {
+    major: 0,
+    minor: 3,
+    patch: 4,
+    pre: vec![],
+    build: vec![],
+};
+
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
 // https://github.com/shepmaster/snafu/issues/110
@@ -61,40 +71,10 @@ fn main() {
     }
 }
 
-/// Checks for the presence of a file ending with `manifest.json` in the migrations directory.
-/// The presence of the manifest tells us that migrations are signed and we should proceed to load a
-/// TUF repo. Returns `true` in this case. This function is 'deprecated' out of the gate, and we
-/// should remove it when we no longer support backwards compatibility with unsigned migrations.
+// TODO(brigmatt) - eliminate this function unless it becomes more complicated
 #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
-fn are_migrations_signed<P: AsRef<Path>>(migrations_directory: P) -> Result<bool> {
-    let migrations_directory = migrations_directory.as_ref();
-    // TODO(brigmatt) - return true if dsfljksldkjhsdfljkhsdglj.manifest.json exists
-    // not sure if this is necessary. i want the function to infallibly return true or false and i'm
-    // not sure if there are valid cases where the directory does not exist. either way this should
-    // be harmless
-    fs::create_dir_all(&migrations_directory).context(error::UnsignedMigrationsCreateDir {
-        path: &migrations_directory,
-    })?;
-    let entries =
-        fs::read_dir(&migrations_directory).context(error::UnsignedMigrationsListDir {
-            path: &migrations_directory,
-        })?;
-    for entry in entries {
-        let entry = entry.context(error::UnsignedMigrationsListDir {
-            path: &migrations_directory,
-        })?;
-        if entry.path().is_file() {
-            // to_string_lossy should be ok because we know our string ends with 'manifest.json'
-            if entry
-                .file_name()
-                .to_string_lossy()
-                .ends_with("manifest.json")
-            {
-                return Ok(true);
-            }
-        }
-    }
-    Ok(false)
+fn are_migrations_signed(from_version: &Version) -> bool {
+    from_version.gt(&LAST_UNSIGNED_MIGRATIONS_VERSION)
 }
 
 #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
@@ -151,7 +131,7 @@ fn run(args: &Args) -> Result<()> {
     // DEPRECATED CODE BEGIN ///////////////////////////////////////////////////////////////////////
     // check for the presence of TUF metadata in a specific location. if it's not there, we assume
     // migrations are unsigned and proceed to run the old, unsigned migration code path.
-    if !are_migrations_signed(&args.migration_directory)? {
+    if !are_migrations_signed(&current_version) {
         // note in the system journal that the unsigned code path ran.
         eprintln!("migrator: running unsigned migrations");
         return find_and_run_unsigned_migrations(
@@ -217,7 +197,6 @@ fn run(args: &Args) -> Result<()> {
 
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
-// TODO(brigmatt) - this is restored code, make it work /////////////////////////////////////////////////////
 /// Returns a list of all unsigned migrations found on disk.
 #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
 fn find_unsigned_migrations_on_disk<P>(dir: P) -> Result<Vec<PathBuf>>
@@ -227,7 +206,6 @@ where
     let dir = dir.as_ref();
     let mut result = Vec::new();
 
-    // TODO(brigmatt) ignore migration files that have a sha prefix
     trace!("Looking for potential migrations in {}", dir.display());
     let entries = fs::read_dir(dir).context(error::ListMigrations { dir })?;
     for entry in entries {
@@ -276,6 +254,8 @@ fn select_unsigned_migrations<P: AsRef<Path>>(
             })?
             .to_str()
             .context(error::MigrationNameNotUTF8 { path: &path })?;
+        // this will not match signed migrations because we used consistent snapshots and the signed
+        // files will have a sha prefix.
         let captures = match MIGRATION_FILENAME_RE.captures(&file_name) {
             Some(captures) => captures,
             None => {
