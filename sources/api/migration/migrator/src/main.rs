@@ -133,7 +133,8 @@ fn run(args: &Args) -> Result<()> {
     // migrations are unsigned and proceed to run the old, unsigned migration code path.
     if !are_migrations_signed(&current_version) {
         // note in the system journal that the unsigned code path ran.
-        eprintln!("migrator: running unsigned migrations");
+        eprintln!("migrator is running unsigned migrations");
+        warn!("migrator is running unsigned migrations");
         return find_and_run_unsigned_migrations(
             &args.migration_directory,
             &args.datastore_path, // TODO(brigmatt) make sure this is correct
@@ -141,6 +142,10 @@ fn run(args: &Args) -> Result<()> {
             &args.migrate_to_version,
             &direction,
         );
+    } else {
+        // note in the system journal that the signed code path ran.
+        into!("migrator is running signed migrations");
+        eprintln!("migrator is running signed migrations");
     }
     // DEPRECATED CODE END /////////////////////////////////////////////////////////////////////////
 
