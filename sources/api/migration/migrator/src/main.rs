@@ -144,7 +144,7 @@ fn run(args: &Args) -> Result<()> {
         );
     } else {
         // note in the system journal that the signed code path ran.
-        into!("migrator is running signed migrations");
+        info!("migrator is running signed migrations");
         eprintln!("migrator is running signed migrations");
     }
     // DEPRECATED CODE END /////////////////////////////////////////////////////////////////////////
