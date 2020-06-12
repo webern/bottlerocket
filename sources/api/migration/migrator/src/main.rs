@@ -66,21 +66,22 @@ fn main() {
 /// TUF repo. Returns `true` in this case. This function is 'deprecated' out of the gate, and we
 /// should remove it when we no longer support backwards compatibility with unsigned migrations.
 #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
-fn are_migrations_signed<P: AsRef<Path>>(metadata_directory: P) -> Result<bool> {
-    let metadata_directory = metadata_directory.as_ref();
+fn are_migrations_signed<P: AsRef<Path>>(migrations_directory: P) -> Result<bool> {
+    let migrations_directory = migrations_directory.as_ref();
     // TODO(brigmatt) - return true if dsfljksldkjhsdfljkhsdglj.manifest.json exists
     // not sure if this is necessary. i want the function to infallibly return true or false and i'm
     // not sure if there are valid cases where the directory does not exist. either way this should
     // be harmless
-    fs::create_dir_all(&metadata_directory).context(error::UnsignedMigrationsCreateDir {
-        path: &metadata_directory,
+    fs::create_dir_all(&migrations_directory).context(error::UnsignedMigrationsCreateDir {
+        path: &migrations_directory,
     })?;
-    let entries = fs::read_dir(&metadata_directory).context(error::UnsignedMigrationsListDir {
-        path: &metadata_directory,
-    })?;
+    let entries =
+        fs::read_dir(&migrations_directory).context(error::UnsignedMigrationsListDir {
+            path: &migrations_directory,
+        })?;
     for entry in entries {
         let entry = entry.context(error::UnsignedMigrationsListDir {
-            path: &metadata_directory,
+            path: &migrations_directory,
         })?;
         if entry.path().is_file() {
             // to_string_lossy should be ok because we know our string ends with 'manifest.json'
@@ -150,7 +151,7 @@ fn run(args: &Args) -> Result<()> {
     // DEPRECATED CODE BEGIN ///////////////////////////////////////////////////////////////////////
     // check for the presence of TUF metadata in a specific location. if it's not there, we assume
     // migrations are unsigned and proceed to run the old, unsigned migration code path.
-    if !are_migrations_signed(&args.metadata_directory)? {
+    if !are_migrations_signed(&args.migration_directory)? {
         // note in the system journal that the unsigned code path ran.
         eprintln!("migrator: running unsigned migrations");
         return find_and_run_unsigned_migrations(
