@@ -839,6 +839,122 @@ mod test {
         }
     }
 
+    /// Returns the filepath to a `root.json` file stored in tree for testing. This file declares
+    /// an expiration date of `1970-01-01` to ensure success with an expired TUF repository.
+    fn root() -> PathBuf {
+        test_data().join("expired-root.json")
+    }
+
+    /// Returns the filepath to a private key, stored in tree and used only for testing.
+    fn pem() -> PathBuf {
+        test_data().join("fake-key.pem")
+    }
+
+    /// Represents a TUF repository, which is held in a tempdir. Provides some conveniences like
+    /// the metadata and targets URLs (as references where TestRepo defines the lifetime).
+    struct TestRepo {
+        temp_dir: TempDir,
+        metadata_path: PathBuf,
+        targets_path: PathBuf,
+        metadata_url: String,
+        targets_url: String,
+    }
+
+    impl<'a> TestRepo {
+        fn metadata_path(&'a self) -> &'a Path {
+            self.metadata_path.as_path()
+        }
+
+        fn targets_path(&'a self) -> &'a Path {
+            self.targets_path.as_path()
+        }
+
+        fn metadata_url(&'a self) -> &'a str {
+            self.metadata_url.as_str()
+        }
+
+        fn targets_url(&'a self) -> &'a str {
+            self.targets_url.as_str()
+        }
+    }
+
+    /// Creates a test repository with a couple of versions defined in the manifest and a couple of
+    /// migrations. See the test description for for more info.
+    fn create_test_repo() -> TestRepo {
+        // This is where the signed TUF repo will exist when we are done. It is the
+        // root directory of the `TestRepo` we will return when we are done.
+        let tuftool_outdir = TempDir::new().unwrap();
+        let metadata_path = tuftool_outdir.path().join("m");
+        let targets_path = tuftool_outdir.path().join("t");
+        let metadata_url = format!("file://{}", metadata_path.to_str().unwrap());
+        let targets_url = format!("file://{}", targets_path.to_str().unwrap());
+
+        // This is where we will stage the TUF repository targets prior to signing them.
+        let tuftool_indir = TempDir::new().unwrap();
+
+        // Create a Manifest and save it to the tuftool_indir for signing.
+        let mut manifest = update_metadata::Manifest::default();
+        // insert the following migrations to the manifest. note that the first migration would sort
+        // later than the second migration alphabetically. this is to help ensure that migrations
+        // are running in their listed order (rather than sorted order as in previous
+        // implementations).
+        // "migrations": {
+        //     "(0.99.0, 0.99.1)": [
+        //       "x-first-migration.lz4",
+        //       "a-second-migration.lz4"
+        //     ]
+        //  }
+        manifest.migrations.insert(
+            (Version::new(0, 99, 0), Version::new(0, 99, 1)),
+            vec![
+                "x-first-migration.lz4".into(),
+                "a-second-migration.lz4".into(),
+            ],
+        );
+        update_metadata::write_file(
+            tuftool_indir.path().join("manifest.json").as_path(),
+            &manifest,
+        )
+        .unwrap();
+
+        // Create a bash script that we can use as the 'migration' that migrator will run. this
+        // script will write its name and arguments to a file named results.txt in the parent dir.
+        // results.txt can be used to see what migrations ran, and in what order.
+        let script = r#"/usr/bin/env bash
+        set -eo pipefail
+        migration_name="${0##*/}"
+        datastore_parent_dir="$(dirname "${3}")"
+        outfile="${datastore_parent_dir}/result.txt"
+        echo "${migration_name}: writing a message to '${outfile}'"
+        echo "${migration_name}:" "${@}" >> "${outfile}"
+        "#;
+
+        // Save lz4 compressed copies of this bash script into the tuftool_indir to match the
+        // migration specifications in the manifest.
+        let compressed = lz4::block::compress(script.as_bytes(), None, true).unwrap();
+        std::fs::write(
+            tuftool_indir.path().join("x-first-migration.lz4"),
+            &compressed,
+        )
+        .unwrap();
+        std::fs::write(
+            tuftool_indir.path().join("a-second-migration.lz4"),
+            &compressed,
+        )
+        .unwrap();
+
+        // Sign the TUF repository.
+        let mut editor = tough::editor::RepositoryEditor::new(root()).unwrap();
+
+        TestRepo {
+            temp_dir: tuftool_outdir,
+            metadata_path,
+            targets_path,
+            metadata_url,
+            targets_url,
+        }
+    }
+
     /// Migrator relies on the datastore symlink structure to determine the 'from' version.
     /// This function sets up the directory and symlinks to mock the datastore for migrator.
     fn create_datastore_links(info: &mut MigrationTestInfo) {
@@ -864,13 +980,6 @@ mod test {
         std::os::unix::fs::symlink(&datastore_version, &datastore_minor).unwrap();
         std::os::unix::fs::symlink(&datastore_minor, &datastore_major).unwrap();
         std::os::unix::fs::symlink(&datastore_major, &datastore_current).unwrap();
-    }
-
-    fn root() -> PathBuf {
-        test_data()
-            .join("repository")
-            .join("metadata")
-            .join("1.root.json")
     }
 
     fn tuf_metadata() -> PathBuf {
