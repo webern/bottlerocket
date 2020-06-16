@@ -547,7 +547,7 @@ where
 ///
 /// The given data store is used as a starting point; each migration is given the output of the
 /// previous migration, and the final output becomes the new data store.
-/// #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
 fn run_unsigned_migrations<P1, P2>(
     direction: &Direction,
     migrations: &[P1],
