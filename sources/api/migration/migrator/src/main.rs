@@ -853,7 +853,7 @@ mod test {
     /// Represents a TUF repository, which is held in a tempdir. Provides some conveniences like
     /// the metadata and targets URLs (as references where TestRepo defines the lifetime).
     struct TestRepo {
-        temp_dir: TempDir,
+        tuf_dir: TempDir,
         metadata_path: PathBuf,
         targets_path: PathBuf,
         metadata_url: String,
@@ -883,14 +883,17 @@ mod test {
     fn create_test_repo() -> TestRepo {
         // This is where the signed TUF repo will exist when we are done. It is the
         // root directory of the `TestRepo` we will return when we are done.
-        let tuftool_outdir = TempDir::new().unwrap();
-        let metadata_path = tuftool_outdir.path().join("m");
-        let targets_path = tuftool_outdir.path().join("t");
+        let test_repo_dir = TempDir::new().unwrap();
+        let metadata_path = test_repo_dir.path().join("metadata");
+        let targets_path = test_repo_dir.path().join("targets");
         let metadata_url = format!("file://{}", metadata_path.to_str().unwrap());
         let targets_url = format!("file://{}", targets_path.to_str().unwrap());
 
-        // This is where we will stage the TUF repository targets prior to signing them.
-        let tuftool_indir = TempDir::new().unwrap();
+        // This is where we will stage the TUF repository targets prior to signing them. It happens
+        // to be the same dir as the root of the tuf_outdir because RepositoryEditor signing uses
+        // symlinks, so we need the tuf_indir and tuf_outdir/targets to both stick around for the
+        // duration of the test.
+        let tuf_indir = test_repo_dir.path();
 
         // Create a Manifest and save it to the tuftool_indir for signing.
         let mut manifest = update_metadata::Manifest::default();
@@ -911,11 +914,7 @@ mod test {
                 "a-second-migration.lz4".into(),
             ],
         );
-        update_metadata::write_file(
-            tuftool_indir.path().join("manifest.json").as_path(),
-            &manifest,
-        )
-        .unwrap();
+        update_metadata::write_file(tuf_indir.join("manifest.json").as_path(), &manifest).unwrap();
 
         // Create a bash script that we can use as the 'migration' that migrator will run. this
         // script will write its name and arguments to a file named results.txt in the parent dir.
@@ -932,22 +931,47 @@ mod test {
         // Save lz4 compressed copies of this bash script into the tuftool_indir to match the
         // migration specifications in the manifest.
         let compressed = lz4::block::compress(script.as_bytes(), None, true).unwrap();
-        std::fs::write(
-            tuftool_indir.path().join("x-first-migration.lz4"),
-            &compressed,
-        )
-        .unwrap();
-        std::fs::write(
-            tuftool_indir.path().join("a-second-migration.lz4"),
-            &compressed,
-        )
-        .unwrap();
+        std::fs::write(tuf_indir.join("x-first-migration.lz4"), &compressed).unwrap();
+        std::fs::write(tuf_indir.join("a-second-migration.lz4"), &compressed).unwrap();
 
-        // Sign the TUF repository.
+        // Create and sign the TUF repository.
         let mut editor = tough::editor::RepositoryEditor::new(root()).unwrap();
+        let long_ago: chrono::DateTime<chrono::Utc> =
+            chrono::DateTime::parse_from_rfc3339("1970-01-01")
+                .unwrap()
+                .into();
+        let one = std::num::NonZeroU64::new(1).unwrap();
+        editor
+            .targets_version(one)
+            .targets_expires(long_ago)
+            .snapshot_version(one)
+            .snapshot_expires(long_ago)
+            .timestamp_version(one)
+            .timestamp_expires(long_ago);
+
+        fs::read_dir(tuf_indir)
+            .unwrap()
+            .filter(|dir_entry_result| {
+                if let Ok(dir_entry) = dir_entry_result {
+                    return dir_entry.path().is_file();
+                }
+                false
+            })
+            .for_each(|dir_entry_result| {
+                let dir_entry = dir_entry_result.unwrap();
+                editor.add_target(
+                    dir_entry.file_name().to_str().unwrap().into(),
+                    tough::schema::Target::from_path(dir_entry.path()).unwrap(),
+                );
+            });
+        let signed_repo = editor
+            .sign(&[Box::new(tough::key_source::LocalKeySource { path: pem() })])
+            .unwrap();
+        signed_repo.link_targets(tuf_indir, &targets_path).unwrap();
+        signed_repo.write(&metadata_path).unwrap();
 
         TestRepo {
-            temp_dir: tuftool_outdir,
+            tuf_dir: test_repo_dir,
             metadata_path,
             targets_path,
             metadata_url,
@@ -980,14 +1004,6 @@ mod test {
         std::os::unix::fs::symlink(&datastore_version, &datastore_minor).unwrap();
         std::os::unix::fs::symlink(&datastore_minor, &datastore_major).unwrap();
         std::os::unix::fs::symlink(&datastore_major, &datastore_current).unwrap();
-    }
-
-    fn tuf_metadata() -> PathBuf {
-        test_data().join("repository").join("metadata")
-    }
-
-    fn tuf_targets() -> PathBuf {
-        test_data().join("repository").join("targets")
     }
 
     /// Tests the migrator program end-to-end using the `run` function.
@@ -1024,13 +1040,14 @@ mod test {
         let to_version = Version::parse("0.99.1").unwrap();
         let mut info = MigrationTestInfo::new(from_version, to_version);
         create_datastore_links(&mut info);
+        let test_repo = create_test_repo();
         let args = Args {
             datastore_path: info.datastore.clone(),
             log_level: log::LevelFilter::Info,
-            migration_directory: tuf_targets(),
+            migration_directory: test_repo.targets_path().into(),
             migrate_to_version: info.to_version.clone(),
             root_path: root(),
-            metadata_directory: tuf_metadata(),
+            metadata_directory: test_repo.metadata_path().into(),
         };
         run(&args).unwrap();
         // the migrations should write to a file named result.txt.
@@ -1066,13 +1083,14 @@ mod test {
         let to_version = Version::parse("0.99.0").unwrap();
         let mut info = MigrationTestInfo::new(from_version, to_version);
         create_datastore_links(&mut info);
+        let test_repo = create_test_repo();
         let args = Args {
             datastore_path: info.datastore.clone(),
             log_level: log::LevelFilter::Info,
-            migration_directory: tuf_targets(),
+            migration_directory: test_repo.targets_path().into(),
             migrate_to_version: info.to_version.clone(),
             root_path: root(),
-            metadata_directory: tuf_metadata(),
+            metadata_directory: test_repo.metadata_path().into(),
         };
         run(&args).unwrap();
         let output_file = info.tmp.path().join("result.txt");
