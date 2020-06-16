@@ -27,7 +27,6 @@ extern crate lazy_static;
 
 pub const MAX_SEED: u32 = 2048;
 
-// TODO(brigmatt) this is restored code.
 // the use of this regex is deprecated and only used for backward compatibility with
 // unsigned migration
 lazy_static! {

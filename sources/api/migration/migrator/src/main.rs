@@ -126,8 +126,8 @@ fn run(args: &Args) -> Result<()> {
         });
 
     // DEPRECATED CODE BEGIN ///////////////////////////////////////////////////////////////////////
-    // check for the presence of TUF metadata in a specific location. if it's not there, we assume
-    // migrations are unsigned and proceed to run the old, unsigned migration code path.
+    // check if the `from_version` supports signed migrations. if not, run the 'old'
+    // unsigned migrations code and return.
     if !are_migrations_signed(&current_version) {
         // note in the system journal that the unsigned code path ran.
         eprintln!("migrator is running unsigned migrations");
@@ -358,8 +358,6 @@ where
     select_unsigned_migrations(from, to, &candidates)
 }
 
-// TODO(brigmatt) - this is the end of the restored code - make it work //////////////////////////////////
-
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
 where
     P: AsRef<Path>,
@@ -419,7 +417,6 @@ where
     Ok(to)
 }
 
-// TODO(brigmatt) - a version of this function needs to be restored for running unsigned migrations.
 /// Runs the given migrations in their given order.  The given direction is passed to each
 /// migration so it knows which direction we're migrating.
 ///
@@ -547,7 +544,7 @@ where
 ///
 /// The given data store is used as a starting point; each migration is given the output of the
 /// previous migration, and the final output becomes the new data store.
-/// #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
+#[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
 fn run_unsigned_migrations<P1, P2>(
     direction: &Direction,
     migrations: &[P1],
