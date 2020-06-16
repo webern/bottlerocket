@@ -358,8 +358,6 @@ where
     select_unsigned_migrations(from, to, &candidates)
 }
 
-// TODO(brigmatt) - this is the end of the restored code - make it work //////////////////////////////////
-
 fn get_current_version<P>(datastore_dir: P) -> Result<Version>
 where
     P: AsRef<Path>,
