@@ -126,8 +126,8 @@ fn run(args: &Args) -> Result<()> {
         });
 
     // DEPRECATED CODE BEGIN ///////////////////////////////////////////////////////////////////////
-    // check for the presence of TUF metadata in a specific location. if it's not there, we assume
-    // migrations are unsigned and proceed to run the old, unsigned migration code path.
+    // check if the `from_version` supports signed migrations. if not, run the 'old'
+    // unsigned migrations code and return.
     if !are_migrations_signed(&current_version) {
         // note in the system journal that the unsigned code path ran.
         eprintln!("migrator is running unsigned migrations");
