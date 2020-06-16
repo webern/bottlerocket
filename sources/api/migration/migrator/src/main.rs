@@ -419,7 +419,6 @@ where
     Ok(to)
 }
 
-// TODO(brigmatt) - a version of this function needs to be restored for running unsigned migrations.
 /// Runs the given migrations in their given order.  The given direction is passed to each
 /// migration so it knows which direction we're migrating.
 ///
