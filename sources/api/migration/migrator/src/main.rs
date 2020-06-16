@@ -813,6 +813,7 @@ fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
 #[cfg(test)]
 mod test {
     use super::*;
+    use std::io::Write;
     use tempfile::TempDir;
 
     pub fn test_data() -> PathBuf {
@@ -930,7 +931,33 @@ mod test {
 
         // Save lz4 compressed copies of this bash script into the tuftool_indir to match the
         // migration specifications in the manifest.
-        let compressed = lz4::block::compress(script.as_bytes(), None, true).unwrap();
+        let compressed = lz4::block::compress(script.as_bytes(), None, false).unwrap();
+        let mut f = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(tuf_indir.join("x-first-migration.lz4"))
+            .unwrap();
+        let mut encoder = lz4::EncoderBuilder::new()
+            .auto_flush(true)
+            .build(f)
+            .unwrap();
+        encoder.write(compressed.as_slice()).unwrap();
+        encoder.finish().1.unwrap();
+
+        let mut f = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .open(tuf_indir.join("a-second-migration.lz4"))
+            .unwrap();
+        let mut encoder = lz4::EncoderBuilder::new()
+            .auto_flush(true)
+            .build(f)
+            .unwrap();
+        encoder.write(compressed.as_slice()).unwrap();
+        encoder.finish().1.unwrap();
+
         std::fs::write(tuf_indir.join("x-first-migration.lz4"), &compressed).unwrap();
         std::fs::write(tuf_indir.join("a-second-migration.lz4"), &compressed).unwrap();
 
