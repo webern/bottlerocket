@@ -68,7 +68,6 @@ fn main() {
     }
 }
 
-// TODO(brigmatt) - eliminate this function unless it becomes more complicated
 #[deprecated(since = "0.3.5", note = "for unsigned migrations.")]
 fn are_migrations_signed(from_version: &Version) -> bool {
     from_version.gt(&LAST_UNSIGNED_MIGRATIONS_VERSION)
