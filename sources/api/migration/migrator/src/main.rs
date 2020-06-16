@@ -937,7 +937,7 @@ mod test {
         // Create and sign the TUF repository.
         let mut editor = tough::editor::RepositoryEditor::new(root()).unwrap();
         let long_ago: chrono::DateTime<chrono::Utc> =
-            chrono::DateTime::parse_from_rfc3339("1970-01-01")
+            chrono::DateTime::parse_from_rfc3339("1970-01-01T00:00:00Z")
                 .unwrap()
                 .into();
         let one = std::num::NonZeroU64::new(1).unwrap();
