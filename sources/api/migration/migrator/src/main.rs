@@ -854,11 +854,11 @@ mod test {
     /// Represents a TUF repository, which is held in a tempdir. Provides some conveniences like
     /// the metadata and targets URLs (as references where TestRepo defines the lifetime).
     struct TestRepo {
-        tuf_dir: TempDir,
+        /// This field preserves the lifetime of the TempDir even though we never read it. When
+        /// `TestRepo` goes out of scope, `TempDir` will remove the temporary directory.
+        _tuf_dir: TempDir,
         metadata_path: PathBuf,
         targets_path: PathBuf,
-        metadata_url: String,
-        targets_url: String,
     }
 
     impl<'a> TestRepo {
@@ -868,14 +868,6 @@ mod test {
 
         fn targets_path(&'a self) -> &'a Path {
             self.targets_path.as_path()
-        }
-
-        fn metadata_url(&'a self) -> &'a str {
-            self.metadata_url.as_str()
-        }
-
-        fn targets_url(&'a self) -> &'a str {
-            self.targets_url.as_str()
         }
     }
 
@@ -898,8 +890,6 @@ mod test {
         let test_repo_dir = TempDir::new().unwrap();
         let metadata_path = test_repo_dir.path().join("metadata");
         let targets_path = test_repo_dir.path().join("targets");
-        let metadata_url = format!("file://{}", metadata_path.to_str().unwrap());
-        let targets_url = format!("file://{}", targets_path.to_str().unwrap());
 
         // This is where we will stage the TUF repository targets prior to signing them. It happens
         // to be the same dir as the root of the tuf_outdir because RepositoryEditor signing uses
@@ -931,7 +921,7 @@ mod test {
         // Create a bash script that we can use as the 'migration' that migrator will run. this
         // script will write its name and arguments to a file named results.txt in the parent dir.
         // results.txt can be used to see what migrations ran, and in what order.
-        let script = r#"/usr/bin/env bash
+        let script = r#"#!/usr/bin/env bash
         set -eo pipefail
         migration_name="${0##*/}"
         datastore_parent_dir="$(dirname "${3}")"
@@ -1011,11 +1001,9 @@ mod test {
         signed_repo.write(&metadata_path).unwrap();
 
         TestRepo {
-            tuf_dir: test_repo_dir,
+            _tuf_dir: test_repo_dir,
             metadata_path,
             targets_path,
-            metadata_url,
-            targets_url,
         }
     }
 
@@ -1096,20 +1084,20 @@ mod test {
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        if !first_line.contains("x-first-migration: --forward") {
+        if !first_line.contains("x-first-migration.lz4: --forward") {
             panic!(format!(
-                "Expected the migration 'x-first-migration.sh' to run first and write \
-            a message containing 'x-first-migration: --forward' to the output file. Instead found \
-            '{}'",
+                "Expected the migration 'x-first-migration.lz4' to run first and write \
+            a message containing 'x-first-migration.lz4: --forward' to the output file. Instead \
+            found '{}'",
                 first_line
             ));
         }
         let second_line = *lines.get(1).unwrap();
-        if !second_line.contains("a-second-migration: --forward") {
+        if !second_line.contains("a-second-migration.lz4: --forward") {
             panic!(format!(
-                "Expected the migration 'a-second-migration.sh' to run second and write \
-            a message containing 'a-second-migration: --forward' to the output file. Instead found \
-            '{}'",
+                "Expected the migration 'a-second-migration.lz4' to run second and write \
+            a message containing 'a-second-migration.lz4: --forward' to the output file. Instead \
+            found '{}'",
                 second_line
             ));
         }
@@ -1138,19 +1126,19 @@ mod test {
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        if !first_line.contains("a-second-migration: --backward") {
+        if !first_line.contains("a-second-migration.lz4: --backward") {
             panic!(format!(
-                "Expected the migration 'a-second-migration.sh' to run first and write \
-            a message containing 'a-second-migration: --backward' to the output file. Instead \
+                "Expected the migration 'a-second-migration.lz4' to run first and write \
+            a message containing 'a-second-migration.lz4: --backward' to the output file. Instead \
             found '{}'",
                 first_line
             ));
         }
         let second_line = *lines.get(1).unwrap();
-        if !second_line.contains("x-first-migration: --backward") {
+        if !second_line.contains("x-first-migration.lz4: --backward") {
             panic!(format!(
-                "Expected the migration 'x-first-migration.sh' to run second and write \
-            a message containing 'x-first-migration: --backward' to the output file. Instead \
+                "Expected the migration 'x-first-migration.lz4' to run second and write \
+            a message containing 'x-first-migration.lz4: --backward' to the output file. Instead \
             found '{}'",
                 second_line
             ));
