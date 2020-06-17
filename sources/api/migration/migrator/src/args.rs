@@ -138,15 +138,16 @@ impl Args {
 
         Self {
             datastore_path: datastore_path
-                .unwrap_or_else(|| usage_msg("--datastore_path is empty")),
+                .unwrap_or_else(|| usage_msg("--datastore-path must be specified")),
             log_level: log_level.unwrap_or_else(|| LevelFilter::Info),
             migration_directory: migration_directory
-                .unwrap_or_else(|| usage_msg("--migration_directory is empty")),
-            migrate_to_version: migrate_to_version
-                .unwrap_or_else(|| usage_msg("--migrate_to_version is empty")),
-            root_path: root_path.unwrap_or_else(|| usage_msg("--root_path is empty")),
+                .unwrap_or_else(|| usage_msg("--migration-directory must be specified")),
+            migrate_to_version: migrate_to_version.unwrap_or_else(|| {
+                usage_msg("--migrate-to-version was either unspecified or could not be determined")
+            }),
+            root_path: root_path.unwrap_or_else(|| usage_msg("--root-path must be specified")),
             metadata_directory: metadata_path
-                .unwrap_or_else(|| usage_msg("--metadata_directory is empty")),
+                .unwrap_or_else(|| usage_msg("--metadata-directory must be specified")),
         }
     }
 }
