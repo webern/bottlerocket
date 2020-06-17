@@ -834,27 +834,20 @@ mod test {
         test_data().join("fake-key.pem")
     }
 
-    /// Holds the lifetime of a `TempDir` to serve as the datastore root, a path to the datastore,
-    /// and the to and from versions for a migration test.
-    struct MigrationTestInfo {
+    /// Holds the lifetime of a `TempDir` inside which a datastore directory and links are held for
+    /// testing.
+    struct TestDatastore {
         tmp: TempDir,
-        from_version: Version,
-        to_version: Version,
         datastore: PathBuf,
     }
 
-    impl MigrationTestInfo {
+    impl TestDatastore {
         /// Creates a `TempDir`, sets up the datastore links needed to represent the `from_version`
-        /// and returns a `MigrationTestInfo` populated with these items.
-        fn new(from_version: Version, to_version: Version) -> Self {
+        /// and returns a `TestDatastore` populated with these information.
+        fn new(from_version: &Version) -> Self {
             let tmp = TempDir::new().unwrap();
             let datastore = Self::create_datastore_links(&tmp, &from_version);
-            MigrationTestInfo {
-                tmp,
-                from_version,
-                to_version,
-                datastore,
-            }
+            TestDatastore { tmp, datastore }
         }
 
         /// Migrator relies on the datastore symlink structure to determine the 'from' version.
@@ -1023,19 +1016,19 @@ mod test {
     fn migrate_forward() {
         let from_version = Version::parse("0.99.0").unwrap();
         let to_version = Version::parse("0.99.1").unwrap();
-        let info = MigrationTestInfo::new(from_version, to_version);
+        let test_datastore = TestDatastore::new(&from_version);
         let test_repo = create_test_repo();
         let args = Args {
-            datastore_path: info.datastore.clone(),
+            datastore_path: test_datastore.datastore.clone(),
             log_level: log::LevelFilter::Info,
             migration_directory: test_repo.targets_path().into(),
-            migrate_to_version: info.to_version.clone(),
+            migrate_to_version: to_version,
             root_path: root(),
             metadata_directory: test_repo.metadata_path().into(),
         };
         run(&args).unwrap();
         // the migrations should write to a file named result.txt.
-        let output_file = info.tmp.path().join("result.txt");
+        let output_file = test_datastore.tmp.path().join("result.txt");
         let contents = std::fs::read_to_string(&output_file).unwrap();
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
@@ -1051,18 +1044,18 @@ mod test {
     fn migrate_backward() {
         let from_version = Version::parse("0.99.1").unwrap();
         let to_version = Version::parse("0.99.0").unwrap();
-        let info = MigrationTestInfo::new(from_version, to_version);
+        let test_datastore = TestDatastore::new(&from_version);
         let test_repo = create_test_repo();
         let args = Args {
-            datastore_path: info.datastore.clone(),
+            datastore_path: test_datastore.datastore.clone(),
             log_level: log::LevelFilter::Info,
             migration_directory: test_repo.targets_path().into(),
-            migrate_to_version: info.to_version.clone(),
+            migrate_to_version: to_version,
             root_path: root(),
             metadata_directory: test_repo.metadata_path().into(),
         };
         run(&args).unwrap();
-        let output_file = info.tmp.path().join("result.txt");
+        let output_file = test_datastore.tmp.path().join("result.txt");
         let contents = std::fs::read_to_string(&output_file).unwrap();
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
