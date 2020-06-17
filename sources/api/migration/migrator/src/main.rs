@@ -843,7 +843,7 @@ mod test {
 
     impl TestDatastore {
         /// Creates a `TempDir`, sets up the datastore links needed to represent the `from_version`
-        /// and returns a `TestDatastore` populated with these information.
+        /// and returns a `TestDatastore` populated with this information.
         fn new(from_version: &Version) -> Self {
             let tmp = TempDir::new().unwrap();
             let datastore = Self::create_datastore_links(&tmp, &from_version);
