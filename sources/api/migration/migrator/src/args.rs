@@ -143,7 +143,7 @@ impl Args {
             migration_directory: migration_directory
                 .unwrap_or_else(|| usage_msg("--migration-directory must be specified")),
             migrate_to_version: migrate_to_version.unwrap_or_else(|| {
-                usage_msg("--migrate-to-version was either unspecified or could not be determined")
+                usage_msg("--migrate-to-version could not be determined")
             }),
             root_path: root_path.unwrap_or_else(|| usage_msg("--root-path must be specified")),
             metadata_directory: metadata_path
