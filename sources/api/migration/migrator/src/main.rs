@@ -885,15 +885,6 @@ mod test {
         targets_path: PathBuf,
     }
 
-    impl<'a> TestRepo {
-        fn metadata_path(&'a self) -> &'a Path {
-            self.metadata_path.as_path()
-        }
-
-        fn targets_path(&'a self) -> &'a Path {
-            self.targets_path.as_path()
-        }
-    }
 
     /// LZ4 compresses `source` bytes to a new file at `destination`.
     fn compress(source: &[u8], destination: &Path) {
