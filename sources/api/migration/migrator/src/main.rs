@@ -1014,24 +1014,11 @@ mod test {
     ///     ]
     /// ```
     ///
-    /// The two 'migrations' are bash scripts with content like this:
-    ///
-    /// ```
-    /// #!/bin/bash
-    /// set -eo pipefail
-    /// migration_name="x-first-migration"
-    /// datastore_parent_dir="$(dirname "${3}")"
-    /// outfile="${datastore_parent_dir}/result.txt"
-    /// echo "${migration_name}: writing a message to '${outfile}'"
-    /// echo "${migration_name}:" "${@}" >> "${outfile}"
-    /// ```
-    ///
-    /// These 'migrations' use the --source-datastore path and take its parent.
-    /// Into this parent directory they write lines to a file named result.txt.
-    /// In the test we read the result.txt file to see that the migrations have been run in the
-    /// expected order.
-    ///
-    /// This test ensures that migrations run when migrating from an older to a newer version.
+    /// The two 'migrations' are instances of the same bash script (see `create_test_repo`) which
+    /// writes its name (i.e. the migration name) and its arguments to a file at `./result.txt`
+    /// (i.e. since migrations run in the context of the datastore directory, `result.txt` is
+    /// written one directory above the datastore.) We can then inspect the contents of `result.txt`
+    /// to see that the expected migrations ran in the correct order.
     #[test]
     fn migrate_forward() {
         let from_version = Version::parse("0.99.0").unwrap();
