@@ -903,12 +903,6 @@ mod test {
         // later than the second migration alphabetically. this is to help ensure that migrations
         // are running in their listed order (rather than sorted order as in previous
         // implementations).
-        // "migrations": {
-        //     "(0.99.0, 0.99.1)": [
-        //       "x-first-migration.lz4",
-        //       "a-second-migration.lz4"
-        //     ]
-        //  }
         manifest.migrations.insert(
             (Version::new(0, 99, 0), Version::new(0, 99, 1)),
             vec![
