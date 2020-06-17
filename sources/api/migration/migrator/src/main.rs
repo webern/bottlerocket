@@ -1040,23 +1040,9 @@ mod test {
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        if !first_line.contains("x-first-migration.lz4: --forward") {
-            panic!(format!(
-                "Expected the migration 'x-first-migration.lz4' to run first and write \
-            a message containing 'x-first-migration.lz4: --forward' to the output file. Instead \
-            found '{}'",
-                first_line
-            ));
-        }
+        assert!(first_line.contains("x-first-migration.lz4: --forward"));
         let second_line = *lines.get(1).unwrap();
-        if !second_line.contains("a-second-migration.lz4: --forward") {
-            panic!(format!(
-                "Expected the migration 'a-second-migration.lz4' to run second and write \
-            a message containing 'a-second-migration.lz4: --forward' to the output file. Instead \
-            found '{}'",
-                second_line
-            ));
-        }
+        assert!(second_line.contains("a-second-migration.lz4: --forward"));
     }
 
     /// This test ensures that migrations run when migrating from a newer to an older version.
@@ -1081,22 +1067,8 @@ mod test {
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        if !first_line.contains("a-second-migration.lz4: --backward") {
-            panic!(format!(
-                "Expected the migration 'a-second-migration.lz4' to run first and write \
-            a message containing 'a-second-migration.lz4: --backward' to the output file. Instead \
-            found '{}'",
-                first_line
-            ));
-        }
+        assert!(first_line.contains("a-second-migration.lz4: --backward"));
         let second_line = *lines.get(1).unwrap();
-        if !second_line.contains("x-first-migration.lz4: --backward") {
-            panic!(format!(
-                "Expected the migration 'x-first-migration.lz4' to run second and write \
-            a message containing 'x-first-migration.lz4: --backward' to the output file. Instead \
-            found '{}'",
-                second_line
-            ));
-        }
+        assert!(second_line.contains("x-first-migration.lz4: --backward"));
     }
 }
