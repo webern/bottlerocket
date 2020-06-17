@@ -968,7 +968,6 @@ mod test {
             .snapshot_expires(long_ago)
             .timestamp_version(one)
             .timestamp_expires(long_ago);
-
         fs::read_dir(tuf_indir)
             .unwrap()
             .filter(|dir_entry_result| {
