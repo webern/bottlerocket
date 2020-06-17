@@ -816,28 +816,11 @@ mod test {
     use std::io::Write;
     use tempfile::TempDir;
 
+    /// Provides the path to a folder where test data files reside.
     pub fn test_data() -> PathBuf {
         let mut p = PathBuf::from(env!("CARGO_MANIFEST_DIR"));
         p.pop();
         p.join("migrator").join("tests").join("data")
-    }
-
-    struct MigrationTestInfo {
-        tmp: TempDir,
-        from_version: Version,
-        to_version: Version,
-        datastore: PathBuf,
-    }
-
-    impl MigrationTestInfo {
-        fn new(from_version: Version, to_version: Version) -> Self {
-            MigrationTestInfo {
-                tmp: TempDir::new().unwrap(),
-                from_version,
-                to_version,
-                datastore: PathBuf::default(),
-            }
-        }
     }
 
     /// Returns the filepath to a `root.json` file stored in tree for testing. This file declares
@@ -849,6 +832,54 @@ mod test {
     /// Returns the filepath to a private key, stored in tree and used only for testing.
     fn pem() -> PathBuf {
         test_data().join("fake-key.pem")
+    }
+
+    /// Holds the lifetime of a `TempDir` to serve as the datastore root, a path to the datastore,
+    /// and the to and from versions for a migration test.
+    struct MigrationTestInfo {
+        tmp: TempDir,
+        from_version: Version,
+        to_version: Version,
+        datastore: PathBuf,
+    }
+
+    impl MigrationTestInfo {
+        /// Creates a `TempDir`, sets up the datastore links needed to represent the `from_version`
+        /// and returns a `MigrationTestInfo` populated with these items.
+        fn new(from_version: Version, to_version: Version) -> Self {
+            let tmp = TempDir::new().unwrap();
+            let datastore = Self::create_datastore_links(&tmp, &from_version);
+            MigrationTestInfo {
+                tmp,
+                from_version,
+                to_version,
+                datastore,
+            }
+        }
+
+        /// Migrator relies on the datastore symlink structure to determine the 'from' version.
+        /// This function sets up the directory and symlinks to mock the datastore for migrator.
+        fn create_datastore_links(tmp: &TempDir, from_version: &Version) -> PathBuf {
+            let datastore = tmp.path().join(format!(
+                "v{}.{}.{}_xyz",
+                from_version.major, from_version.minor, from_version.patch
+            ));
+            let datastore_version = tmp.path().join(format!(
+                "v{}.{}.{}",
+                from_version.major, from_version.minor, from_version.patch
+            ));
+            let datastore_minor = tmp
+                .path()
+                .join(format!("v{}.{}", from_version.major, from_version.minor));
+            let datastore_major = tmp.path().join(format!("v{}", from_version.major));
+            let datastore_current = tmp.path().join("current");
+            fs::create_dir_all(&datastore).unwrap();
+            std::os::unix::fs::symlink(&datastore, &datastore_version).unwrap();
+            std::os::unix::fs::symlink(&datastore_version, &datastore_minor).unwrap();
+            std::os::unix::fs::symlink(&datastore_minor, &datastore_major).unwrap();
+            std::os::unix::fs::symlink(&datastore_major, &datastore_current).unwrap();
+            datastore
+        }
     }
 
     /// Represents a TUF repository, which is held in a tempdir. Provides some conveniences like
@@ -973,33 +1004,6 @@ mod test {
         }
     }
 
-    /// Migrator relies on the datastore symlink structure to determine the 'from' version.
-    /// This function sets up the directory and symlinks to mock the datastore for migrator.
-    fn create_datastore_links(info: &mut MigrationTestInfo) {
-        info.datastore = info.tmp.path().join(format!(
-            "v{}.{}.{}_xyz",
-            info.from_version.major, info.from_version.minor, info.from_version.patch
-        ));
-        let datastore_version = info.tmp.path().join(format!(
-            "v{}.{}.{}",
-            info.from_version.major, info.from_version.minor, info.from_version.patch
-        ));
-        let datastore_minor = info.tmp.path().join(format!(
-            "v{}.{}",
-            info.from_version.major, info.from_version.minor
-        ));
-        let datastore_major = info
-            .tmp
-            .path()
-            .join(format!("v{}", info.from_version.major));
-        let datastore_current = info.tmp.path().join("current");
-        fs::create_dir_all(&info.datastore).unwrap();
-        std::os::unix::fs::symlink(&info.datastore, &datastore_version).unwrap();
-        std::os::unix::fs::symlink(&datastore_version, &datastore_minor).unwrap();
-        std::os::unix::fs::symlink(&datastore_minor, &datastore_major).unwrap();
-        std::os::unix::fs::symlink(&datastore_major, &datastore_current).unwrap();
-    }
-
     /// Tests the migrator program end-to-end using the `run` function.
     /// The test uses a locally stored tuf repo at `migrator/tests/data/repository`.
     /// In the `manifest.json` we have specified the following migrations:
@@ -1032,8 +1036,7 @@ mod test {
     fn migrate_forward() {
         let from_version = Version::parse("0.99.0").unwrap();
         let to_version = Version::parse("0.99.1").unwrap();
-        let mut info = MigrationTestInfo::new(from_version, to_version);
-        create_datastore_links(&mut info);
+        let info = MigrationTestInfo::new(from_version, to_version);
         let test_repo = create_test_repo();
         let args = Args {
             datastore_path: info.datastore.clone(),
@@ -1075,8 +1078,7 @@ mod test {
     fn migrate_backward() {
         let from_version = Version::parse("0.99.1").unwrap();
         let to_version = Version::parse("0.99.0").unwrap();
-        let mut info = MigrationTestInfo::new(from_version, to_version);
-        create_datastore_links(&mut info);
+        let info = MigrationTestInfo::new(from_version, to_version);
         let test_repo = create_test_repo();
         let args = Args {
             datastore_path: info.datastore.clone(),
