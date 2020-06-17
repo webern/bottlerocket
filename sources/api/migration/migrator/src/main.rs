@@ -924,7 +924,8 @@ mod test {
 
         // Create a Manifest and save it to the tuftool_indir for signing.
         let mut manifest = update_metadata::Manifest::default();
-        // insert the following migrations to the manifest. note that the first migration would sort
+        
+        // Insert the following migrations to the manifest. note that the first migration would sort
         // later than the second migration alphabetically. this is to help ensure that migrations
         // are running in their listed order (rather than sorted order as in previous
         // implementations).
