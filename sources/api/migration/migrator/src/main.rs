@@ -849,7 +849,7 @@ mod test {
 
     impl TestDatastore {
         /// Creates a `TempDir`, sets up the datastore links needed to represent the `from_version`
-        /// and returns a `TestDatastore` populated with these information.
+        /// and returns a `TestDatastore` populated with this information.
         fn new(from_version: &Version) -> Self {
             let tmp = TempDir::new().unwrap();
             let datastore = Self::create_datastore_links(&tmp, &from_version);
@@ -891,15 +891,6 @@ mod test {
         targets_path: PathBuf,
     }
 
-    impl<'a> TestRepo {
-        fn metadata_path(&'a self) -> &'a Path {
-            self.metadata_path.as_path()
-        }
-
-        fn targets_path(&'a self) -> &'a Path {
-            self.targets_path.as_path()
-        }
-    }
 
     /// LZ4 compresses `source` bytes to a new file at `destination`.
     fn compress(source: &[u8], destination: &Path) {
@@ -913,11 +904,9 @@ mod test {
         result.unwrap()
     }
 
-    /// Creates a test repository with a couple of versions defined in the manifest and a couple of
-    /// migrations. See the test description for for more info.
+    /// Creates a test repository with migrations.
     fn create_test_repo() -> TestRepo {
-        // This is where the signed TUF repo will exist when we are done. It is the
-        // root directory of the `TestRepo` we will return when we are done.
+        // The TUF targets and metadata directories will be inside this tempdir.
         let test_repo_dir = TempDir::new().unwrap();
         let metadata_path = test_repo_dir.path().join("metadata");
         let targets_path = test_repo_dir.path().join("targets");
@@ -930,7 +919,8 @@ mod test {
 
         // Create a Manifest and save it to the tuftool_indir for signing.
         let mut manifest = update_metadata::Manifest::default();
-        // insert the following migrations to the manifest. note that the first migration would sort
+        
+        // Insert the following migrations to the manifest. note that the first migration would sort
         // later than the second migration alphabetically. this is to help ensure that migrations
         // are running in their listed order (rather than sorted order as in previous
         // implementations).
@@ -974,7 +964,6 @@ mod test {
             .snapshot_expires(long_ago)
             .timestamp_version(one)
             .timestamp_expires(long_ago);
-
         fs::read_dir(tuf_indir)
             .unwrap()
             .filter(|dir_entry_result| {
