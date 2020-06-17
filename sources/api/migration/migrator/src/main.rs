@@ -802,7 +802,7 @@ where
 
 /// Converts a filepath into a URI formatted string
 fn dir_url<P: AsRef<Path>>(path: P) -> Result<String> {
-    let path_str = path.as_ref().to_str().context(error::PathUrl {
+    let path_str = path.as_ref().to_str().context(error::PathString {
         path: path.as_ref(),
     })?;
     Ok(format!("file://{}", path_str))

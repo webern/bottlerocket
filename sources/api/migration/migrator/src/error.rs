@@ -120,8 +120,8 @@ pub(crate) enum Error {
         backtrace: Backtrace,
     },
 
-    #[snafu(display("Unable to create URL from path '{}'", path.display()))]
-    PathUrl { path: PathBuf, backtrace: Backtrace },
+    #[snafu(display("Path is not a valid UTF-8 string '{}'", path.display()))]
+    PathString { path: PathBuf, backtrace: Backtrace },
 
     #[snafu(display("Failed reading migration directory entry: {}", source))]
     ReadMigrationEntry { source: io::Error },
