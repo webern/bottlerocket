@@ -934,35 +934,6 @@ mod test {
         // migration specifications in the manifest.
         compress(script.as_bytes(), &tuf_indir.join("x-first-migration.lz4"));
         compress(script.as_bytes(), &tuf_indir.join("a-second-migration.lz4"));
-        // let compressed = lz4::block::compress(script.as_bytes(), None, false).unwrap();
-        // let mut f = OpenOptions::new()
-        //     .read(true)
-        //     .write(true)
-        //     .create(true)
-        //     .open(tuf_indir.join("x-first-migration.lz4"))
-        //     .unwrap();
-        // let mut encoder = lz4::EncoderBuilder::new()
-        //     .auto_flush(true)
-        //     .build(f)
-        //     .unwrap();
-        // encoder.write(compressed.as_slice()).unwrap();
-        // encoder.finish().1.unwrap();
-        //
-        // let mut f = OpenOptions::new()
-        //     .read(true)
-        //     .write(true)
-        //     .create(true)
-        //     .open(tuf_indir.join("a-second-migration.lz4"))
-        //     .unwrap();
-        // let mut encoder = lz4::EncoderBuilder::new()
-        //     .auto_flush(true)
-        //     .build(f)
-        //     .unwrap();
-        // encoder.write(compressed.as_slice()).unwrap();
-        // encoder.finish().1.unwrap();
-        //
-        // std::fs::write(tuf_indir.join("x-first-migration.lz4"), &compressed).unwrap();
-        // std::fs::write(tuf_indir.join("a-second-migration.lz4"), &compressed).unwrap();
 
         // Create and sign the TUF repository.
         let mut editor = tough::editor::RepositoryEditor::new(root()).unwrap();

@@ -1,9 +1,0 @@
-{
-  "updates": [],
-  "migrations": {
-    "(0.99.0, 0.99.1)": [
-      "x-first-migration.lz4",
-      "a-second-migration.lz4"
-    ]
-  }
-}
