@@ -910,8 +910,7 @@ mod test {
     /// Creates a test repository with a couple of versions defined in the manifest and a couple of
     /// migrations. See the test description for for more info.
     fn create_test_repo() -> TestRepo {
-        // This is where the signed TUF repo will exist when we are done. It is the
-        // root directory of the `TestRepo` we will return when we are done.
+        // The TUF targets and metadata directories will be inside this tempdir.
         let test_repo_dir = TempDir::new().unwrap();
         let metadata_path = test_repo_dir.path().join("metadata");
         let targets_path = test_repo_dir.path().join("targets");
