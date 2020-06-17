@@ -834,6 +834,12 @@ mod test {
         test_data().join("fake-key.pem")
     }
 
+    /// The name of a test migration. The prefix `b-` ensures we are not alphabetically sorting.
+    const FIRST_MIGRATION: &str = "b-first-migration";
+
+    /// The name of a test migration. The prefix `a-` ensures we are not alphabetically sorting.
+    const SECOND_MIGRATION: &str = "sdjghsldkjhglskdjfg";
+
     /// Holds the lifetime of a `TempDir` inside which a datastore directory and links are held for
     /// testing.
     struct TestDatastore {
