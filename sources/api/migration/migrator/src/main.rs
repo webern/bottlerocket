@@ -849,7 +849,7 @@ mod test {
 
     impl TestDatastore {
         /// Creates a `TempDir`, sets up the datastore links needed to represent the `from_version`
-        /// and returns a `TestDatastore` populated with this information.
+        /// and returns a `TestDatastore` populated with these information.
         fn new(from_version: &Version) -> Self {
             let tmp = TempDir::new().unwrap();
             let datastore = Self::create_datastore_links(&tmp, &from_version);
@@ -891,6 +891,15 @@ mod test {
         targets_path: PathBuf,
     }
 
+    impl<'a> TestRepo {
+        fn metadata_path(&'a self) -> &'a Path {
+            self.metadata_path.as_path()
+        }
+
+        fn targets_path(&'a self) -> &'a Path {
+            self.targets_path.as_path()
+        }
+    }
 
     /// LZ4 compresses `source` bytes to a new file at `destination`.
     fn compress(source: &[u8], destination: &Path) {
@@ -904,9 +913,11 @@ mod test {
         result.unwrap()
     }
 
-    /// Creates a test repository with migrations.
+    /// Creates a test repository with a couple of versions defined in the manifest and a couple of
+    /// migrations. See the test description for for more info.
     fn create_test_repo() -> TestRepo {
-        // The TUF targets and metadata directories will be inside this tempdir.
+        // This is where the signed TUF repo will exist when we are done. It is the
+        // root directory of the `TestRepo` we will return when we are done.
         let test_repo_dir = TempDir::new().unwrap();
         let metadata_path = test_repo_dir.path().join("metadata");
         let targets_path = test_repo_dir.path().join("targets");
@@ -919,17 +930,13 @@ mod test {
 
         // Create a Manifest and save it to the tuftool_indir for signing.
         let mut manifest = update_metadata::Manifest::default();
-        
-        // Insert the following migrations to the manifest. note that the first migration would sort
+        // insert the following migrations to the manifest. note that the first migration would sort
         // later than the second migration alphabetically. this is to help ensure that migrations
         // are running in their listed order (rather than sorted order as in previous
         // implementations).
         manifest.migrations.insert(
             (Version::new(0, 99, 0), Version::new(0, 99, 1)),
-            vec![
-                "x-first-migration.lz4".into(),
-                "a-second-migration.lz4".into(),
-            ],
+            vec![FIRST_MIGRATION.into(), SECOND_MIGRATION.into()],
         );
         update_metadata::write_file(tuf_indir.join("manifest.json").as_path(), &manifest).unwrap();
 
@@ -947,8 +954,8 @@ mod test {
 
         // Save lz4 compressed copies of this bash script into the tuftool_indir to match the
         // migration specifications in the manifest.
-        compress(script.as_bytes(), &tuf_indir.join("x-first-migration.lz4"));
-        compress(script.as_bytes(), &tuf_indir.join("a-second-migration.lz4"));
+        compress(script.as_bytes(), &tuf_indir.join(FIRST_MIGRATION));
+        compress(script.as_bytes(), &tuf_indir.join(SECOND_MIGRATION));
 
         // Create and sign the TUF repository.
         let mut editor = tough::editor::RepositoryEditor::new(root()).unwrap();
@@ -964,6 +971,7 @@ mod test {
             .snapshot_expires(long_ago)
             .timestamp_version(one)
             .timestamp_expires(long_ago);
+
         fs::read_dir(tuf_indir)
             .unwrap()
             .filter(|dir_entry_result| {
@@ -997,8 +1005,8 @@ mod test {
     /// In the `manifest.json` we have specified the following migrations:
     /// ```
     ///     "(0.99.0, 0.99.1)": [
-    ///       "x-first-migration.lz4",
-    ///       "a-second-migration.lz4"
+    ///       "b-first-migration",
+    ///       "a-second-migration"
     ///     ]
     /// ```
     ///
@@ -1016,7 +1024,7 @@ mod test {
         let args = Args {
             datastore_path: test_datastore.datastore.clone(),
             log_level: log::LevelFilter::Info,
-            migration_directory: test_repo.targets_path().into(),
+            migration_directory: test_repo.targets_path.clone(),
             migrate_to_version: to_version,
             root_path: root(),
             metadata_directory: test_repo.metadata_path().into(),
@@ -1028,9 +1036,9 @@ mod test {
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        assert!(first_line.contains("x-first-migration.lz4: --forward"));
+        assert!(first_line.contains(format!("{}: --forward", FIRST_MIGRATION).as_str()));
         let second_line = *lines.get(1).unwrap();
-        assert!(second_line.contains("a-second-migration.lz4: --forward"));
+        assert!(second_line.contains(format!("{}: --forward", SECOND_MIGRATION).as_str()));
     }
 
     /// This test ensures that migrations run when migrating from a newer to an older version.
@@ -1044,7 +1052,7 @@ mod test {
         let args = Args {
             datastore_path: test_datastore.datastore.clone(),
             log_level: log::LevelFilter::Info,
-            migration_directory: test_repo.targets_path().into(),
+            migration_directory: test_repo.targets_path.clone(),
             migrate_to_version: to_version,
             root_path: root(),
             metadata_directory: test_repo.metadata_path().into(),
@@ -1055,8 +1063,8 @@ mod test {
         let lines: Vec<&str> = contents.split('\n').collect();
         assert_eq!(lines.len(), 3);
         let first_line = *lines.get(0).unwrap();
-        assert!(first_line.contains("a-second-migration.lz4: --backward"));
+        assert!(first_line.contains(format!("{}: --backward", SECOND_MIGRATION).as_str()));
         let second_line = *lines.get(1).unwrap();
-        assert!(second_line.contains("x-first-migration.lz4: --backward"));
+        assert!(second_line.contains(format!("{}: --backward", FIRST_MIGRATION).as_str()));
     }
 }
