@@ -871,6 +871,7 @@ mod test {
         }
     }
 
+    /// LZ4 compresses `source` bytes to a new file at `destination`.
     fn compress(source: &[u8], destination: &Path) {
         let output_file = File::create(destination).unwrap();
         let mut encoder = lz4::EncoderBuilder::new()
