@@ -907,8 +907,7 @@ mod test {
         result.unwrap()
     }
 
-    /// Creates a test repository with a couple of versions defined in the manifest and a couple of
-    /// migrations. See the test description for for more info.
+    /// Creates a test repository with migrations.
     fn create_test_repo() -> TestRepo {
         // The TUF targets and metadata directories will be inside this tempdir.
         let test_repo_dir = TempDir::new().unwrap();
