@@ -58,8 +58,11 @@ pub(crate) enum Error {
     #[snafu(display("Data store for new version {} already exists at {}", version, path.display()))]
     NewVersionAlreadyExists { version: Version, path: PathBuf },
 
-    #[snafu(display("Unable to start migration command {:?} - {}", command, source))]
-    StartMigration { command: Command, source: io::Error },
+    #[snafu(display("Unable to seal migration command: {}", source))]
+    SealMigration { source: std::io::Error },
+
+    #[snafu(display("Unable to start migration command: {}", source))]
+    StartMigration { source: std::io::Error },
 
     #[snafu(display("Migration returned '{}' - stderr: {}",
                     output.status.code()

@@ -452,25 +452,27 @@ where
 
         // deflate with an lz4 decoder read
         let mut reader = lz4::Decoder::new(lz4_bytes).context(error::Lz4Decode { migration })?;
+        //
+        // // TODO - remove this use of the filesystem when we add pentacle
+        // let exec_path = migrations_rundir.as_ref().join(&migration);
+        // {
+        //     let mut f = OpenOptions::new()
+        //         .write(true)
+        //         .create(true)
+        //         .truncate(true)
+        //         .open(&exec_path)
+        //         .context(error::MigrationSave { path: &exec_path })?;
+        //     let _ = std::io::copy(&mut reader, &mut f)
+        //         .context(error::MigrationSave { path: &exec_path })?;
+        // }
+        //
+        // // Ensure the migration is executable.
+        // fs::set_permissions(&exec_path, Permissions::from_mode(0o755))
+        //     .context(error::SetPermissions { path: &exec_path })?;
 
-        // TODO - remove this use of the filesystem when we add pentacle
-        let exec_path = migrations_rundir.as_ref().join(&migration);
-        {
-            let mut f = OpenOptions::new()
-                .write(true)
-                .create(true)
-                .truncate(true)
-                .open(&exec_path)
-                .context(error::MigrationSave { path: &exec_path })?;
-            let _ = std::io::copy(&mut reader, &mut f)
-                .context(error::MigrationSave { path: &exec_path })?;
-        }
-
-        // Ensure the migration is executable.
-        fs::set_permissions(&exec_path, Permissions::from_mode(0o755))
-            .context(error::SetPermissions { path: &exec_path })?;
-
-        let mut command = Command::new(&exec_path);
+        // let mut command = Command::new(&exec_path);
+        let mut command =
+            pentacle::SealedCommand::new(&mut reader).context(error::SealMigration)?;
 
         // Point each migration in the right direction, and at the given data store.
         command.arg(direction.to_string());
@@ -490,9 +492,7 @@ where
 
         info!("Running migration command: {:?}", command);
 
-        let output = command
-            .output()
-            .context(error::StartMigration { command })?;
+        let output = command.output().context(error::StartMigration)?;
 
         if !output.stdout.is_empty() {
             debug!(
@@ -590,9 +590,7 @@ where
 
         info!("Running migration command: {:?}", command);
 
-        let output = command
-            .output()
-            .context(error::StartMigration { command })?;
+        let output = command.output().context(error::StartMigration)?;
 
         if !output.stdout.is_empty() {
             debug!(
