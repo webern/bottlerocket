@@ -27,6 +27,9 @@ url = "2.1.1"
 [build-dependencies]
 cargo-readme = "3.1"
 
+[dev-dependencies]
+chrono = "0.4.11"
+
 [[bin]]
 name = "migrator"
 path = "src/main.rs"
