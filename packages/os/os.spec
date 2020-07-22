@@ -137,6 +137,11 @@ Summary: Bottlerocket updater CLI
 %description -n %{_cross_os}updog
 not much what's up with you
 
+%package -n %{_cross_os}healthdog
+Summary: Bottlerocket health metrics sender
+%description -n %{_cross_os}healthdog
+healthdog sends anonymous system health data
+
 %package -n %{_cross_os}logdog
 Summary: Bottlerocket log extractor
 %description -n %{_cross_os}logdog
@@ -171,6 +176,7 @@ mkdir bin
     -p signpost \
     -p updog \
     -p logdog \
+    -p healthdog \
     -p growpart \
     %{nil}
 
@@ -191,7 +197,7 @@ for p in \
   thar-be-settings thar-be-updates servicedog host-containers \
   storewolf settings-committer \
   migrator \
-  signpost updog logdog;
+  signpost updog healthdog logdog;
 do
   install -p -m 0755 ${HOME}/.cache/%{__cargo_target}/release/${p} %{buildroot}%{_cross_bindir}
 done
@@ -326,6 +332,9 @@ install -p -m 0644 %{S:202} %{buildroot}%{_cross_tmpfilesdir}/thar-be-updates.co
 %{_cross_datadir}/updog
 %dir %{_cross_templatedir}
 %{_cross_templatedir}/updog-toml
+
+%files -n %{_cross_os}healthdog
+%{_cross_bindir}/healthdog
 
 %files -n %{_cross_os}logdog
 %{_cross_bindir}/logdog

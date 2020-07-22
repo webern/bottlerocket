@@ -1,12 +1,12 @@
 /*!
 # Introduction
 
-`logdog` is a program that gathers logs from various places on a Bottlerocket host and combines them
+`healthdog` is a program that gathers logs from various places on a Bottlerocket host and combines them
 into a tarball for easy export.
 
 Usage example:
 ```
-$ logdog
+$ healthdog
 logs are at: /tmp/bottlerocket-logs.tar.gz
 ```
 
@@ -35,7 +35,7 @@ use log_request::{log_requests, LogRequest};
 use snafu::{ErrorCompat, OptionExt, ResultExt};
 use tempfile::TempDir;
 
-const ERROR_FILENAME: &str = "logdog.errors";
+const ERROR_FILENAME: &str = "healthdog.errors";
 const OUTPUT_FILENAME: &str = "bottlerocket-logs.tar.gz";
 const TARBALL_DIRNAME: &str = "bottlerocket-logs";
 

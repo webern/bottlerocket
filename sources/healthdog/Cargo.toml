@@ -1,5 +1,5 @@
 [package]
-name = "logdog"
+name = "healthdog"
 version = "0.1.0"
 authors = ["Matt Briggs <brigmatt@amazon.com>"]
 license = "Apache-2.0 OR MIT"

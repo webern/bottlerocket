@@ -1,4 +1,4 @@
-//! Provides the list of errors for `logdog`.
+//! Provides the list of errors for `healthdog`.
 
 use std::io;
 use std::path::PathBuf;

@@ -1,4 +1,4 @@
-//! Provides the list of commands that `logdog` will run.
+//! Provides the list of commands that `healthdog` will run.
 
 /// `LogRequest` holds a command to run to retrieve log information and the filename for its output.
 pub(crate) struct LogRequest<'a> {
@@ -6,7 +6,7 @@ pub(crate) struct LogRequest<'a> {
     pub(crate) command: &'a str,
 }
 
-/// Returns the standard list of `logdog` commands.
+/// Returns the standard list of `healthdog` commands.
 pub(crate) fn log_requests<'a>() -> impl Iterator<Item = LogRequest<'static>> {
     [
         ("os-release", "cat /etc/os-release"),
