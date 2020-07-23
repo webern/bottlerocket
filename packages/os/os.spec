@@ -336,6 +336,7 @@ install -p -m 0644 %{S:202} %{buildroot}%{_cross_tmpfilesdir}/thar-be-updates.co
 
 %files -n %{_cross_os}healthdog
 %{_cross_bindir}/healthdog
+%{_cross_datadir}/healthdog
 %dir %{_cross_templatedir}
 %{_cross_templatedir}/healthdog-toml
 
