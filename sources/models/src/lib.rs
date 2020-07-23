@@ -132,7 +132,7 @@ struct AwsSettings {
 
 // Healthdog related settings.
 #[model]
-struct KubernetesSettings {
+struct HealthdogSettings {
     metrics_url: Url,
     send_metrics: bool,
     service_health: Vec<String>,
