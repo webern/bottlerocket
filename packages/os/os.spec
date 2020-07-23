@@ -239,6 +239,10 @@ install -p -m 0644 %{S:3} %{buildroot}%{_cross_datadir}/eks
 install -d %{buildroot}%{_cross_datadir}/updog
 install -p -m 0644 %{S:4} %{buildroot}%{_cross_datadir}/updog
 
+install -d %{buildroot}%{_cross_datadir}/healthdog
+# TODO what does this do, e.g. see updog
+#install -p -m 0644 %{S:4} %{buildroot}%{_cross_datadir}/healthdog
+
 install -d %{buildroot}%{_cross_templatedir}
 install -p -m 0644 %{S:5} %{buildroot}%{_cross_templatedir}
 
@@ -336,7 +340,8 @@ install -p -m 0644 %{S:202} %{buildroot}%{_cross_tmpfilesdir}/thar-be-updates.co
 
 %files -n %{_cross_os}healthdog
 %{_cross_bindir}/healthdog
-%{_cross_datadir}/healthdog
+# TODO what does this do, e.g. see updog
+# %{_cross_datadir}/updog
 %dir %{_cross_templatedir}
 %{_cross_templatedir}/healthdog-toml
 
