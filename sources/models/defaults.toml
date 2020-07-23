@@ -52,6 +52,24 @@ template-path = "/usr/share/templates/updog-toml"
 affected-services = ["updog"]
 seed.setting-generator = "bork seed"
 
+# Healthdog
+
+[settings.healthdog]
+# the URL to which anonymous health metrics will be sent
+metrics-url = "https://example-metrics-url.com/metrics/"
+# set to false to opt-out of anonymout helth metrics collection
+send-metrics = true
+# the list of services that are checked to determine if a host is healthy
+service-health = ["apiserver", "containerd", "host-containerd"]
+
+[services.healthdog]
+configuration-files = ["healthdog-toml"]
+restart-commands = []
+
+[configuration-files.healthdog-toml]
+path = "/etc/healthdog.toml"
+template-path = "/usr/share/templates/healthdog-toml"
+
 # HostContainers
 
 [settings.host-containers.admin]

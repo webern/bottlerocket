@@ -36,3 +36,9 @@ affected-services = ["kubernetes", "containerd"]
 
 [settings.kubernetes]
 cluster-domain = "cluster.local"
+
+# Healthdog
+
+[settings.healthdog]
+metrics-url = "https://metrics.bottlerocket.aws/metrics/"
+service-health = ["apiserver", "containerd", "host-containerd", "kubelet"]

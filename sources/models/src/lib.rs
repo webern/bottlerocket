@@ -130,6 +130,14 @@ struct AwsSettings {
     region: SingleLineString,
 }
 
+// Healthdog related settings.
+#[model]
+struct KubernetesSettings {
+    metrics_url: Url,
+    send_metrics: bool,
+    service_health: Vec<String>,
+}
+
 ///// Internal services
 
 // Note: Top-level objects that get returned from the API should have a "rename" attribute

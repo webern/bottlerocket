@@ -14,6 +14,7 @@ Source3: eni-max-pods
 
 Source4: root.json
 Source5: updog-toml
+Source6: healthdog-toml
 
 # 1xx sources: systemd units
 Source100: apiserver.service
@@ -335,6 +336,8 @@ install -p -m 0644 %{S:202} %{buildroot}%{_cross_tmpfilesdir}/thar-be-updates.co
 
 %files -n %{_cross_os}healthdog
 %{_cross_bindir}/healthdog
+%dir %{_cross_templatedir}
+%{_cross_templatedir}/healthdog-toml
 
 %files -n %{_cross_os}logdog
 %{_cross_bindir}/logdog
