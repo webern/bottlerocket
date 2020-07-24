@@ -141,7 +141,7 @@ not much what's up with you
 %package -n %{_cross_os}healthdog
 Summary: Bottlerocket health metrics sender
 %description -n %{_cross_os}healthdog
-healthdog sends anonymous system health data
+%{summary}.
 
 %package -n %{_cross_os}logdog
 Summary: Bottlerocket log extractor
