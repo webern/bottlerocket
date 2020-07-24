@@ -1,5 +1,6 @@
-metadata_base_url = "{{settings.updates.metadata-base-url}}"
-targets_base_url = "{{settings.updates.targets-base-url}}"
+metrics_url = "{{settings.healthdog.metrics-url}}"
+send_metrics = "{{settings.healthdog.send-metrics}}"
+service_health = "{{settings.healthdog.service-health}}"
 seed = {{settings.updates.seed}}
 version_lock = "{{settings.updates.version-lock}}"
 ignore_waves = {{settings.updates.ignore-waves}}
