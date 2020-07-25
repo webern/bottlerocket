@@ -54,7 +54,7 @@ impl BottlerocketRelease {
         Self::from_file(DEFAULT_RELEASE_FILE)
     }
 
-    fn from_file<P>(path: P) -> Result<Self>
+    pub fn from_file<P>(path: P) -> Result<Self>
     where
         P: AsRef<Path>,
     {
