@@ -10,6 +10,7 @@ pub(crate) struct Config {
     pub(crate) metrics_url: String,
     pub(crate) send_metrics: bool,
     pub(crate) service_health: Vec<String>,
+    pub(crate) region: String,
     pub(crate) seed: u32,
     pub(crate) version_lock: String,
     pub(crate) ignore_waves: bool,
@@ -39,6 +40,7 @@ mod test {
     send_metrics = true
     # note the extra comma will because of the way it is written with handlebars 'each'
     service_health = ["a", "b", "c",]
+    region = "us-west-2"
     seed = 1234
     version_lock = "v0.1.2"
     ignore_waves = false
@@ -49,6 +51,7 @@ mod test {
     metrics_url = ""
     send_metrics = false
     service_health = ["a", "b", "c",]
+    region = "us-west-2"
     seed = 1234
     version_lock = "v0.1.2"
     ignore_waves = false
@@ -66,6 +69,7 @@ mod test {
         assert_eq!("a", config.service_health.get(0).unwrap());
         assert_eq!("b", config.service_health.get(1).unwrap());
         assert_eq!("c", config.service_health.get(2).unwrap());
+        assert_eq!("us-west-2", config.region);
         assert_eq!(1234, config.seed);
         assert_eq!("v0.1.2", config.version_lock);
         assert!(!config.ignore_waves);
@@ -83,6 +87,7 @@ mod test {
         assert_eq!("a", config.service_health.get(0).unwrap());
         assert_eq!("b", config.service_health.get(1).unwrap());
         assert_eq!("c", config.service_health.get(2).unwrap());
+        assert_eq!("us-west-2", config.region);
         assert_eq!(1234, config.seed);
         assert_eq!("v0.1.2", config.version_lock);
         assert!(!config.ignore_waves);

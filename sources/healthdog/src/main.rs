@@ -23,9 +23,11 @@ mod config;
 mod error;
 mod healthcheck;
 mod healthdog;
+#[cfg(test)]
+mod healthdog_test;
 mod run;
 
-use crate::args::USAGE;
+use crate::args::{Command, USAGE};
 use crate::config::Config;
 use crate::error::{Error, Result};
 use crate::healthcheck::{ServiceCheck, SystemdCheck};
@@ -66,6 +68,14 @@ where
     }
     .context(error::BottlerocketRelease)?;
     let config = Config::from_file(&arguments.config_path)?;
-    let healthdog = Healthdog::from_parts(Some(config), Some(os_release), None)?;
+    let healthdog = Healthdog::from_parts(Some(config), Some(os_release), Some(service_check))?;
+    match arguments.command {
+        Command::BootSuccess => {
+            healthdog.send_boot_success()?;
+        }
+        Command::HealthPing => {
+            healthdog.send_health_ping()?;
+        }
+    }
     Ok(())
 }

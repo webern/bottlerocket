@@ -25,6 +25,12 @@ pub(crate) enum Error {
 
     #[snafu(display("Usage error."))]
     Usage { message: Option<String> },
+
+    #[snafu(display("Unable to parse URL {}: {}", url, source))]
+    UrlParse {
+        url: String,
+        source: url::ParseError,
+    },
 }
 
 pub(crate) type Result<T> = std::result::Result<T, Error>;

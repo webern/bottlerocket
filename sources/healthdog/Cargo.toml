@@ -14,13 +14,16 @@ path = "src/main.rs"
 
 [dependencies]
 bottlerocket-release = { version = "0.1.0", path = "../bottlerocket-release"}
+reqwest = { version = "0.10.7", features = ["blocking", "rustls"] }
 serde = { version = "1.0.100", features = ["derive"] }
 shell-words = "0.1.0"
 snafu = { version = "0.6" }
 toml = "0.5.1"
+url = "2.1.1"
 
 [build-dependencies]
 cargo-readme = "3.1"
 
 [dev-dependencies]
+httptest = "0.13.1"
 tempfile = { version = "3.1.0", default-features = false }

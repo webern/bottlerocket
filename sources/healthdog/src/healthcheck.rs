@@ -3,8 +3,6 @@ use std::path::Display;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub(crate) struct ServiceHealth {
-    /// The name of the service.
-    pub(crate) name: String,
     /// Whether or not the service reports as healthy.
     pub(crate) is_healthy: bool,
     /// In the event of an unhealthy service, the service's failure exit code goes here.

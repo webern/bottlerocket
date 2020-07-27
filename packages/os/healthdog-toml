@@ -1,6 +1,7 @@
 metrics_url = "{{settings.healthdog.metrics-url}}"
 send_metrics = {{settings.healthdog.send-metrics}}
 service_health = [{{#each settings.healthdog.service-health as |service| ~}}"{{service}}",{{/each~}}]
+region = "{{settings.aws.region}}"
 seed = {{settings.updates.seed}}
 version_lock = "{{settings.updates.version-lock}}"
 ignore_waves = {{settings.updates.ignore-waves}}
