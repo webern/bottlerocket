@@ -1055,9 +1055,11 @@ version = "0.1.0"
 dependencies = [
  "bottlerocket-release 0.1.0",
  "cargo-readme 3.2.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "serde 1.0.111 (registry+https://github.com/rust-lang/crates.io-index)",
  "shell-words 0.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
  "snafu 0.6.8 (registry+https://github.com/rust-lang/crates.io-index)",
  "tempfile 3.1.0 (registry+https://github.com/rust-lang/crates.io-index)",
+ "toml 0.5.6 (registry+https://github.com/rust-lang/crates.io-index)",
 ]
 
 [[package]]

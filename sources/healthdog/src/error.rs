@@ -11,6 +11,18 @@ pub(crate) enum Error {
     #[snafu(display("Unable to load bottlerocket release info: '{}'", source))]
     BottlerocketRelease { source: bottlerocket_release::Error },
 
+    #[snafu(display("Failed to parse config file {}: {}", path.display(), source))]
+    ConfigParse {
+        path: PathBuf,
+        source: toml::de::Error,
+    },
+
+    #[snafu(display("Failed to read config file {}: {}", path.display(), source))]
+    ConfigRead {
+        path: PathBuf,
+        source: std::io::Error,
+    },
+
     #[snafu(display("Usage error."))]
     Usage { message: Option<String> },
 }

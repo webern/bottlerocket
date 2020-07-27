@@ -13,10 +13,14 @@ name = "healthdog"
 path = "src/main.rs"
 
 [dependencies]
+bottlerocket-release = { version = "0.1.0", path = "../bottlerocket-release"}
+serde = { version = "1.0.100", features = ["derive"] }
 shell-words = "0.1.0"
 snafu = { version = "0.6" }
-bottlerocket-release = { version = "0.1.0", path = "../bottlerocket-release"}
+toml = "0.5.1"
 
 [build-dependencies]
 cargo-readme = "3.1"
+
+[dev-dependencies]
 tempfile = { version = "3.1.0", default-features = false }
