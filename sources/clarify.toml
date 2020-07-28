@@ -67,7 +67,7 @@ skip-files = [
     "src/testdata/LICENSE", # we aren't using the test data
 ]
 
-[clarify.regex]
+[clarify.regex-automata]
 skip-files = [
     # we aren't using the test data
     "data/fowler-tests/LICENSE",
