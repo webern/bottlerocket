@@ -87,6 +87,7 @@ license-files = [
 ]
 skip-files = [
     "data/fowler-tests/LICENSE", # we aren't using the test data
+    "data/tests/fowler/LICENSE",
 ]
 
 [clarify.regex-syntax]
