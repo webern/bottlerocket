@@ -98,13 +98,13 @@ where
 
 #[test]
 fn parse_args_test_boot_success() {
-    let mut raw_args = vec![
+    let raw_args = vec![
         String::from("/bin/healthdog"),
         String::from(BOOT_SUCCESS),
         String::from("--config"),
         String::from("/some/path"),
     ];
-    let mut iter = raw_args.iter().cloned();
+    let iter = raw_args.iter().cloned();
     let args = parse_args(iter).unwrap();
     assert_eq!(args.command, Command::BootSuccess);
     assert_eq!(args.config_path.to_str().unwrap(), "/some/path");
@@ -113,13 +113,13 @@ fn parse_args_test_boot_success() {
 
 #[test]
 fn parse_args_test_boot_success_default_config() {
-    let mut raw_args = vec![
+    let raw_args = vec![
         String::from("/bin/healthdog"),
         String::from(BOOT_SUCCESS),
         String::from("--os-release"),
         String::from("/my/os-release"),
     ];
-    let mut iter = raw_args.iter().cloned();
+    let iter = raw_args.iter().cloned();
     let args = parse_args(iter).unwrap();
     assert_eq!(args.command, Command::BootSuccess);
     assert_eq!(args.config_path.to_str().unwrap(), "/etc/healthdog.toml");
@@ -128,13 +128,13 @@ fn parse_args_test_boot_success_default_config() {
 
 #[test]
 fn parse_args_test_health_ping() {
-    let mut raw_args = vec![
+    let raw_args = vec![
         String::from("/bin/healthdog"),
         String::from(HEALTH_PING),
         String::from("--config"),
         String::from("/some/path"),
     ];
-    let mut iter = raw_args.iter().cloned();
+    let iter = raw_args.iter().cloned();
     let args = parse_args(iter).unwrap();
     assert_eq!(args.command, Command::HealthPing);
     assert_eq!(args.config_path.to_str().unwrap(), "/some/path");
@@ -142,37 +142,37 @@ fn parse_args_test_health_ping() {
 
 #[test]
 fn parse_args_test_bad_command() {
-    let mut raw_args = vec![
+    let raw_args = vec![
         String::from("/bin/healthdog"),
         String::from("nope"),
         String::from("--config"),
         String::from("/some/path"),
     ];
-    let mut iter = raw_args.iter().cloned();
+    let iter = raw_args.iter().cloned();
     let result = parse_args(iter);
     assert!(result.is_err())
 }
 
 #[test]
 fn parse_args_test_no_command() {
-    let mut raw_args = vec![
+    let raw_args = vec![
         String::from("/bin/healthdog"),
         String::from("--config"),
         String::from("/some/path"),
     ];
-    let mut iter = raw_args.iter().cloned();
+    let iter = raw_args.iter().cloned();
     let result = parse_args(iter);
     assert!(result.is_err())
 }
 
 #[test]
 fn parse_args_test_bad_value() {
-    let mut raw_args = vec![
+    let raw_args = vec![
         String::from("/bin/healthdog"),
         String::from("nope"),
         String::from("--config"),
     ];
-    let mut iter = raw_args.iter().cloned();
+    let iter = raw_args.iter().cloned();
     let result = parse_args(iter);
     assert!(result.is_err())
 }

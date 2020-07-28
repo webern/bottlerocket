@@ -1,9 +1,8 @@
 use crate::config::Config;
-use crate::error::Error::UrlParse;
 use crate::error::{self, Result};
 use crate::healthcheck::{ServiceCheck, SystemdCheck};
 use bottlerocket_release::BottlerocketRelease;
-use reqwest::blocking::{Client, ClientBuilder, Request, Response};
+use reqwest::blocking::Client;
 use snafu::ResultExt;
 use std::collections::HashMap;
 use std::str::FromStr;
@@ -19,6 +18,7 @@ pub(crate) struct Healthdog {
 impl Healthdog {
     /// Create a new instance by parsing the os-release and healthdog.toml files from their default
     /// locations, and constructing a SystemdCheck object.
+    #[allow(dead_code)]
     pub(crate) fn new() -> Result<Self> {
         Self::from_parts(None, None, None)
     }
@@ -105,7 +105,7 @@ impl Healthdog {
                 match service_status.exit_code {
                     None => failed_services.push_str(format!("{}", service).as_str()),
                     Some(exit_code) => failed_services
-                        .push_str(format!("{}:{}", service.as_str(), exit_code).as_str()),
+                        .push_str(format!("{}:{},", service.as_str(), exit_code).as_str()),
                 }
             }
         }
@@ -119,6 +119,7 @@ impl Healthdog {
     // private
 
     fn send_get_request(url: Url, timeout_sec: u64) -> Result<()> {
+        println!("{}", url.as_str());
         // TODO - create error variants for all of these unwraps
         let client = Client::builder()
             .timeout(Duration::from_secs(timeout_sec))

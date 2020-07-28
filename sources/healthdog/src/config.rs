@@ -1,6 +1,6 @@
 use crate::args::DEFAULT_CONFIG_PATH;
 use crate::error::{self, Result};
-use serde::{Deserialize, Serialize};
+use serde::Deserialize;
 use snafu::ResultExt;
 use std::fs;
 use std::path::{Path, PathBuf};
@@ -32,7 +32,7 @@ impl Config {
 #[cfg(test)]
 mod test {
     use crate::config::Config;
-    use tempfile::{NamedTempFile, TempDir};
+    use tempfile::TempDir;
 
     // This is what most configs will look like.
     const STANDARD_CONFIG: &str = r#"

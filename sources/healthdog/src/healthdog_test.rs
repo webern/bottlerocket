@@ -25,10 +25,15 @@ struct TestCheck {}
 
 impl ServiceCheck for TestCheck {
     fn check(&self, service_name: &str) -> Result<ServiceHealth> {
-        if service_name.ends_with("fail") {
+        if service_name.ends_with("fail1") {
             Ok(ServiceHealth {
                 is_healthy: false,
                 exit_code: Some(1),
+            })
+        } else if service_name.ends_with("fail2") {
+            Ok(ServiceHealth {
+                is_healthy: false,
+                exit_code: Some(2),
             })
         } else if service_name.ends_with("error") {
             Err(crate::error::Error::Usage { message: None })
@@ -53,8 +58,8 @@ fn send_healthy_ping() {
         request::query(url_decoded(contains(("arch", "x86_64")))),
         request::query(url_decoded(contains(("region", "us-east-1")))),
         request::query(url_decoded(contains(("seed", "2041")))),
-        request::query(url_decoded(contains(("is_healthy", "true")))),
         request::query(url_decoded(contains(("failed_services", "")))),
+        request::query(url_decoded(contains(("is_healthy", "true")))),
     ];
     server.expect(Expectation::matching(matcher).respond_with(status_code(200)));
     let port = server.addr().port();
@@ -76,5 +81,82 @@ fn send_healthy_ping() {
         Some(Box::new(TestCheck {})),
     )
     .unwrap();
-    healthdog.send_health_ping();
+    healthdog.send_health_ping().unwrap();
+}
+
+#[test]
+fn send_unhealthy_ping() {
+    let server = Server::run();
+    let matcher = all_of![
+        request::method_path("GET", "/metrics"),
+        request::query(url_decoded(contains(("sender", "healthdog")))),
+        request::query(url_decoded(contains(("event", "health-ping")))),
+        request::query(url_decoded(contains(("version", "0.4.0")))),
+        request::query(url_decoded(contains(("variant", "aws-k8s-1.16")))),
+        request::query(url_decoded(contains(("arch", "x86_64")))),
+        request::query(url_decoded(contains(("region", "us-east-1")))),
+        request::query(url_decoded(contains(("seed", "2041")))),
+        request::query(url_decoded(contains((
+            "failed_services",
+            "service_afail2:2,service_cfail1:1,"
+        )))),
+        request::query(url_decoded(contains(("is_healthy", "false")))),
+    ];
+    server.expect(Expectation::matching(matcher).respond_with(status_code(200)));
+    let port = server.addr().port();
+    let healthdog = Healthdog::from_parts(
+        Some(Config {
+            metrics_url: format!("http://localhost:{}/metrics", port),
+            send_metrics: true,
+            service_health: vec![
+                String::from("service_afail2"),
+                String::from("service_b"),
+                String::from("service_cfail1"),
+            ],
+            region: String::from("us-east-1"),
+            seed: 2041,
+            version_lock: String::from("latest"),
+            ignore_waves: false,
+        }),
+        Some(os_release()),
+        Some(Box::new(TestCheck {})),
+    )
+    .unwrap();
+    healthdog.send_health_ping().unwrap();
+}
+
+#[test]
+fn send_boot_success() {
+    let server = Server::run();
+    let matcher = all_of![
+        request::method_path("GET", "/metrics"),
+        request::query(url_decoded(contains(("sender", "healthdog")))),
+        request::query(url_decoded(contains(("event", "boot-success")))),
+        request::query(url_decoded(contains(("version", "0.4.0")))),
+        request::query(url_decoded(contains(("variant", "aws-k8s-1.16")))),
+        request::query(url_decoded(contains(("arch", "x86_64")))),
+        request::query(url_decoded(contains(("region", "us-east-1")))),
+        request::query(url_decoded(contains(("seed", "2041")))),
+    ];
+    server.expect(Expectation::matching(matcher).respond_with(status_code(200)));
+    let port = server.addr().port();
+    let healthdog = Healthdog::from_parts(
+        Some(Config {
+            metrics_url: format!("http://localhost:{}/metrics", port),
+            send_metrics: true,
+            service_health: vec![
+                String::from("service_afail2"),
+                String::from("service_b"),
+                String::from("service_cfail1"),
+            ],
+            region: String::from("us-east-1"),
+            seed: 2041,
+            version_lock: String::from("latest"),
+            ignore_waves: false,
+        }),
+        Some(os_release()),
+        Some(Box::new(TestCheck {})),
+    )
+    .unwrap();
+    healthdog.send_boot_success().unwrap();
 }

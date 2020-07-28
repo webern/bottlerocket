@@ -1,9 +1,7 @@
 //! Provides the list of errors for `healthdog`.
 
-use std::io;
-use std::path::PathBuf;
-
 use snafu::Snafu;
+use std::path::PathBuf;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub(crate)")]

@@ -1,5 +1,4 @@
 use crate::error::Result;
-use std::path::Display;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]
 pub(crate) struct ServiceHealth {

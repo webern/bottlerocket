@@ -25,14 +25,12 @@ mod healthcheck;
 mod healthdog;
 #[cfg(test)]
 mod healthdog_test;
-mod run;
 
 use crate::args::{Command, USAGE};
 use crate::config::Config;
 use crate::error::{Error, Result};
 use crate::healthcheck::{ServiceCheck, SystemdCheck};
 use crate::healthdog::Healthdog;
-use crate::run::run;
 use args::parse_args;
 use bottlerocket_release::BottlerocketRelease;
 use snafu::ResultExt;
