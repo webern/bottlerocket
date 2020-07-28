@@ -15,6 +15,14 @@ license-files = [
     { path = "LICENSE-THIRD-PARTY", hash = 0x7e40bc60 },
 ]
 
+[clarify.crossbeam-queue]
+expression = "(MIT OR Apache-2.0) AND BSD-2-Clause-FreeBSD"
+license-files = [
+    { path = "LICENSE-APACHE", hash = 0x24b54f4b },
+    { path = "LICENSE-MIT", hash = 0x386ca1bc },
+    { path = "LICENSE-THIRD-PARTY", hash = 0xc6242648 },
+]
+
 [clarify.lz4-sys]
 # The lz4-sys crate's license is listed as MIT.
 #
