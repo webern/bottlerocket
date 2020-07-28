@@ -67,6 +67,12 @@ skip-files = [
     "src/testdata/LICENSE", # we aren't using the test data
 ]
 
+[clarify.regex]
+skip-files = [
+    # we aren't using the test data
+    "data/fowler-tests/LICENSE",
+]
+
 [clarify.regex-syntax]
 expression = "(MIT OR Apache-2.0) AND Unicode-DFS-2016"
 license-files = [
