@@ -39,3 +39,14 @@ expression = "ISC"
 license-files = [
     { path = "LICENSE", hash = 0x001c7e6c },
 ]
+
+# https://github.com/tokio-rs/tokio/blob/master/tokio-macros/LICENSE
+# This LICENSE file contains two copies of the MIT license, one for
+# "Copyright (c) 2019 Tokio Contributors" and one for "Copyright (c)
+# 2019 Yoshua Wuyts"
+[[licenses.clarify]]
+name = "tokio-macros"
+expression = "MIT"
+license-files = [
+    { path = "LICENSE", hash = 0xff97fcac },
+]
