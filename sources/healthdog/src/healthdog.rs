@@ -119,7 +119,8 @@ impl Healthdog {
     // private
 
     fn send_get_request(url: Url, timeout_sec: u64) -> Result<()> {
-        println!("{}", url.as_str());
+        // TODO - remove this debug print
+        eprintln!("{}", url.as_str());
         // TODO - create error variants for all of these unwraps
         let client = Client::builder()
             .timeout(Duration::from_secs(timeout_sec))
