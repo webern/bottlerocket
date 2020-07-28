@@ -67,7 +67,7 @@ impl BottlerocketRelease {
             .lines()
             .filter_map(|line| {
                 // Allow for comments
-                if line.starts_with("#") {
+                if line.starts_with('#') {
                     return None;
                 }
 

@@ -91,7 +91,7 @@ where
         command: subcommand.context(error::Usage {
             message: Some(String::from("Subcommand not found.")),
         })?,
-        config_path: config_path.unwrap_or(PathBuf::from(DEFAULT_CONFIG_PATH)),
+        config_path: config_path.unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH)),
         os_release,
     })
 }

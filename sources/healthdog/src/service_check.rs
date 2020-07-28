@@ -1,5 +1,5 @@
 use crate::error::{self, Error, Result};
-use snafu::{ensure, ResultExt};
+use snafu::ResultExt;
 use std::process::Command;
 
 #[derive(Debug, Clone, Eq, PartialEq, Ord, PartialOrd)]

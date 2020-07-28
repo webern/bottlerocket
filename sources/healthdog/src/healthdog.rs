@@ -103,7 +103,7 @@ impl Healthdog {
             if !service_status.is_healthy {
                 is_healthy = false;
                 match service_status.exit_code {
-                    None => failed_services.push_str(format!("{}", service).as_str()),
+                    None => failed_services.push_str(service),
                     Some(exit_code) => failed_services
                         .push_str(format!("{}:{},", service.as_str(), exit_code).as_str()),
                 }
