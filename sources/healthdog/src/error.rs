@@ -9,6 +9,12 @@ pub(crate) enum Error {
     #[snafu(display("Unable to load bottlerocket release info: '{}'", source))]
     BottlerocketRelease { source: bottlerocket_release::Error },
 
+    #[snafu(display("Unable to parse '{}' to an int: '{}'", value, source))]
+    IntParse {
+        value: String,
+        source: std::num::ParseIntError,
+    },
+
     // TODO - improve
     #[snafu(display("Failed to run a command: {}", source))]
     Command { source: std::io::Error },

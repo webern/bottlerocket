@@ -2,7 +2,7 @@ use crate::error::{self, Error, Result};
 use snafu::{ensure, OptionExt};
 use std::path::PathBuf;
 
-const BOOT_SUCCESS: &str = "report-boot-success";
+const BOOT_SUCCESS: &str = "send-boot-success";
 const HEALTH_PING: &str = "send-health-ping";
 pub(crate) const DEFAULT_CONFIG_PATH: &str = "/etc/healthdog.toml";
 
@@ -36,7 +36,7 @@ pub(crate) const USAGE: &str = r"USAGE:
 healthdog <SUBCOMMAND> <OPTIONS>
 
 SUBCOMMANDS:
-    report-boot-success     Send a report that the instance booted successfully.
+    send-boot-success       Send a report that the instance booted successfully.
 
     send-health-ping        Check services and report whether the host is healthy or not.
 

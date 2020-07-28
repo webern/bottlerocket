@@ -1,4 +1,6 @@
 use crate::error::{self, Error, Result};
+use lazy_static::lazy_static;
+use regex::Regex;
 use snafu::ResultExt;
 use std::process::Command;
 
@@ -75,7 +77,6 @@ fn is_ok(service: &str) -> Result<bool> {
 }
 
 fn parse_service_exit_code(service: &str) -> Result<Option<i32>> {
-    // TODO - implement parse_service_exit_code
     let outcome = systemctl(&["--no-pager", "status", service])?;
     if outcome.exit != 0 {
         return Err(Error::CommandExit {
@@ -86,7 +87,45 @@ fn parse_service_exit_code(service: &str) -> Result<Option<i32>> {
     Ok(parse_stdout(&outcome.stdout)?)
 }
 
-fn parse_stdout(_stdout: &str) -> Result<Option<i32>> {
-    // TODO - implement parse_stdout
-    Ok(None)
+/// Regex pattern for finding the exit code of a systemd service that has exited. There is a single
+/// capture group, named `exit_code`.
+const SYSTEMD_EXIT_REGEX_PATTERN: &str =
+    r#"Main PID: \d+ \(code=[a-zA-Z0-9-_]+, status=(?P<exit_code>\d{1,3})/[A-Z]+\)"#;
+
+lazy_static! {
+    static ref RX: Regex = Regex::new(SYSTEMD_EXIT_REGEX_PATTERN).unwrap();
+}
+
+fn parse_stdout(stdout: &str) -> Result<Option<i32>> {
+    let captures = if let Some(caps) = RX.captures(stdout) {
+        caps
+    } else {
+        return Ok(None);
+    };
+    let s = if let Some(m) = captures.name("exit_code") {
+        m.as_str()
+    } else {
+        return Ok(None);
+    };
+    Ok(Some(
+        s.parse::<i32>().context(error::IntParse { value: s })?,
+    ))
+}
+
+#[test]
+fn parse_stdout_exit_0() {
+    let stdout = r#"● plymouth-start.service - Show Plymouth Boot Screen
+   Loaded: loaded (/usr/lib/systemd/system/plymouth-start.service; static; vendor preset: disabled)
+   Active: active (exited) since Tue 2020-07-28 17:20:10 UTC; 4min 11s ago
+  Process: 824 ExecStart=/usr/sbin/plymouthd --mode=boot --pid-file=/run/plymouth/pid
+           --attach-to-session (code=exited, status=0/SUCCESS)
+  Process: 846 ExecStartPost=/usr/bin/plymouth show-splash (code=exited, status=0/SUCCESS)
+ Main PID: 845 (code=exited, status=0/SUCCESS)
+
+Jul 28 17:20:10 severus systemd[1]: Starting Show Plymouth Boot Screen...
+Jul 28 17:20:10 severus systemd[1]: Started Show Plymouth Boot Screen.
+"#;
+    let got = parse_stdout(stdout).unwrap().unwrap();
+    let want = 0;
+    assert_eq!(got, want);
 }

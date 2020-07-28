@@ -69,7 +69,11 @@ where
     let healthdog = Healthdog::from_parts(Some(config), Some(os_release), Some(service_check))?;
     match arguments.command {
         Command::BootSuccess => {
-            healthdog.send_boot_success()?;
+            if let Err(err) = healthdog.send_boot_success() {
+                // we don't want to fail the boot if there is a failure to send this message, so
+                // we log the error and return Ok(())
+                eprintln!("healthdog error while reporting boot success: {}", err);
+            }
         }
         Command::HealthPing => {
             healthdog.send_health_ping()?;
