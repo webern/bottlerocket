@@ -7,6 +7,17 @@ license-files = [
     { path = "src/libbacktrace/LICENSE", hash = 0x0ce09262 },
 ]
 
+[clarify.bstr]
+expression = "MIT OR Apache-2.0"
+license-files = [
+    { path = "COPYING", hash = 0x28398560 },
+    { path = "LICENSE-MIT", hash = 0x462dee44 },
+    { path = "LICENSE-APACHE", hash = 0x24b54f4b },
+]
+skip-files = [
+    "src/unicode/data/LICENSE-UNICODE", # we aren't using the test data
+]
+
 [clarify.crossbeam-queue]
 expression = "(MIT OR Apache-2.0) AND BSD-2-Clause-FreeBSD"
 license-files = [
@@ -66,15 +77,6 @@ license-files = [
 skip-files = [
     "src/testdata/LICENSE", # we aren't using the test data
 ]
-
-#16 2.677 regex-automata:
-#16 2.677   + Unlicense OR MIT (stated in metadata)
-#16 2.678   + COPYING (hash = 0x969f37d8) detected as non-license file
-#16 2.681   + LICENSE-MIT (hash = 0x616d8a83) detected as MIT (confidence 0.9817)
-#16 2.684   + UNLICENSE (hash = 0x87b84020) detected as Unlicense (confidence 1.0000)
-#16 2.699 Error: failed to detect any license from /home/builder/.cargo/registry/src/github.com-1ecc6299db9ec823/regex-automata-0.1.9/data/fowler-tests/LICENSE (hash = 0xa522c7da), please add a clarification
-#16 2.701 error: Bad exit status from /var/tmp/rpm-tmp.dC8jTi (%install)
-#16 2.701     Bad exit status from /var/tmp/rpm-tmp.dC8jTi (%install)
 
 [clarify.regex-automata]
 expression = "Unlicense OR MIT"
