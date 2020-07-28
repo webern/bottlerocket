@@ -79,8 +79,9 @@ skip-files = [
 [clarify.regex-automata]
 expression = "Unlicense OR MIT"
 license-files = [
-    { path = "UNLICENSE", hash = 0x87b84020 },
+    { path = "COPYING", hash = 0x969f37d8 },
     { path = "LICENSE-MIT", hash = 0x616d8a83 },
+    { path = "UNLICENSE", hash = 0x87b84020 },
 ]
 skip-files = [
     "data/fowler-tests/LICENSE", # we aren't using the test data
