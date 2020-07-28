@@ -21,16 +21,16 @@ For the commands used to gather logs, please see [log_request](src/log_request.r
 mod args;
 mod config;
 mod error;
-mod healthcheck;
 mod healthdog;
 #[cfg(test)]
 mod healthdog_test;
+mod service_check;
 
 use crate::args::{Command, USAGE};
 use crate::config::Config;
 use crate::error::{Error, Result};
-use crate::healthcheck::{ServiceCheck, SystemdCheck};
 use crate::healthdog::Healthdog;
+use crate::service_check::{ServiceCheck, SystemdCheck};
 use args::parse_args;
 use bottlerocket_release::BottlerocketRelease;
 use snafu::ResultExt;

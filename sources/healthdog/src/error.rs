@@ -9,6 +9,13 @@ pub(crate) enum Error {
     #[snafu(display("Unable to load bottlerocket release info: '{}'", source))]
     BottlerocketRelease { source: bottlerocket_release::Error },
 
+    // TODO - improve
+    #[snafu(display("Failed to run a command: {}", source))]
+    Command { source: std::io::Error },
+
+    #[snafu(display("Command returned exit code {}: {}", exit, stderr))]
+    CommandExit { exit: i32, stderr: String },
+
     #[snafu(display("Failed to parse config file {}: {}", path.display(), source))]
     ConfigParse {
         path: PathBuf,

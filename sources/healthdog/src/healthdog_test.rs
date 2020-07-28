@@ -1,7 +1,7 @@
 use crate::config::Config;
 use crate::error::Result;
-use crate::healthcheck::{ServiceCheck, ServiceHealth};
 use crate::healthdog::Healthdog;
+use crate::service_check::{ServiceCheck, ServiceHealth};
 use bottlerocket_release::BottlerocketRelease;
 use httptest::{matchers::*, responders::*, Expectation, Server};
 use tempfile::TempDir;

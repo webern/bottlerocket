@@ -1,6 +1,6 @@
 use crate::config::Config;
 use crate::error::{self, Result};
-use crate::healthcheck::{ServiceCheck, SystemdCheck};
+use crate::service_check::{ServiceCheck, SystemdCheck};
 use bottlerocket_release::BottlerocketRelease;
 use reqwest::blocking::Client;
 use snafu::ResultExt;

@@ -38,7 +38,6 @@ mod test {
     const STANDARD_CONFIG: &str = r#"
     metrics_url = "https://example.com"
     send_metrics = true
-    # note the extra comma will because of the way it is written with handlebars 'each'
     service_health = ["a", "b", "c",]
     region = "us-west-2"
     seed = 1234
