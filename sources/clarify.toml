@@ -15,7 +15,7 @@ license-files = [
     { path = "LICENSE-THIRD-PARTY", hash = 0x7e40bc60 },
 ]
 
-[clarify.crossbeam-queue]
+[clarify.crossbeam-channel]
 expression = "(MIT OR Apache-2.0) AND BSD-2-Clause-FreeBSD"
 license-files = [
     { path = "LICENSE-APACHE", hash = 0x24b54f4b },
