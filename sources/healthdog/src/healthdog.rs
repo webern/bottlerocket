@@ -1,5 +1,4 @@
 use crate::config::Config;
-use crate::error::Error::HttpResponse;
 use crate::error::{self, Result};
 use crate::service_check::{ServiceCheck, SystemdCheck};
 use bottlerocket_release::BottlerocketRelease;
