@@ -98,21 +98,24 @@ impl Healthdog {
     /// are healthy, or `is_healthy=false&failed_services=a,b` if services 'a' and 'b' have failed.
     pub(crate) fn send_health_ping(&self) -> Result<()> {
         let mut is_healthy = true;
-        let mut failed_services = String::new();
+        let mut failed_services: Vec<String> = Vec::new();
         for service in &self.config.service_health {
             let service_status = self.healthcheck.check(service)?;
             if !service_status.is_healthy {
                 is_healthy = false;
                 match service_status.exit_code {
-                    None => failed_services.push_str(service),
-                    Some(exit_code) => failed_services
-                        .push_str(format!("{}:{},", service.as_str(), exit_code).as_str()),
+                    None => failed_services.push(service.clone()),
+                    Some(exit_code) => {
+                        failed_services.push(format!("{}:{}", service.as_str(), exit_code))
+                    }
                 }
             }
         }
         let mut values = HashMap::new();
         values.insert(String::from("is_healthy"), format!("{}", is_healthy));
-        values.insert(String::from("failed_services"), failed_services);
+        // consistent ordering
+        failed_services.sort();
+        values.insert(String::from("failed_services"), failed_services.join(","));
         self.send("healthdog", "health-ping", Some(&values))?;
         Ok(())
     }

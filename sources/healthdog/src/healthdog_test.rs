@@ -98,7 +98,7 @@ fn send_unhealthy_ping() {
         request::query(url_decoded(contains(("seed", "2041")))),
         request::query(url_decoded(contains((
             "failed_services",
-            "service_afail2:2,service_cfail1:1,"
+            "service_afail2:2,service_cfail1:1"
         )))),
         request::query(url_decoded(contains(("is_healthy", "false")))),
     ];
@@ -108,10 +108,12 @@ fn send_unhealthy_ping() {
         Some(Config {
             metrics_url: format!("http://localhost:{}/metrics", port),
             send_metrics: true,
+            // note that these are out-of-order sort order to ensure that failed services are sorted
+            // in the url
             service_health: vec![
+                String::from("service_cfail1"),
                 String::from("service_afail2"),
                 String::from("service_b"),
-                String::from("service_cfail1"),
             ],
             region: String::from("us-east-1"),
             seed: 2041,
