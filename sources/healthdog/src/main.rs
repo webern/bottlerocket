@@ -53,14 +53,14 @@ fn main() -> ! {
 }
 
 /// To facilitate end-to-end testing, ensure that the logger is only initialized once.
-static INIT_LOGGER_INCE: Once = Once::new();
+static INIT_LOGGER_ONCE: Once = Once::new();
 
 fn main_inner<A>(args: A, service_check: Box<dyn ServiceCheck>) -> Result<()>
 where
     A: Iterator<Item = String>,
 {
     let arguments = parse_args(args)?;
-    INIT_LOGGER_INCE.call_once(|| {
+    INIT_LOGGER_ONCE.call_once(|| {
         match arguments.log_level {
             None => Builder::new().init(),
             Some(level) => Builder::new().filter_module("healthdog", level).init(),

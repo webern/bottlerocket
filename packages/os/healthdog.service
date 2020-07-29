@@ -1,0 +1,10 @@
+[Unit]
+Description=Send a Healthdog Ping
+
+[Service]
+Type=oneshot
+RemainAfterExit=true
+ExecStart=/bin/healthdog --log-level trace send-health-ping
+
+[Install]
+WantedBy=multi-user.target

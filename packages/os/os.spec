@@ -25,6 +25,8 @@ Source105: settings-applier.service
 Source106: migrator.service
 Source107: host-containers@.service
 Source110: mark-successful-boot.service
+Source111: healthdog.service
+Source112: healthdog.timer
 
 # 2xx sources: tmpfilesd configs
 Source200: migration-tmpfiles.conf
@@ -245,7 +247,7 @@ install -p -m 0644 %{S:5} %{S:6} %{buildroot}%{_cross_templatedir}
 install -d %{buildroot}%{_cross_unitdir}
 install -p -m 0644 \
   %{S:100} %{S:101} %{S:102} %{S:103} %{S:105} \
-  %{S:106} %{S:107} %{S:110} \
+  %{S:106} %{S:107} %{S:110} %{S:111} %{S:112} \
   %{buildroot}%{_cross_unitdir}
 
 install -d %{buildroot}%{_cross_tmpfilesdir}
@@ -338,6 +340,8 @@ install -p -m 0644 %{S:202} %{buildroot}%{_cross_tmpfilesdir}/thar-be-updates.co
 %{_cross_bindir}/healthdog
 %dir %{_cross_templatedir}
 %{_cross_templatedir}/healthdog-toml
+%{_cross_unitdir}/healthdog.service
+%{_cross_unitdir}/healthdog.timer
 
 %files -n %{_cross_os}logdog
 %{_cross_bindir}/logdog
