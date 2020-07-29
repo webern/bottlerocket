@@ -3,7 +3,7 @@ Description=Send a Healthdog Ping
 
 [Service]
 Type=oneshot
-RemainAfterExit=true
+RemainAfterExit=false
 ExecStart=/bin/healthdog --log-level trace send-health-ping
 
 [Install]
