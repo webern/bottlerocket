@@ -10,6 +10,10 @@ use std::str::FromStr;
 use std::time::Duration;
 use url::Url;
 
+/// 20 seconds is arbitrary, but we to give the option of passing a timeout in the send command
+/// because we use it to send-boot-success, which we want to have a short timeout.
+const DEFAULT_TIMEOUT_SECONDS: u64 = 20;
+
 pub(crate) struct Healthdog {
     config: Config,
     os_release: BottlerocketRelease,
@@ -51,6 +55,7 @@ impl Healthdog {
         sender: S1,
         event: S2,
         values: Option<&HashMap<String, String>>,
+        timeout: Option<u64>,
     ) -> Result<()>
     where
         S1: AsRef<str>,
@@ -83,13 +88,14 @@ impl Healthdog {
                 }
             }
         }
-        Self::send_get_request(url, 20)?;
+        Self::send_get_request(url, timeout.unwrap_or(DEFAULT_TIMEOUT_SECONDS))?;
         Ok(())
     }
 
     /// Sends a notification to the metrics url that boot succeeded.
     pub(crate) fn send_boot_success(&self) -> Result<()> {
-        self.send("healthdog", "boot-success", None)?;
+        // timeout of 1 second to avoid blocking the mark-boot-success service
+        self.send("healthdog", "boot-success", None, Some(1))?;
         Ok(())
     }
 
@@ -116,7 +122,7 @@ impl Healthdog {
         // consistent ordering
         failed_services.sort();
         values.insert(String::from("failed_services"), failed_services.join(","));
-        self.send("healthdog", "health-ping", Some(&values))?;
+        self.send("healthdog", "health-ping", Some(&values), None)?;
         Ok(())
     }
 
