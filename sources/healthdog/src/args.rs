@@ -1,5 +1,5 @@
 use crate::error::{self, Error, Result};
-use simplelog::LevelFilter;
+use log::LevelFilter;
 use snafu::{ensure, OptionExt};
 use std::path::PathBuf;
 use std::str::FromStr;
@@ -31,7 +31,7 @@ pub(crate) struct Arguments {
     pub(crate) command: Command,
     pub(crate) config_path: PathBuf,
     pub(crate) os_release: Option<PathBuf>,
-    pub(crate) log_level: LevelFilter,
+    pub(crate) log_level: Option<LevelFilter>,
 }
 
 /// The usage message for --help.
@@ -57,7 +57,7 @@ where
     let mut config_path = None;
     let mut subcommand = None;
     let mut os_release = None;
-    let mut log_level = LevelFilter::Info;
+    let mut log_level = None;
     let mut iter = args.skip(1);
     while let Some(arg) = iter.next() {
         match arg.as_ref() {
@@ -71,13 +71,15 @@ where
                 let val = iter.next().context(error::Usage {
                     message: String::from("Did not give argument to --log-level"),
                 })?;
-                log_level = LevelFilter::from_str(&val).map_err(|_| error::Error::Usage {
-                    message: Some(format!(
-                        "Incorrect argument to --log-level, '{}'.\n\
+                log_level = Some(
+                    LevelFilter::from_str(&val).map_err(|_| error::Error::Usage {
+                        message: Some(format!(
+                            "Incorrect argument to --log-level, '{}'.\n\
                         Must be one of trace|debug|info|warn|error.",
-                        val
-                    )),
-                })?;
+                            val
+                        )),
+                    })?,
+                );
             }
             "--os-release" => {
                 let val = iter.next().context(error::Usage {
