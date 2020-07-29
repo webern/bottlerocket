@@ -2,6 +2,7 @@
 
 use snafu::Snafu;
 use std::path::PathBuf;
+use url::Url;
 
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub(crate)")]
@@ -16,11 +17,19 @@ pub(crate) enum Error {
     },
 
     // TODO - improve
-    #[snafu(display("Failed to run a command: {}", source))]
-    Command { source: std::io::Error },
+    #[snafu(display("Command '{}' with args '{:?}' failed: {}", command, args, source))]
+    Command {
+        command: String,
+        args: Vec<String>,
+        source: std::io::Error,
+    },
 
-    #[snafu(display("Command returned exit code {}: {}", exit, stderr))]
-    CommandExit { exit: i32, stderr: String },
+    #[snafu(display("Command '{}' returned exit code {}: {}", command, exit, stderr))]
+    CommandExit {
+        command: String,
+        exit: i32,
+        stderr: String,
+    },
 
     #[snafu(display("Failed to parse config file {}: {}", path.display(), source))]
     ConfigParse {
@@ -33,6 +42,12 @@ pub(crate) enum Error {
         path: PathBuf,
         source: std::io::Error,
     },
+
+    #[snafu(display("Error building HTTP client for {}: {}", url.as_str(), source))]
+    HttpClient { url: Url, source: reqwest::Error },
+
+    #[snafu(display("Error receiving response {}: {}", url.as_str(), source))]
+    HttpResponse { url: Url, source: reqwest::Error },
 
     #[snafu(display("Usage error."))]
     Usage { message: Option<String> },

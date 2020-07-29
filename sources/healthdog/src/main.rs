@@ -33,7 +33,9 @@ use crate::healthdog::Healthdog;
 use crate::service_check::{ServiceCheck, SystemdCheck};
 use args::parse_args;
 use bottlerocket_release::BottlerocketRelease;
+use simplelog::{ConfigBuilder, TermLogger, TerminalMode};
 use snafu::ResultExt;
+use std::sync::Once;
 use std::{env, process};
 
 fn main() -> ! {
@@ -54,11 +56,26 @@ fn main() -> ! {
     })
 }
 
+/// To facilitate end-to-end testing, ensure that the logger is only initialized once.
+static INIT_LOGGER_INCE: Once = Once::new();
+
 fn main_inner<A>(args: A, service_check: Box<dyn ServiceCheck>) -> Result<()>
 where
     A: Iterator<Item = String>,
 {
     let arguments = parse_args(args)?;
+    INIT_LOGGER_INCE.call_once(|| {
+        if let Err(e) = TermLogger::init(
+            arguments.log_level,
+            ConfigBuilder::new()
+                .add_filter_allow_str("healthdog")
+                .build(),
+            TerminalMode::Mixed,
+        ) {
+            // do not fail the program for lack of a logger
+            eprintln!("unable to initialize logger: {}", e);
+        }
+    });
     let os_release = if let Some(os_release_path) = &arguments.os_release {
         BottlerocketRelease::from_file(os_release_path)
     } else {

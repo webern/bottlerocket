@@ -1,5 +1,6 @@
 use crate::error::{self, Error, Result};
 use lazy_static::lazy_static;
+use log::debug;
 use regex::Regex;
 use snafu::ResultExt;
 use std::process::Command;
@@ -49,12 +50,14 @@ impl Outcome {
 }
 
 fn systemctl(args: &[&str]) -> Result<Outcome> {
+    debug!("calling systemctl with '{:?}'", args);
     let output = Command::new("systemctl")
         .args(args)
         .output()
-        // TODO - add more info to this error?
-        .context(error::Command)?;
-
+        .context(error::Command {
+            command: "systemctl",
+            args: args.iter().map(|&s| s.to_owned()).collect::<Vec<String>>(),
+        })?;
     Ok(Outcome {
         exit: output.status.code().unwrap_or(-1),
         stdout: String::from_utf8_lossy(output.stdout.as_slice()).into(),
@@ -80,6 +83,7 @@ fn parse_service_exit_code(service: &str) -> Result<Option<i32>> {
     let outcome = systemctl(&["--no-pager", "status", service])?;
     if outcome.exit != 0 {
         return Err(Error::CommandExit {
+            command: format!("systemctl --no-pager status {}", service),
             exit: outcome.exit,
             stderr: outcome.stderr,
         });
@@ -97,6 +101,7 @@ lazy_static! {
 }
 
 fn parse_stdout(stdout: &str) -> Result<Option<i32>> {
+    debug!("parsing systemctl stdout:\n{}", stdout);
     let captures = if let Some(caps) = RX.captures(stdout) {
         caps
     } else {

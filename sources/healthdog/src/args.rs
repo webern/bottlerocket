@@ -1,6 +1,8 @@
 use crate::error::{self, Error, Result};
+use simplelog::LevelFilter;
 use snafu::{ensure, OptionExt};
 use std::path::PathBuf;
+use std::str::FromStr;
 
 const BOOT_SUCCESS: &str = "send-boot-success";
 const HEALTH_PING: &str = "send-health-ping";
@@ -29,6 +31,7 @@ pub(crate) struct Arguments {
     pub(crate) command: Command,
     pub(crate) config_path: PathBuf,
     pub(crate) os_release: Option<PathBuf>,
+    pub(crate) log_level: LevelFilter,
 }
 
 /// The usage message for --help.
@@ -43,6 +46,7 @@ SUBCOMMANDS:
 GLOBAL OPTIONS:
     [ --config ]            Path to the TOML config file.
     [ --os-release ]        Path to the os-release file.
+    [ --log-level ]         Logging verbosity trace|debug|info|warn|error
 ";
 
 /// Parses the command line arguments.
@@ -53,6 +57,7 @@ where
     let mut config_path = None;
     let mut subcommand = None;
     let mut os_release = None;
+    let mut log_level = LevelFilter::Info;
     let mut iter = args.skip(1);
     while let Some(arg) = iter.next() {
         match arg.as_ref() {
@@ -61,6 +66,18 @@ where
                     message: String::from("Did not give argument to --config"),
                 })?;
                 config_path = Some(PathBuf::from(val));
+            }
+            "--log-level" => {
+                let val = iter.next().context(error::Usage {
+                    message: String::from("Did not give argument to --log-level"),
+                })?;
+                log_level = LevelFilter::from_str(&val).map_err(|_| error::Error::Usage {
+                    message: Some(format!(
+                        "Incorrect argument to --log-level, '{}'.\n\
+                        Must be one of trace|debug|info|warn|error.",
+                        val
+                    )),
+                })?;
             }
             "--os-release" => {
                 let val = iter.next().context(error::Usage {
@@ -93,6 +110,7 @@ where
         })?,
         config_path: config_path.unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH)),
         os_release,
+        log_level,
     })
 }
 

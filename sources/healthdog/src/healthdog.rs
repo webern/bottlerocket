@@ -1,7 +1,9 @@
 use crate::config::Config;
+use crate::error::Error::HttpResponse;
 use crate::error::{self, Result};
 use crate::service_check::{ServiceCheck, SystemdCheck};
 use bottlerocket_release::BottlerocketRelease;
+use log::debug;
 use reqwest::blocking::Client;
 use snafu::ResultExt;
 use std::collections::HashMap;
@@ -119,15 +121,15 @@ impl Healthdog {
     // private
 
     fn send_get_request(url: Url, timeout_sec: u64) -> Result<()> {
-        // TODO - remove this debug print
-        eprintln!("{}", url.as_str());
-        // TODO - create error variants for all of these unwraps
+        debug!("sending: {}", url.as_str());
         let client = Client::builder()
             .timeout(Duration::from_secs(timeout_sec))
             .build()
-            .unwrap();
-        let response = client.get(url).send().unwrap();
-        response.error_for_status().unwrap();
+            .context(error::HttpClient { url: url.clone() })?;
+        let response = client.get(url.clone()).send().unwrap();
+        response
+            .error_for_status()
+            .context(error::HttpResponse { url })?;
         Ok(())
     }
 }
