@@ -1,6 +1,6 @@
-use crate::error::{self, Error, Result};
+use crate::error::{self, Result};
 use lazy_static::lazy_static;
-use log::debug;
+use log::trace;
 use regex::Regex;
 use snafu::ResultExt;
 use std::process::Command;
@@ -38,19 +38,16 @@ impl ServiceCheck for SystemdCheck {
 struct Outcome {
     exit: i32,
     stdout: String,
-    stderr: String,
 }
-
-const EXIT_TRUE: i32 = 0;
 
 impl Outcome {
     fn is_exit_true(&self) -> bool {
-        self.exit == EXIT_TRUE
+        self.exit == 0
     }
 }
 
 fn systemctl(args: &[&str]) -> Result<Outcome> {
-    debug!("calling systemctl with '{:?}'", args);
+    trace!("calling systemctl with '{:?}'", args);
     let output = Command::new("systemctl")
         .args(args)
         .output()
@@ -61,7 +58,6 @@ fn systemctl(args: &[&str]) -> Result<Outcome> {
     Ok(Outcome {
         exit: output.status.code().unwrap_or(-1),
         stdout: String::from_utf8_lossy(output.stdout.as_slice()).into(),
-        stderr: String::from_utf8_lossy(output.stderr.as_slice()).into(),
     })
 }
 
@@ -80,14 +76,9 @@ fn is_ok(service: &str) -> Result<bool> {
 }
 
 fn parse_service_exit_code(service: &str) -> Result<Option<i32>> {
+    // we don't check the command's exit code because systemctl returns non-zero codes for various
+    // non-error execution outcomes.
     let outcome = systemctl(&["--no-pager", "status", service])?;
-    if outcome.exit != 0 {
-        return Err(Error::CommandExit {
-            command: format!("systemctl --no-pager status {}", service),
-            exit: outcome.exit,
-            stderr: outcome.stderr,
-        });
-    }
     Ok(parse_stdout(&outcome.stdout)?)
 }
 
@@ -101,7 +92,7 @@ lazy_static! {
 }
 
 fn parse_stdout(stdout: &str) -> Result<Option<i32>> {
-    debug!("parsing systemctl stdout:\n{}", stdout);
+    trace!("parsing systemctl stdout:\n{}", stdout);
     let captures = if let Some(caps) = RX.captures(stdout) {
         caps
     } else {

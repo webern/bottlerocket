@@ -16,19 +16,11 @@ pub(crate) enum Error {
         source: std::num::ParseIntError,
     },
 
-    // TODO - improve
     #[snafu(display("Command '{}' with args '{:?}' failed: {}", command, args, source))]
     Command {
         command: String,
         args: Vec<String>,
         source: std::io::Error,
-    },
-
-    #[snafu(display("Command '{}' returned exit code {}: {}", command, exit, stderr))]
-    CommandExit {
-        command: String,
-        exit: i32,
-        stderr: String,
     },
 
     #[snafu(display("Failed to parse config file {}: {}", path.display(), source))]
