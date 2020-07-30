@@ -57,7 +57,7 @@ seed.setting-generator = "bork seed"
 [settings.healthdog]
 # the URL to which anonymous health metrics will be sent
 metrics-url = "https://example-metrics-url.com/metrics/"
-# set to false to opt-out of anonymout helth metrics collection
+# whether or not health metrics will be sent. set to false to opt-out
 send-metrics = true
 # the list of services that are checked to determine if a host is healthy
 service-health = ["apiserver", "containerd", "host-containerd"]
