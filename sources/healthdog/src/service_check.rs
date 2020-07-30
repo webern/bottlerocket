@@ -9,7 +9,7 @@ use std::process::Command;
 pub(crate) struct ServiceHealth {
     /// Whether or not the service reports as healthy.
     pub(crate) is_healthy: bool,
-    /// In the event of an unhealthy service, the service's failure exit code goes here.
+    /// In the event of an unhealthy service, the service's exit code (if found).
     pub(crate) exit_code: Option<i32>,
 }
 
