@@ -115,7 +115,7 @@ fn parse_stdout_exit_0() {
    Active: active (exited) since Tue 2020-07-28 17:20:10 UTC; 4min 11s ago
   Process: 824 ExecStart=/usr/sbin/somesvcd --mode=boot --pid-file=/run/somesvc/pid
            --attach-to-session (code=exited, status=0/SUCCESS)
-  Process: 846 ExecStartPost=/usr/bin/somesvc show-splash (code=exited, status=0/SUCCESS)
+  Process: 846 ExecStartPost=/usr/bin/somesvc show-splash (code=exited, status=123/SUCCESS)
  Main PID: 845 (code=exited, status=0/SUCCESS)
 
 Jul 28 17:20:10 severus systemd[1]: Starting Do Somesvc Thing...
