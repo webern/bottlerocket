@@ -77,7 +77,7 @@ fn is_ok(service: &str) -> Result<bool> {
 
 fn parse_service_exit_code(service: &str) -> Result<Option<i32>> {
     // we don't check the command's exit code because systemctl returns non-zero codes for various
-    // non-error execution outcomes.
+    // non-exceptional execution outcomes.
     let outcome = systemctl(&["--no-pager", "status", service])?;
     Ok(parse_stdout(&outcome.stdout)?)
 }
