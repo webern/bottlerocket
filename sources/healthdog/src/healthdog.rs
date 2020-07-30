@@ -149,7 +149,10 @@ impl Healthdog {
             .timeout(Duration::from_secs(timeout_sec))
             .build()
             .context(error::HttpClient { url: url.clone() })?;
-        let response = client.get(url.clone()).send().unwrap();
+        let response = client
+            .get(url.clone())
+            .send()
+            .context(error::HttpSend { url: url.clone() })?;
         response
             .error_for_status()
             .context(error::HttpResponse { url })?;

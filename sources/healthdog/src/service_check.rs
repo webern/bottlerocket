@@ -110,16 +110,16 @@ fn parse_stdout(stdout: &str) -> Result<Option<i32>> {
 
 #[test]
 fn parse_stdout_exit_0() {
-    let stdout = r#"● plymouth-start.service - Show Plymouth Boot Screen
-   Loaded: loaded (/usr/lib/systemd/system/plymouth-start.service; static; vendor preset: disabled)
+    let stdout = r#"● somesvc-start.service - Do Somesvc Thing
+   Loaded: loaded (/usr/lib/systemd/system/somesvc-start.service; static; vendor preset: disabled)
    Active: active (exited) since Tue 2020-07-28 17:20:10 UTC; 4min 11s ago
-  Process: 824 ExecStart=/usr/sbin/plymouthd --mode=boot --pid-file=/run/plymouth/pid
+  Process: 824 ExecStart=/usr/sbin/somesvcd --mode=boot --pid-file=/run/somesvc/pid
            --attach-to-session (code=exited, status=0/SUCCESS)
-  Process: 846 ExecStartPost=/usr/bin/plymouth show-splash (code=exited, status=0/SUCCESS)
+  Process: 846 ExecStartPost=/usr/bin/somesvc show-splash (code=exited, status=0/SUCCESS)
  Main PID: 845 (code=exited, status=0/SUCCESS)
 
-Jul 28 17:20:10 severus systemd[1]: Starting Show Plymouth Boot Screen...
-Jul 28 17:20:10 severus systemd[1]: Started Show Plymouth Boot Screen.
+Jul 28 17:20:10 severus systemd[1]: Starting Do Somesvc Thing...
+Jul 28 17:20:10 severus systemd[1]: Started Do Somesvc Thing.
 "#;
     let got = parse_stdout(stdout).unwrap().unwrap();
     let want = 0;

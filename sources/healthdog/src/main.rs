@@ -18,6 +18,8 @@ mod error;
 mod healthdog;
 #[cfg(test)]
 mod healthdog_test;
+#[cfg(test)]
+mod main_test;
 mod service_check;
 
 use crate::args::{Command, USAGE};
@@ -28,7 +30,7 @@ use crate::service_check::{ServiceCheck, SystemdCheck};
 use args::parse_args;
 use bottlerocket_release::BottlerocketRelease;
 use env_logger::Builder;
-use log::trace;
+use log::{error, trace};
 use snafu::ResultExt;
 use std::sync::Once;
 use std::{env, process};
@@ -54,7 +56,8 @@ fn main() -> ! {
 /// To facilitate testing of `main_inner` function, ensure that the logger is only initialized once.
 static INIT_LOGGER_ONCE: Once = Once::new();
 
-fn main_inner<A>(args: A, service_check: Box<dyn ServiceCheck>) -> Result<()>
+/// pub(crate) for testing.
+pub(crate) fn main_inner<A>(args: A, service_check: Box<dyn ServiceCheck>) -> Result<()>
 where
     A: Iterator<Item = String>,
 {
@@ -76,6 +79,10 @@ where
         None => Config::new()?,
         Some(filepath) => Config::from_file(filepath)?,
     };
+    // exit early with no error if the opt-out flag is set
+    if !config.send_metrics || config.metrics_url.is_empty() {
+        return Ok(());
+    }
     let healthdog = Healthdog::from_parts(Some(config), Some(os_release), Some(service_check))?;
     match arguments.command {
         Command::BootSuccess => {
