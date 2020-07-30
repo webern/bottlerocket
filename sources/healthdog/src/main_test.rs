@@ -170,7 +170,7 @@ fn send_boot_success_404() {
 }
 
 #[test]
-/// assert that a the program will exit 0 even if the server sends a 404
+/// assert that we get an error when we have a bad subcommand
 fn usage_error() {
     let args = vec![String::from("healthdog"), String::from("bad-command")];
     let err = main_inner(args.iter().cloned(), Box::new(MockCheck {}))
