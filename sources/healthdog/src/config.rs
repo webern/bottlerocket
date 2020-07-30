@@ -1,9 +1,11 @@
-use crate::args::DEFAULT_CONFIG_PATH;
+// use crate::args::DEFAULT_CONFIG_PATH;
 use crate::error::{self, Result};
 use serde::Deserialize;
 use snafu::ResultExt;
 use std::fs;
 use std::path::{Path, PathBuf};
+
+const DEFAULT_CONFIG_PATH: &str = "/etc/healthdog.toml";
 
 #[derive(Debug, Deserialize)]
 pub(crate) struct Config {

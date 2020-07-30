@@ -7,14 +7,8 @@ use url::Url;
 #[derive(Debug, Snafu)]
 #[snafu(visibility = "pub(crate)")]
 pub(crate) enum Error {
-    #[snafu(display("Unable to load bottlerocket release info: '{}'", source))]
+    #[snafu(display("Unable to load Bottlerocket release info: '{}'", source))]
     BottlerocketRelease { source: bottlerocket_release::Error },
-
-    #[snafu(display("Unable to parse '{}' to an int: '{}'", value, source))]
-    IntParse {
-        value: String,
-        source: std::num::ParseIntError,
-    },
 
     #[snafu(display("Command '{}' with args '{:?}' failed: {}", command, args, source))]
     Command {
@@ -40,6 +34,12 @@ pub(crate) enum Error {
 
     #[snafu(display("Error receiving response {}: {}", url.as_str(), source))]
     HttpResponse { url: Url, source: reqwest::Error },
+
+    #[snafu(display("Unable to parse '{}' to an int: '{}'", value, source))]
+    IntParse {
+        value: String,
+        source: std::num::ParseIntError,
+    },
 
     #[snafu(display("Usage error."))]
     Usage { message: Option<String> },

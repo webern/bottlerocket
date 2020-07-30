@@ -6,7 +6,6 @@ use std::str::FromStr;
 
 const BOOT_SUCCESS: &str = "send-boot-success";
 const HEALTH_PING: &str = "send-health-ping";
-pub(crate) const DEFAULT_CONFIG_PATH: &str = "/etc/healthdog.toml";
 
 /// The command, e.g. `healthdog report-boot-success` or `healthdog send-health-ping`
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
@@ -29,7 +28,7 @@ impl Command {
 
 pub(crate) struct Arguments {
     pub(crate) command: Command,
-    pub(crate) config_path: PathBuf,
+    pub(crate) config_path: Option<PathBuf>,
     pub(crate) os_release: Option<PathBuf>,
     pub(crate) log_level: Option<LevelFilter>,
 }
@@ -44,8 +43,8 @@ SUBCOMMANDS:
     send-health-ping        Check services and report whether the host is healthy or not.
 
 GLOBAL OPTIONS:
-    [ --config ]            Path to the TOML config file.
-    [ --os-release ]        Path to the os-release file.
+    [ --config ]            Path to the TOML config file
+    [ --os-release ]        Path to the os-release file
     [ --log-level ]         Logging verbosity trace|debug|info|warn|error
 ";
 
@@ -110,7 +109,7 @@ where
         command: subcommand.context(error::Usage {
             message: Some(String::from("Subcommand not found.")),
         })?,
-        config_path: config_path.unwrap_or_else(|| PathBuf::from(DEFAULT_CONFIG_PATH)),
+        config_path,
         os_release,
         log_level,
     })
@@ -127,7 +126,7 @@ fn parse_args_test_boot_success() {
     let iter = raw_args.iter().cloned();
     let args = parse_args(iter).unwrap();
     assert_eq!(args.command, Command::BootSuccess);
-    assert_eq!(args.config_path.to_str().unwrap(), "/some/path");
+    assert_eq!(args.config_path.unwrap().to_str().unwrap(), "/some/path");
     assert!(args.os_release.is_none());
 }
 
@@ -142,7 +141,7 @@ fn parse_args_test_boot_success_default_config() {
     let iter = raw_args.iter().cloned();
     let args = parse_args(iter).unwrap();
     assert_eq!(args.command, Command::BootSuccess);
-    assert_eq!(args.config_path.to_str().unwrap(), "/etc/healthdog.toml");
+    assert!(args.config_path.is_none());
     assert_eq!(args.os_release.unwrap().to_str().unwrap(), "/my/os-release");
 }
 
@@ -157,7 +156,7 @@ fn parse_args_test_health_ping() {
     let iter = raw_args.iter().cloned();
     let args = parse_args(iter).unwrap();
     assert_eq!(args.command, Command::HealthPing);
-    assert_eq!(args.config_path.to_str().unwrap(), "/some/path");
+    assert_eq!(args.config_path.unwrap().to_str().unwrap(), "/some/path");
 }
 
 #[test]

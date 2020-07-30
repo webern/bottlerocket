@@ -4,14 +4,13 @@ Current version: 0.1.0
 
 ## Introduction
 
-`healthdog` is a program that gathers logs from various places on a Bottlerocket host and combines them
-into a tarball for easy export.
+`healthdog` sends anonymous information about the health of a Bottlerocket host.
+It does so by sending key-value pairs as query params in an HTTP GET request.
 
-Usage example:
-```rust
-$ healthdog
-logs are at: /tmp/bottlerocket-logs.tar.gz
-```
+## What it Sends
+
+TODO - list of the metrics being sent.
+
 
 ## Colophon
 

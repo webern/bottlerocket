@@ -21,9 +21,9 @@ fn os_release() -> BottlerocketRelease {
     BottlerocketRelease::from_file(&path).unwrap()
 }
 
-struct TestCheck {}
+struct MockCheck {}
 
-impl ServiceCheck for TestCheck {
+impl ServiceCheck for MockCheck {
     fn check(&self, service_name: &str) -> Result<ServiceHealth> {
         if service_name.ends_with("fail1") {
             Ok(ServiceHealth {
@@ -35,8 +35,6 @@ impl ServiceCheck for TestCheck {
                 is_healthy: false,
                 exit_code: Some(2),
             })
-        } else if service_name.ends_with("error") {
-            Err(crate::error::Error::Usage { message: None })
         } else {
             Ok(ServiceHealth {
                 is_healthy: true,
@@ -78,7 +76,7 @@ fn send_healthy_ping() {
             ignore_waves: false,
         }),
         Some(os_release()),
-        Some(Box::new(TestCheck {})),
+        Some(Box::new(MockCheck {})),
     )
     .unwrap();
     healthdog.send_health_ping().unwrap();
@@ -121,7 +119,7 @@ fn send_unhealthy_ping() {
             ignore_waves: false,
         }),
         Some(os_release()),
-        Some(Box::new(TestCheck {})),
+        Some(Box::new(MockCheck {})),
     )
     .unwrap();
     healthdog.send_health_ping().unwrap();
@@ -157,7 +155,7 @@ fn send_boot_success() {
             ignore_waves: false,
         }),
         Some(os_release()),
-        Some(Box::new(TestCheck {})),
+        Some(Box::new(MockCheck {})),
     )
     .unwrap();
     healthdog.send_boot_success().unwrap();

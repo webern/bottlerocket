@@ -1,17 +1,16 @@
 /*!
 # Introduction
 
-`healthdog` is a program that gathers logs from various places on a Bottlerocket host and combines them
-into a tarball for easy export.
+`healthdog` sends anonymous information about the health of a Bottlerocket host.
+It does so by sending key-value pairs as query params in an HTTP GET request.
 
-Usage example:
-```
-$ healthdog
-logs are at: /tmp/bottlerocket-logs.tar.gz
-```
+# What it Sends
+
+TODO - list of the metrics being sent.
+
 */
 
-#![deny(rust_2018_idioms)]
+#![deny(rust_2018_idioms, unreachable_pub, missing_copy_implementations)]
 
 mod args;
 mod config;
@@ -52,7 +51,7 @@ fn main() -> ! {
     })
 }
 
-/// To facilitate end-to-end testing, ensure that the logger is only initialized once.
+/// To facilitate testing of `main_inner` function, ensure that the logger is only initialized once.
 static INIT_LOGGER_ONCE: Once = Once::new();
 
 fn main_inner<A>(args: A, service_check: Box<dyn ServiceCheck>) -> Result<()>
@@ -73,14 +72,17 @@ where
         BottlerocketRelease::new()
     }
     .context(error::BottlerocketRelease)?;
-    let config = Config::from_file(&arguments.config_path)?;
+    let config = match &arguments.config_path {
+        None => Config::new()?,
+        Some(filepath) => Config::from_file(filepath)?,
+    };
     let healthdog = Healthdog::from_parts(Some(config), Some(os_release), Some(service_check))?;
     match arguments.command {
         Command::BootSuccess => {
             if let Err(err) = healthdog.send_boot_success() {
                 // we don't want to fail the boot if there is a failure to send this message, so
                 // we log the error and return Ok(())
-                eprintln!("healthdog error while reporting boot success: {}", err);
+                error!("Error while reporting boot success: {}", err);
             }
         }
         Command::HealthPing => {

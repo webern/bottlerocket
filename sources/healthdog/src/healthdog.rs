@@ -10,24 +10,25 @@ use std::str::FromStr;
 use std::time::Duration;
 use url::Url;
 
-/// 20 seconds is arbitrary, but we to give the option of passing a timeout in the send command
-/// because we use it to send-boot-success, which we want to have a short timeout.
+/// The send function optionally takes a timout parameter so that we can have a short timeout for
+/// `boot_success`. When `None` is passed, this default timout is used. 20 seconds was arbitrarily
+/// chosen and can be changed if the need arises.
 const DEFAULT_TIMEOUT_SECONDS: u64 = 20;
 
+/// Sends key-value pairs as query params to a URL configured in `config`. Also provides the ability
+/// to check the health of a list of services and send information about whether or not the services
+/// are running.
 pub(crate) struct Healthdog {
+    /// The `Healthdog` configuration, e.g. from `/etc/healthdog.toml`
     config: Config,
+    /// Information about the Bottlerocket release, e.g. from `os-release`
     os_release: BottlerocketRelease,
+    /// A trait object that checks if a service (listed in `config`) is healthy. This can be passed-
+    /// in, but defaults to an object that checks `systemd` services by name.
     healthcheck: Box<dyn ServiceCheck>,
 }
 
 impl Healthdog {
-    /// Create a new instance by parsing the os-release and healthdog.toml files from their default
-    /// locations, and constructing a SystemdCheck object.
-    #[allow(dead_code)]
-    pub(crate) fn new() -> Result<Self> {
-        Self::from_parts(None, None, None)
-    }
-
     /// Create a new instance by optionally passing in the `Config`, the `BottlerocketRelease`, and
     /// `SystemCheck` objects. For each of these, if `None` is passed, then the default is used.
     pub(crate) fn from_parts(
@@ -48,14 +49,29 @@ impl Healthdog {
         })
     }
 
-    /// Sends any message to the metrics url
-    // TODO - send documentation
+    /// # Description
+    ///
+    /// Sends key-value pairs as query parameters in a GET request to the URL in `config`. A
+    /// standard set of key-value pairs are sent first, and appended by any additional parameters
+    /// passed in to this function. The standard keys are: sender, event, version, variant, arch,
+    /// region, seed, version-lock, and ignore-waves.
+    ///
+    /// # Parameters
+    ///
+    /// * `sender`:          This is the name of the application sending the metrics e.g.
+    ///                      `healthdog` or `updog`.
+    /// * `event`:           The name of the type of metrics event that is being sent. For example
+    ///                      `boot-success` or `health-ping`.
+    /// * `values`:          The key-value pairs that you want to send. These will be sorted by key
+    ///                      before sending to ensure consistency or key-value ordering.
+    /// * `timeout_seconds`: The timeout setting for the HTTP client setting. Defaults to
+    ///                      `DEFAULT_TIMEOUT_SECONDS` when `None` is passed.
     pub(crate) fn send<S1, S2>(
         &self,
         sender: S1,
         event: S2,
         values: Option<&HashMap<String, String>>,
-        timeout: Option<u64>,
+        timeout_seconds: Option<u64>,
     ) -> Result<()>
     where
         S1: AsRef<str>,
@@ -88,7 +104,7 @@ impl Healthdog {
                 }
             }
         }
-        Self::send_get_request(url, timeout.unwrap_or(DEFAULT_TIMEOUT_SECONDS))?;
+        Self::send_get_request(url, timeout_seconds.unwrap_or(DEFAULT_TIMEOUT_SECONDS))?;
         Ok(())
     }
 
@@ -101,7 +117,8 @@ impl Healthdog {
 
     /// Checks the services listed in `config.service_health` using `healthcheck`. Sends a
     /// notification to the metrics url reporting `is_healthy=true&failed_services=` if all services
-    /// are healthy, or `is_healthy=false&failed_services=a,b` if services 'a' and 'b' have failed.
+    /// are healthy, or `is_healthy=false&failed_services=a:1,b:2` where `a` and `b` are the failed
+    /// services, and `1` and `2` are exit codes of the failed services.
     pub(crate) fn send_health_ping(&self) -> Result<()> {
         let mut is_healthy = true;
         let mut failed_services: Vec<String> = Vec::new();
@@ -119,14 +136,12 @@ impl Healthdog {
         }
         let mut values = HashMap::new();
         values.insert(String::from("is_healthy"), format!("{}", is_healthy));
-        // consistent ordering
+        // consistent ordering of failed services
         failed_services.sort();
         values.insert(String::from("failed_services"), failed_services.join(","));
         self.send("healthdog", "health-ping", Some(&values), None)?;
         Ok(())
     }
-
-    // private
 
     fn send_get_request(url: Url, timeout_sec: u64) -> Result<()> {
         debug!("sending: {}", url.as_str());
