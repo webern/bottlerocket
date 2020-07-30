@@ -155,6 +155,13 @@ Summary: Thar data store migrations
 %description -n %{_cross_os}migrations
 %{summary}.
 
+%if "%{_cross_variant}" == "aws-ecs-1"
+%package -n %{_cross_os}ecs-settings-applier
+Summary: Settings generator for ECS
+%description -n %{_cross_os}ecs-settings-applier
+%{summary}.
+%endif
+
 %prep
 %setup -T -c
 %cargo_prep
@@ -187,6 +194,13 @@ mkdir bin
     -p apiclient \
     %{nil}
 
+# Build conditional ECS component
+%if "%{_cross_variant}" == "aws-ecs-1"
+%cargo_build --manifest-path %{_builddir}/sources/Cargo.toml \
+    -p ecs-settings-applier \
+    %{nil}
+%endif
+
 # Build the migrations
 for crate in $(find %{_builddir}/sources/api/migration/migrations -name 'Cargo.toml'); do
     %cargo_build_static --manifest-path "${crate}"
@@ -204,6 +218,16 @@ for p in \
 do
   install -p -m 0755 ${HOME}/.cache/%{__cargo_target}/release/${p} %{buildroot}%{_cross_bindir}
 done
+
+
+%if "%{_cross_variant}" == "aws-ecs-1"
+for p in \
+  ecs-settings-applier;
+do
+  install -p -m 0755 ${HOME}/.cache/%{__cargo_target}/release/${p} %{buildroot}%{_cross_bindir}
+done
+%endif
+
 
 for p in apiclient ; do
   install -p -m 0755 ${HOME}/.cache/%{__cargo_target_static}/release/${p} %{buildroot}%{_cross_bindir}
@@ -345,5 +369,10 @@ install -p -m 0644 %{S:202} %{buildroot}%{_cross_tmpfilesdir}/thar-be-updates.co
 
 %files -n %{_cross_os}logdog
 %{_cross_bindir}/logdog
+
+%if "%{_cross_variant}" == "aws-ecs-1"
+%files -n %{_cross_os}ecs-settings-applier
+%{_cross_bindir}/ecs-settings-applier
+%endif
 
 %changelog
