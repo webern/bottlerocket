@@ -122,6 +122,6 @@ Jul 28 17:20:10 severus systemd[1]: Starting Do Somesvc Thing...
 Jul 28 17:20:10 severus systemd[1]: Started Do Somesvc Thing.
 "#;
     let got = parse_stdout(stdout).unwrap().unwrap();
-    let want = 0;
+    let want = 123;
     assert_eq!(got, want);
 }
