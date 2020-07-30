@@ -145,7 +145,7 @@ struct AwsSettings {
     region: SingleLineString,
 }
 
-// Healthdog related settings.
+// Healthdog settings.
 #[model]
 struct HealthdogSettings {
     metrics_url: Url,
