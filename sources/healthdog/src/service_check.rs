@@ -85,7 +85,7 @@ fn parse_service_exit_code(service: &str) -> Result<Option<i32>> {
 /// Regex pattern for finding the exit code of a systemd service that has exited. There is a single
 /// capture group, named `exit_code`.
 const SYSTEMD_EXIT_REGEX_PATTERN: &str =
-    r#"Main PID: \d+ \(code=[a-zA-Z0-9-_]+, status=(?P<exit_code>\d{1,3})/[A-Z]+\)"#;
+    r#"Main PID: \d+ \(code=[a-zA-Z0-9-_]+, status=(?P<exit_code>\d{1,3})/[a-zA-Z0-9-_]+\)"#;
 
 lazy_static! {
     static ref RX: Regex = Regex::new(SYSTEMD_EXIT_REGEX_PATTERN).unwrap();
