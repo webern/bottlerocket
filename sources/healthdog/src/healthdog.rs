@@ -64,7 +64,7 @@ impl Healthdog {
     ///                      `boot-success` or `health-ping`.
     /// * `values`:          The key-value pairs that you want to send. These will be sorted by key
     ///                      before sending to ensure consistency or key-value ordering.
-    /// * `timeout_seconds`: The timeout setting for the HTTP client setting. Defaults to
+    /// * `timeout_seconds`: The timeout setting for the HTTP client. Defaults to
     ///                      `DEFAULT_TIMEOUT_SECONDS` when `None` is passed.
     pub(crate) fn send<S1, S2>(
         &self,
