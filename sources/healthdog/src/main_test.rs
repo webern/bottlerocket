@@ -91,7 +91,7 @@ fn os_release_path(tempdir: &TempDir) -> String {
 }
 
 #[test]
-fn send_boot_success_happy() {
+fn send_boot_success() {
     let server = Server::run();
     server.expect(
         Expectation::matching(request::method_path("GET", "/metrics"))
