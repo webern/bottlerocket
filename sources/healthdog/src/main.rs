@@ -91,7 +91,7 @@ fn main() -> ! {
     })
 }
 
-/// To facilitate testing of `main_inner` function, ensure that the logger is only initialized once.
+/// To facilitate testing of `main_inner`, ensure that the logger is only initialized once.
 static INIT_LOGGER_ONCE: Once = Once::new();
 
 /// pub(crate) for testing.
