@@ -81,7 +81,7 @@ impl Healthdog {
             url: self.config.metrics_url.clone(),
         })?;
         {
-            let mut q = url.query_pairs_mut();
+            let q = url.query_pairs_mut();
             q.append_pair("sender", sender.as_ref());
             q.append_pair("event", event.as_ref());
             let version = format!("{}", &self.os_release.version_id);
