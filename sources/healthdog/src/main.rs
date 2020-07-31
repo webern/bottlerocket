@@ -1,13 +1,16 @@
 /*!
 # Introduction
 
-`healthdog` sends anonymous information about the health of a Bottlerocket host.
+Healthdog sends anonymous information about the health of a Bottlerocket host.
 It does so by sending key-value pairs as query params in an HTTP GET request.
+
+Healthdog also has the ability to check that a list of critical services is running.
+It does so using `systemctl` and reports services that are not healthy.
 
 # What it Sends
 
-```suggestion
-The standard set of metrics:
+### The standard set of metrics:
+
 * `sender`: the application sending the report.
 * `event`: the event that invoked the report.
 * `version`: the Bottlerocket version.
@@ -18,13 +21,14 @@ The standard set of metrics:
 * `version-lock`: the optional setting that locks Bottlerocket to a certain version.
 * `ignore-waves`: an update setting that allows hosts to update before their seed is reached.
 
-Additionally, when `healthdog` sends a 'health ping', it adds:
+### Additionally, when `healthdog` sends a 'health ping', it adds:
+
 * `is-healthy`: true or false based on whether critical services are running.
 * `failed_services`: a list of critical services that have failed, if any.
 
 # Configuration
 
-The following configuration options are available, and read by `healthdog` from a `toml` file that looks like this:
+Configuration is read from a TOML file that looks like this:
 
 ```toml
 # the url to which healthdog will send metrics information
@@ -41,7 +45,7 @@ seed = 1234
 version_lock = "latest"
 # whether bottlerocket should ignore update roll-out timing
 ignore_waves = false
-
+```
 */
 
 #![deny(rust_2018_idioms)]
