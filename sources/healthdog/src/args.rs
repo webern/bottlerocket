@@ -87,7 +87,7 @@ where
                 os_release = Some(PathBuf::from(val));
             }
             "--help" | "-h" => return Err(Error::Usage { message: None }),
-            // Assume any arguments not prefixed with '-' is a subcommand
+            // Assume any argument not prefixed with '-' is a subcommand
             s if !s.starts_with('-') => {
                 ensure!(
                     subcommand.is_none(),
