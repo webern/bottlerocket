@@ -7,7 +7,7 @@ use std::str::FromStr;
 const BOOT_SUCCESS: &str = "send-boot-success";
 const HEALTH_PING: &str = "send-health-ping";
 
-/// The command, e.g. `healthdog report-boot-success` or `healthdog send-health-ping`
+/// The command, e.g. `healthdog send-boot-success` or `healthdog send-health-ping`
 #[derive(Debug, Clone, Copy, Eq, PartialEq)]
 pub(crate) enum Command {
     BootSuccess,
