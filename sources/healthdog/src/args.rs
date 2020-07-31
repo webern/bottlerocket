@@ -33,7 +33,7 @@ pub(crate) struct Arguments {
     pub(crate) log_level: Option<LevelFilter>,
 }
 
-/// The usage message for --help.
+/// The usage message for `--help`.
 pub(crate) const USAGE: &str = r"USAGE:
 healthdog <SUBCOMMAND> <OPTIONS>
 
