@@ -8,7 +8,7 @@ After=multi-user.target
 Type=oneshot
 RemainAfterExit=true
 ExecStart=/bin/signpost mark-successful-boot
-ExecStartPost=/bin/healthdog send-boot-success
+ExecStartPost=/bin/healthdog --log-level trace send-boot-success
 
 [Install]
 WantedBy=multi-user.target
