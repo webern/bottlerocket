@@ -1,4 +1,3 @@
-// use crate::args::DEFAULT_CONFIG_PATH;
 use crate::error::{self, Result};
 use serde::Deserialize;
 use snafu::ResultExt;
