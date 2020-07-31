@@ -42,7 +42,7 @@ send_metrics = true
 service_health = ["apiserver", "containerd", "kubelet"]
 # the region
 region = "us-west-2"
-# the update wave seed
+# this hosts' update wave seed
 seed = 1234
 # what version bottlerocket that this host is set to stay on
 version_lock = "latest"
