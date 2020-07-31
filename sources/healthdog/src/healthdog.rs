@@ -53,8 +53,7 @@ impl Healthdog {
     ///
     /// Sends key-value pairs as query parameters in a GET request to the URL in `config`. A
     /// standard set of key-value pairs are added first, and appended by any additional parameters
-    /// passed in to this function. The standard keys are: sender, event, version, variant, arch,
-    /// region, seed, version-lock, and ignore-waves.
+    /// passed in to this function.
     ///
     /// # Parameters
     ///
