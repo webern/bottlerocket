@@ -110,8 +110,8 @@ impl Healthdog {
 
     /// Sends a notification to the metrics url that boot succeeded.
     pub(crate) fn send_boot_success(&self) -> Result<()> {
-        // timeout of 1 second to avoid blocking the mark-boot-success service
-        self.send("healthdog", "boot-success", None, Some(1))?;
+        // timeout of 3 seconds to prevent blocking the completion of mark-boot-success
+        self.send("healthdog", "boot-success", None, Some(3))?;
         Ok(())
     }
 
