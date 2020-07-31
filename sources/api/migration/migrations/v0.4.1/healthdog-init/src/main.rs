@@ -4,7 +4,7 @@ use migration_helpers::common_migrations::AddSettingsMigration;
 use migration_helpers::{migrate, Result};
 use std::process;
 
-/// We added two new settings, `updates.version-lock` and `updates.ignore-waves`
+/// Add settings for the new `healthdog` program.
 fn run() -> Result<()> {
     migrate(AddSettingsMigration(&[
         "settings.healthdog.metrics-url",
