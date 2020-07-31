@@ -1,7 +1,5 @@
 [Unit]
 Description=Scheduled Healthdog Pings
-RefuseManualStart=no        # Allow manual starts
-RefuseManualStop=no         # Allow manual stops
 
 [Timer]
 # Don't execute missed executions
