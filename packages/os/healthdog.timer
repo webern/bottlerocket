@@ -4,10 +4,10 @@ Description=Scheduled Healthdog Pings
 [Timer]
 # Don't execute missed executions
 Persistent=false
-# Run 360 seconds after boot for the first time
-OnBootSec=360
-# Run every 6 hours thereafter
-OnUnitActiveSec=21600
+# Run 120 seconds after boot for the first time
+OnBootSec=120
+# Run every 6 hours thereafter #21600
+OnUnitActiveSec=6
 # File describing job to execute
 Unit=healthdog.service
 
