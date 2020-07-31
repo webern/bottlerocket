@@ -4,6 +4,7 @@ use crate::service_check::{ServiceCheck, ServiceHealth};
 use httptest::responders::status_code;
 use httptest::{matchers::*, Expectation, Server};
 use std::fs::write;
+use std::path::PathBuf;
 use tempfile::TempDir;
 
 const OS_RELEASE: &str = r#"PRETTY_NAME=Bottlerocket,
@@ -62,11 +63,11 @@ fn create_config_file_contents(port: u16, services: &[&str], send_metrics: bool)
 fn create_test_files(port: u16, services: &[&str], send_metrics: bool) -> TempDir {
     let t = TempDir::new().unwrap();
     write(
-        t.path().join("healthdog.toml"),
+        PathBuf::from(config_path(&t)),
         create_config_file_contents(port, services, send_metrics),
     )
     .unwrap();
-    write(t.path().join("os-release"), OS_RELEASE).unwrap();
+    write(PathBuf::from(os_release_path(&t)), OS_RELEASE).unwrap();
     t
 }
 
