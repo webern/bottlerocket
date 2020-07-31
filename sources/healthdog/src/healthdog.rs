@@ -63,7 +63,7 @@ impl Healthdog {
     /// * `event`:           The name of the type of metrics event that is being sent. For example
     ///                      `boot-success` or `health-ping`.
     /// * `values`:          The key-value pairs that you want to send. These will be sorted by key
-    ///                      before sending to ensure consistency or key-value ordering.
+    ///                      before sending to ensure consistency of key-value ordering.
     /// * `timeout_seconds`: The timeout setting for the HTTP client. Defaults to
     ///                      `DEFAULT_TIMEOUT_SECONDS` when `None` is passed.
     pub(crate) fn send<S1, S2>(
