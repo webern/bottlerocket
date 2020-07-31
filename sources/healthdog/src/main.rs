@@ -28,7 +28,7 @@ It does so using `systemctl` and reports services that are not healthy.
 
 # Configuration
 
-Configuration is read from a TOML file that looks like this:
+Configuration is read from a TOML file, which is generated from Bottlerocket settings:
 
 ```toml
 # the url to which healthdog will send metrics information
