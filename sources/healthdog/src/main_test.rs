@@ -112,7 +112,7 @@ fn send_boot_success() {
 
 #[test]
 /// assert that a request is NOT sent to the server when the user sets `send_metrics` to false
-fn send_boot_success_opt_out() {
+fn opt_out() {
     let server = Server::run();
     server.expect(
         Expectation::matching(request::method_path("GET", "/metrics"))
