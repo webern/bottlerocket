@@ -80,7 +80,7 @@ where
         Some(filepath) => Config::from_file(filepath)?,
     };
     // exit early with no error if the opt-out flag is set
-    if !config.send_metrics || config.metrics_url.is_empty() {
+    if !config.send_metrics {
         return Ok(());
     }
     let healthdog = Healthdog::from_parts(Some(config), Some(os_release), Some(service_check))?;
