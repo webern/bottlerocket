@@ -107,12 +107,6 @@ where
         }
         trace!("logger initialized");
     });
-    let os_release = if let Some(os_release_path) = &arguments.os_release {
-        BottlerocketRelease::from_file(os_release_path)
-    } else {
-        BottlerocketRelease::new()
-    }
-    .context(error::BottlerocketRelease)?;
     let config = match &arguments.config_path {
         None => Config::new()?,
         Some(filepath) => Config::from_file(filepath)?,
@@ -121,6 +115,12 @@ where
     if !config.send_metrics {
         return Ok(());
     }
+    let os_release = if let Some(os_release_path) = &arguments.os_release {
+        BottlerocketRelease::from_file(os_release_path)
+    } else {
+        BottlerocketRelease::new()
+    }
+    .context(error::BottlerocketRelease)?;
     let healthdog = Healthdog::from_parts(Some(config), Some(os_release), Some(service_check))?;
     match arguments.command {
         Command::BootSuccess => {
