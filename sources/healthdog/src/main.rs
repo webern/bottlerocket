@@ -10,7 +10,7 @@ TODO - list of the metrics being sent.
 
 */
 
-#![deny(rust_2018_idioms, unreachable_pub, missing_copy_implementations)]
+#![deny(rust_2018_idioms)]
 
 mod args;
 mod config;
