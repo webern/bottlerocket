@@ -35,7 +35,7 @@ pub(crate) enum Error {
     #[snafu(display("Error sending HTTP request to {}: {}", url.as_str(), source))]
     HttpSend { url: Url, source: reqwest::Error },
 
-    #[snafu(display("Error receiving response {}: {}", url.as_str(), source))]
+    #[snafu(display("Error receiving HTTP response {}: {}", url.as_str(), source))]
     HttpResponse { url: Url, source: reqwest::Error },
 
     #[snafu(display("Unable to parse '{}' to an int: '{}'", value, source))]
