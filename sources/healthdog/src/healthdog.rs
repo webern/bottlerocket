@@ -29,7 +29,7 @@ pub(crate) struct Healthdog {
 }
 
 impl Healthdog {
-    /// Create a new instance by optionally passing in the `Config`, the `BottlerocketRelease`, and
+    /// Create a new instance by optionally passing in the `Config`, `BottlerocketRelease`, and
     /// `ServiceCheck` objects. For each of these, if `None` is passed, then the default is used.
     pub(crate) fn from_parts(
         config: Option<Config>,
