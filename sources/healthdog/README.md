@@ -44,7 +44,7 @@ service_health = ["apiserver", "containerd", "kubelet"]
 region = "us-west-2"
 # the update wave seed
 seed = 1234
-# what version bottlerocket should stay on
+# what version bottlerocket that this host is set to stay on
 version_lock = "latest"
 # whether this host is set to ignore update roll-out timing
 ignore_waves = false
