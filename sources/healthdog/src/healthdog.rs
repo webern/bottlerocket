@@ -11,7 +11,7 @@ use std::time::Duration;
 use url::Url;
 
 /// The send function optionally takes a timout parameter so that we can have a short timeout for
-/// `boot_success`. When `None` is passed, this default timout is used. 20 seconds was arbitrarily
+/// `boot_success`. When `None` is passed, the default timeout is used. 20 seconds was arbitrarily
 /// chosen and can be changed if the need arises.
 const DEFAULT_TIMEOUT_SECONDS: u64 = 20;
 
