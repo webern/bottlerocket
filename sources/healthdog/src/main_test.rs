@@ -150,7 +150,7 @@ fn send_boot_success_no_server() {
 }
 
 #[test]
-/// assert that a the program will exit 0 even if the server sends a 404
+/// assert that send-boot-success exits without error even if the server sends a 404
 fn send_boot_success_404() {
     let server = Server::run();
     server.expect(
