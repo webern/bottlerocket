@@ -46,7 +46,7 @@ region = "us-west-2"
 seed = 1234
 # what version bottlerocket should stay on
 version_lock = "latest"
-# whether bottlerocket should ignore update roll-out timing
+# whether this host is set to ignore update roll-out timing
 ignore_waves = false
 ```
 
