@@ -18,7 +18,7 @@ It does so using `systemctl` and reports services that are not healthy.
 * `event`: the event that invoked the report.
 * `version`: the Bottlerocket version.
 * `variant`: the Bottlerocket variant.
-* `arch`: the machine architecture, e.g.'x86_64' or 'arm'.
+* `arch`: the machine architecture.
 * `region`: the region the machine is running in.
 * `seed`: the seed value used to roll-out updates.
 * `version-lock`: the optional setting that locks Bottlerocket to a certain version.
