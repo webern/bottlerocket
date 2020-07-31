@@ -38,7 +38,7 @@ pub(crate) const USAGE: &str = r"USAGE:
 healthdog <SUBCOMMAND> <OPTIONS>
 
 SUBCOMMANDS:
-    send-boot-success       Send a report that the instance booted successfully.
+    send-boot-success       Report a successful boot.
 
     send-health-ping        Check services and report whether the host is healthy or not.
 
