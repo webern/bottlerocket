@@ -24,7 +24,7 @@ pub(crate) struct Healthdog {
     /// Information about the Bottlerocket release, e.g. from `os-release`
     os_release: BottlerocketRelease,
     /// A trait object that checks if a service (listed in `config`) is healthy. This can be passed-
-    /// in, but defaults to an object that checks `systemd` services by name.
+    /// in, but defaults to an object that uses `systemctl` to check services.
     healthcheck: Box<dyn ServiceCheck>,
 }
 
