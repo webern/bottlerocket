@@ -10,10 +10,14 @@ build = "build.rs"
 exclude = ["README.md"]
 
 [dependencies]
+apiclient = { path = "../apiclient" }
 lazy_static = "1.4"
-reqwest = { version = "0.11.1", default-features = false, features = ["blocking"]}
+reqwest = { version = "0.11.1", default-features = false }
+rusoto_core = { version = "0.46", default-features = false, features = ["rustls"] }
+rusoto_eks = { version = "0.46", default-features = false, features = ["rustls"] }
 serde_json = "1"
-snafu = "0.6"
+snafu = { version = "0.6", features = [ "futures" ] }
+tokio = { version = "1", default-features = false, features = ["macros", "rt-multi-thread"] }
 
 [build-dependencies]
 cargo-readme = "3.1"
