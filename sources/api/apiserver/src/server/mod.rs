@@ -443,27 +443,24 @@ fn transaction_name(query: &web::Query<HashMap<String, String>>) -> &str {
 
 // Can also override `render_response` if we want to change headers, content type, etc.
 impl ResponseError for error::Error {
-
-
-
     /// Maps our error types to the HTTP error code they should return.
-    fn error_response(&self) -> StatusCode {
+    fn error_response(&self) -> HttpResponse {
         use error::Error::*;
         match self {
             // 400 Bad Request
-            MissingInput { .. } => StatusCode::BAD_REQUEST,
-            EmptyInput { .. } => StatusCode::BAD_REQUEST,
-            NewKey { .. } => StatusCode::BAD_REQUEST,
+            MissingInput { .. } => HttpResponse::BadRequest(),
+            EmptyInput { .. } => HttpResponse::BadRequest(),
+            NewKey { .. } => HttpResponse::BadRequest(),
 
             // 404 Not Found
-            MissingData { .. } => StatusCode::NOT_FOUND,
-            ListKeys { .. } => StatusCode::NOT_FOUND,
-            UpdateDoesNotExist { .. } => StatusCode::NOT_FOUND,
-            NoStagedImage { .. } => StatusCode::NOT_FOUND,
-            UninitializedUpdateStatus { .. } => StatusCode::NOT_FOUND,
+            MissingData { .. } => HttpResponse::NotFound(),
+            ListKeys { .. } => HttpResponse::NotFound(),
+            UpdateDoesNotExist { .. } => HttpResponse::NotFound(),
+            NoStagedImage { .. } => HttpResponse::NotFound(),
+            UninitializedUpdateStatus { .. } => HttpResponse::NotFound(),
 
             // 422 Unprocessable Entity
-            CommitWithNoPending => StatusCode::NOT_FOUND HttpResponse::UnprocessableEntity(),
+            CommitWithNoPending => HttpResponse::UnprocessableEntity(),
 
             // 423 Locked
             UpdateShareLock { .. } => HttpResponse::build(StatusCode::LOCKED),
