@@ -4,6 +4,7 @@ use snafu::Snafu;
 use std::io;
 use std::path::PathBuf;
 use std::string::String;
+use actix_web::ResponseError;
 
 // We want server (router/handler) and controller errors together so it's easy to define response
 // error codes for all the high-level types of errors that could happen during a request.
@@ -175,3 +176,9 @@ pub enum Error {
 }
 
 pub type Result<T> = std::result::Result<T, Error>;
+
+impl From<Error> for actix_web::HttpResponse {
+    fn from(e: Error) -> Self {
+        actix_web::HttpResponseBuilder::new(e.status_code()).body(format!("{}", e))
+    }
+}

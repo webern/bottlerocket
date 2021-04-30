@@ -26,6 +26,7 @@ use std::path::Path;
 use std::process::Command;
 use std::sync;
 use thar_be_updates::status::{UpdateStatus, UPDATE_LOCKFILE};
+use actix_web::body::Body;
 
 // =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=   =^..^=
 
@@ -444,8 +445,11 @@ fn transaction_name(query: &web::Query<HashMap<String, String>>) -> &str {
 // Can also override `render_response` if we want to change headers, content type, etc.
 impl ResponseError for error::Error {
     /// Maps our error types to the HTTP error code they should return.
-    fn error_response(&self) -> HttpResponse {
+    fn error_response(&self) -> actix_web::BaseHttpResponse<Body> {
         use error::Error::*;
+        // TODO - change all of the below match arms to a StatusCode and use it here
+        actix_web::BaseHttpResponse::new(StatusCode::OK)
+            /*
         match self {
             // 400 Bad Request
             MissingInput { .. } => HttpResponse::BadRequest(),
@@ -502,6 +506,8 @@ impl ResponseError for error::Error {
         // API is only exposed locally, and only on the host filesystem and to authorized
         // containers, so we're not worried about exposing error details.
         .body(self.to_string())
+        */
+
     }
 }
 
@@ -520,7 +526,7 @@ macro_rules! impl_responder_for {
             fn respond_to($self, _req: &HttpRequest) -> HttpResponse {
                 let body = match serde_json::to_string(&$serialize_expr) {
                     Ok(s) => s,
-                    Err(e) => return Error::ResponseSerialization { source: e }.error_response(),
+                    Err(e) => return Error::ResponseSerialization { source: e }.into(),
                 };
                 HttpResponse::Ok()
                     .content_type("application/json")
