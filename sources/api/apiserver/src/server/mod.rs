@@ -76,7 +76,7 @@ where
             // add the error message into the response.
             .app_data(web::Json::<Settings>::configure(|cfg| {
                 cfg.error_handler(|err, _req| {
-                    HttpResponse::BadRequest().body(err.to_string()).into()
+                    actix_web::Error::from(err)
                 })
             }))
             // This makes the data store available to API methods merely by having a Data
@@ -443,24 +443,27 @@ fn transaction_name(query: &web::Query<HashMap<String, String>>) -> &str {
 
 // Can also override `render_response` if we want to change headers, content type, etc.
 impl ResponseError for error::Error {
+
+
+
     /// Maps our error types to the HTTP error code they should return.
-    fn error_response(&self) -> HttpResponse {
+    fn error_response(&self) -> StatusCode {
         use error::Error::*;
         match self {
             // 400 Bad Request
-            MissingInput { .. } => HttpResponse::BadRequest(),
-            EmptyInput { .. } => HttpResponse::BadRequest(),
-            NewKey { .. } => HttpResponse::BadRequest(),
+            MissingInput { .. } => StatusCode::BAD_REQUEST,
+            EmptyInput { .. } => StatusCode::BAD_REQUEST,
+            NewKey { .. } => StatusCode::BAD_REQUEST,
 
             // 404 Not Found
-            MissingData { .. } => HttpResponse::NotFound(),
-            ListKeys { .. } => HttpResponse::NotFound(),
-            UpdateDoesNotExist { .. } => HttpResponse::NotFound(),
-            NoStagedImage { .. } => HttpResponse::NotFound(),
-            UninitializedUpdateStatus { .. } => HttpResponse::NotFound(),
+            MissingData { .. } => StatusCode::NOT_FOUND,
+            ListKeys { .. } => StatusCode::NOT_FOUND,
+            UpdateDoesNotExist { .. } => StatusCode::NOT_FOUND,
+            NoStagedImage { .. } => StatusCode::NOT_FOUND,
+            UninitializedUpdateStatus { .. } => StatusCode::NOT_FOUND,
 
             // 422 Unprocessable Entity
-            CommitWithNoPending => HttpResponse::UnprocessableEntity(),
+            CommitWithNoPending => StatusCode::NOT_FOUND HttpResponse::UnprocessableEntity(),
 
             // 423 Locked
             UpdateShareLock { .. } => HttpResponse::build(StatusCode::LOCKED),
