@@ -448,66 +448,64 @@ impl ResponseError for error::Error {
     fn error_response(&self) -> actix_web::BaseHttpResponse<Body> {
         use error::Error::*;
         // TODO - change all of the below match arms to a StatusCode and use it here
-        actix_web::BaseHttpResponse::new(StatusCode::OK)
-            /*
-        match self {
+        let status_code = match self {
             // 400 Bad Request
-            MissingInput { .. } => HttpResponse::BadRequest(),
-            EmptyInput { .. } => HttpResponse::BadRequest(),
-            NewKey { .. } => HttpResponse::BadRequest(),
+            MissingInput { .. } => StatusCode::BAD_REQUEST,
+            EmptyInput { .. } => StatusCode::BAD_REQUEST,
+            NewKey { .. } => StatusCode::BAD_REQUEST,
 
             // 404 Not Found
-            MissingData { .. } => HttpResponse::NotFound(),
-            ListKeys { .. } => HttpResponse::NotFound(),
-            UpdateDoesNotExist { .. } => HttpResponse::NotFound(),
-            NoStagedImage { .. } => HttpResponse::NotFound(),
-            UninitializedUpdateStatus { .. } => HttpResponse::NotFound(),
+            MissingData { .. } => StatusCode::NOT_FOUND,
+            ListKeys { .. } => StatusCode::NOT_FOUND,
+            UpdateDoesNotExist { .. } => StatusCode::NOT_FOUND,
+            NoStagedImage { .. } => StatusCode::NOT_FOUND,
+            UninitializedUpdateStatus { .. } => StatusCode::NOT_FOUND,
 
             // 422 Unprocessable Entity
-            CommitWithNoPending => HttpResponse::UnprocessableEntity(),
+            CommitWithNoPending => StatusCode::UNPROCESSABLE_ENTITY,
 
             // 423 Locked
-            UpdateShareLock { .. } => HttpResponse::build(StatusCode::LOCKED),
-            UpdateLockHeld { .. } => HttpResponse::build(StatusCode::LOCKED),
+            UpdateShareLock { .. } => StatusCode::LOCKED,
+            UpdateLockHeld { .. } => StatusCode::LOCKED,
 
             // 409 Conflict
-            DisallowCommand { .. } => HttpResponse::Conflict(),
+            DisallowCommand { .. } => StatusCode::CONFLICT,
 
             // 500 Internal Server Error
-            DataStoreLock => HttpResponse::InternalServerError(),
-            ResponseSerialization { .. } => HttpResponse::InternalServerError(),
-            BindSocket { .. } => HttpResponse::InternalServerError(),
-            ServerStart { .. } => HttpResponse::InternalServerError(),
-            ListedKeyNotPresent { .. } => HttpResponse::InternalServerError(),
-            DataStore { .. } => HttpResponse::InternalServerError(),
-            Deserialization { .. } => HttpResponse::InternalServerError(),
-            DataStoreSerialization { .. } => HttpResponse::InternalServerError(),
-            CommandSerialization { .. } => HttpResponse::InternalServerError(),
-            InvalidMetadata { .. } => HttpResponse::InternalServerError(),
-            ConfigApplierFork { .. } => HttpResponse::InternalServerError(),
-            ConfigApplierStart { .. } => HttpResponse::InternalServerError(),
-            ConfigApplierStdin {} => HttpResponse::InternalServerError(),
-            ConfigApplierWait { .. } => HttpResponse::InternalServerError(),
-            ConfigApplierWrite { .. } => HttpResponse::InternalServerError(),
-            SystemdNotify { .. } => HttpResponse::InternalServerError(),
-            SystemdNotifyStatus {} => HttpResponse::InternalServerError(),
-            SetPermissions { .. } => HttpResponse::InternalServerError(),
-            SetGroup { .. } => HttpResponse::InternalServerError(),
-            ReleaseData { .. } => HttpResponse::InternalServerError(),
-            Shutdown { .. } => HttpResponse::InternalServerError(),
-            Reboot { .. } => HttpResponse::InternalServerError(),
-            UpdateDispatcher { .. } => HttpResponse::InternalServerError(),
-            UpdateError { .. } => HttpResponse::InternalServerError(),
-            UpdateStatusParse { .. } => HttpResponse::InternalServerError(),
-            UpdateInfoParse { .. } => HttpResponse::InternalServerError(),
-            UpdateLockOpen { .. } => HttpResponse::InternalServerError(),
-        }
-        // Include the error message in the response, and for all error types.  The Bottlerocket
-        // API is only exposed locally, and only on the host filesystem and to authorized
-        // containers, so we're not worried about exposing error details.
-        .body(self.to_string())
-        */
+            DataStoreLock => StatusCode::INTERNAL_SERVER_ERROR,
+            ResponseSerialization { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            BindSocket { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ServerStart { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ListedKeyNotPresent { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            DataStore { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            Deserialization { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            DataStoreSerialization { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            CommandSerialization { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            InvalidMetadata { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ConfigApplierFork { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ConfigApplierStart { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ConfigApplierStdin {} => StatusCode::INTERNAL_SERVER_ERROR,
+            ConfigApplierWait { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ConfigApplierWrite { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            SystemdNotify { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            SystemdNotifyStatus {} => StatusCode::INTERNAL_SERVER_ERROR,
+            SetPermissions { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            SetGroup { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            ReleaseData { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            Shutdown { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            Reboot { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            UpdateDispatcher { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            UpdateError { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            UpdateStatusParse { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            UpdateInfoParse { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+            UpdateLockOpen { .. } => StatusCode::INTERNAL_SERVER_ERROR,
+        };
 
+        // The error message is included in the error message in the response, and for all
+        // error types.  The Bottlerocket API is only exposed locally, and only on the host
+        // filesystem and to authorized containers, so we're not worried about exposing
+        // error details.
+        actix_web::BaseHttpResponse::new(status_code)
     }
 }
 
