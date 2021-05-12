@@ -66,12 +66,8 @@ mod error {
         #[snafu(display("IMDS client failed: {}", source))]
         ImdsClient { source: imdsclient::Error },
 
-        #[snafu(display(
-            "IMDS client failed: Response '404' while fetching '{}' from '{}'",
-            target,
-            target_type,
-        ))]
-        ImdsData { target: String, target_type: String },
+        #[snafu(display("IMDS '404' while fetching '{}'", what))]
+        ImdsNone { what: String },
 
         #[snafu(display("Error deserializing response into JSON from {}: {}", uri, source))]
         ImdsJson {
@@ -126,15 +122,12 @@ use error::PlutoError;
 type Result<T> = std::result::Result<T, PlutoError>;
 
 async fn get_max_pods(client: &mut ImdsClient) -> Result<String> {
-    let instance_type_target = "instance-type";
     let instance_type = client
-        .fetch_metadata(&instance_type_target, "instance type")
+        .fetch_identity_document()
         .await
         .context(error::ImdsRequest)?
-        .context(error::ImdsData {
-            target: instance_type_target,
-            target_type: "meta-data",
-        })?;
+        .instance_type()
+        .to_owned();
 
     // Find the corresponding maximum number of pods supported by this instance type
     let file = BufReader::new(
@@ -216,31 +209,30 @@ fn get_dns_from_cidr(cidr: &str) -> Result<String> {
 /// Gets gets the the first VPC IPV4 CIDR block from IMDS. If it starts with `10`, returns
 /// `10.100.0.10`, otherwise returns `172.20.0.10`
 async fn get_cluster_dns_from_imds_mac(client: &mut ImdsClient) -> Result<String> {
-    let macs_target = "network/interfaces/macs";
-    let macs = client
-        .fetch_metadata(&macs_target, "MAC addresses")
+    // Take the first (primary) MAC address. Others may exist from attached ENIs.
+    let mac = client
+        .fetch_mac_addresses()
         .await
         .context(error::ImdsRequest)?
-        .context(error::ImdsData {
-            target: macs_target,
-            target_type: "meta-data",
-        })?;
+        .first()
+        .context(error::ImdsNone {
+            what: "mac addresses",
+        })?
+        .clone();
 
-    // Take the first (primary) MAC address. Others will exist from attached ENIs.
-    let mac = macs.split('\n').next().context(error::MissingMac)?;
-
-    // Infer the cluster DNS based on our CIDR blocks.
-    let mac_cidr_blocks_target = format!("network/interfaces/macs/{}/vpc-ipv4-cidr-blocks", mac);
-    let mac_cidr_blocks = client
-        .fetch_metadata(&mac_cidr_blocks_target, "MAC CIDR blocks")
+    // Take the first CIDR block for the primary MAC.
+    let cidr_block = client
+        .fetch_cidr_blocks_for_mac(&mac)
         .await
         .context(error::ImdsRequest)?
-        .context(error::ImdsData {
-            target: &mac_cidr_blocks_target,
-            target_type: "meta-data",
-        })?;
+        .first()
+        .context(error::ImdsNone {
+            what: "CIDR blocks",
+        })?
+        .clone();
 
-    let dns = if mac_cidr_blocks.starts_with("10.") {
+    // Infer the cluster DNS based on the CIDR block.
+    let dns = if cidr_block.starts_with("10.") {
         DEFAULT_10_RANGE_DNS_CLUSTER_IP
     } else {
         DEFAULT_DNS_CLUSTER_IP
@@ -250,16 +242,10 @@ async fn get_cluster_dns_from_imds_mac(client: &mut ImdsClient) -> Result<String
 }
 
 async fn get_node_ip(client: &mut ImdsClient) -> Result<String> {
-    let node_ip_target = "local-ipv4";
-    let node_ip = client
-        .fetch_metadata(&node_ip_target, "node IPv4 address")
+    client
+        .fetch_local_ipv4_address()
         .await
-        .context(error::ImdsRequest)?
-        .context(error::ImdsData {
-            target: node_ip_target,
-            target_type: "meta-data",
-        })?;
-    Ok(node_ip)
+        .context(error::ImdsRequest)
 }
 
 /// Print usage message.

@@ -12,7 +12,7 @@ AWS instance metadata service (IMDS).
 #![deny(rust_2018_idioms)]
 
 use imdsclient::ImdsClient;
-use log::{debug, info, warn};
+use log::{debug, info};
 use serde::Serialize;
 use simplelog::{ColorChoice, Config as LogConfig, LevelFilter, TermLogger, TerminalMode};
 use snafu::{OptionExt, ResultExt};
@@ -43,85 +43,7 @@ impl UserData {
 async fn fetch_public_keys_from_imds() -> Result<Vec<String>> {
     info!("Connecting to IMDS");
     let mut client = ImdsClient::new().await.context(error::ImdsClient)?;
-    info!("Fetching list of available public keys from IMDS");
-    // Returns a list of available public keys as '0=my-public-key'
-    let public_key_list = match client
-        .fetch_metadata("public-keys", "public keys list")
-        .await
-        .context(error::ImdsRequest)?
-    {
-        Some(public_key_list) => {
-            debug!("available public keys '{}'", &public_key_list);
-            public_key_list
-        }
-        None => {
-            debug!("no available public keys");
-            return Ok(Vec::new());
-        }
-    };
-
-    info!("Generating targets to fetch text of available public keys");
-    let public_key_targets = build_public_key_targets(&public_key_list);
-
-    info!("Fetching public keys from IMDS");
-    let mut public_keys = Vec::new();
-    let target_count: u32 = 0;
-    for target in &public_key_targets {
-        let target_count = target_count + 1;
-        let description = format!(
-            "public key ({}/{})",
-            target_count,
-            &public_key_targets.len()
-        );
-        let public_key_text = client
-            .fetch_metadata(&target, &description)
-            .await
-            .context(error::ImdsRequest)?
-            .context(error::ImdsData {
-                target,
-                target_type: "meta-data",
-            })?;
-        let public_key = public_key_text.trim_end();
-        // Simple check to see if the text is probably an ssh key.
-        if public_key.starts_with("ssh") {
-            debug!("{}", &public_key);
-            public_keys.push(public_key.to_string())
-        } else {
-            warn!(
-                "'{}' does not appear to be a valid key. Skipping...",
-                &public_key
-            );
-            continue;
-        }
-    }
-    if public_keys.is_empty() {
-        warn!("No valid keys found");
-    }
-    Ok(public_keys)
-}
-
-/// Returns a list of public keys available in IMDS. Since IMDS returns the list of keys as
-/// '0=my-public-key', we need to strip the index and insert it into the public key target.
-fn build_public_key_targets(public_key_list: &str) -> Vec<String> {
-    let mut public_key_targets = Vec::new();
-    for available_key in public_key_list.lines() {
-        let f: Vec<&str> = available_key.split('=').collect();
-        // If f[0] isn't a number, then it isn't a valid index.
-        if f[0].parse::<u32>().is_ok() {
-            let public_key_target = format!("public-keys/{}/openssh-key", f[0]);
-            public_key_targets.push(public_key_target);
-        } else {
-            warn!(
-                "'{}' does not appear to be a valid index. Skipping...",
-                &f[0]
-            );
-            continue;
-        }
-    }
-    if public_key_targets.is_empty() {
-        warn!("No valid key targets found");
-    }
-    public_key_targets
+    client.fetch_public_keys().await.context(error::ImdsClient)
 }
 
 /// Store the args we receive on the command line.

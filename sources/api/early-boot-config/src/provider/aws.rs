@@ -14,7 +14,6 @@ pub(crate) struct AwsDataProvider;
 
 impl AwsDataProvider {
     const IDENTITY_DOCUMENT_FILE: &'static str = "/etc/early-boot-config/identity-document";
-    const IDENTITY_DOCUMENT_TARGET: &'static str = "instance-identity/document";
 
     /// Fetches user data, which is expected to be in TOML form and contain a `[settings]` section,
     /// returning a SettingsJson representing the inside of that section.
@@ -39,32 +38,34 @@ impl AwsDataProvider {
     /// document which we'd like to send to the API - currently just region.
     async fn identity_document(client: &mut ImdsClient) -> Result<Option<SettingsJson>> {
         let desc = "instance identity document";
-        let target = Self::IDENTITY_DOCUMENT_TARGET;
         let file = Self::IDENTITY_DOCUMENT_FILE;
 
-        let iid_str = if Path::new(file).exists() {
+        let region = if Path::new(file).exists() {
             info!("{} found at {}, using it", desc, file);
-            fs::read_to_string(file).context(error::InputFileRead { path: file })?
+            let data = fs::read_to_string(file).context(error::InputFileRead { path: file })?;
+            let iid: serde_json::Value =
+                serde_json::from_str(&data).context(error::DeserializeJson)?;
+            iid.get("region")
+                .context(error::IdentityDocMissingData { missing: "region" })?
+                .as_str()
+                .context(error::WrongType {
+                    field_name: "region",
+                    expected_type: "string",
+                })?
+                .to_owned()
         } else {
-            match client
-                .fetch_dynamic(target, desc)
+            client
+                .fetch_identity_document()
                 .await
                 .context(error::ImdsRequest)?
-            {
-                None => return Ok(None),
-                Some(raw) => {
-                    expand_slice_maybe(&raw).context(error::Decompression { what: "user data" })?
-                }
-            }
+                .region()
+                .to_owned()
         };
-        trace!("Received instance identity document: {}", iid_str);
+        trace!(
+            "Retrieved region from instance identity document: {}",
+            region
+        );
 
-        // Grab region from instance identity document.
-        let iid: serde_json::Value =
-            serde_json::from_str(&iid_str).context(error::DeserializeJson)?;
-        let region = iid
-            .get("region")
-            .context(error::IdentityDocMissingData { missing: "region" })?;
         let val = json!({ "aws": {"region": region} });
 
         let json = SettingsJson::from_val(&val, desc).context(error::SettingsToJSON {
@@ -137,6 +138,16 @@ mod error {
         SettingsToJSON {
             from: String,
             source: crate::settings::Error,
+        },
+
+        #[snafu(display(
+            "Wrong type while deserializing, expected '{}' to be type '{}'",
+            field_name,
+            expected_type
+        ))]
+        WrongType {
+            field_name: &'static str,
+            expected_type: &'static str,
         },
     }
 }
