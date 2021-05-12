@@ -11,20 +11,13 @@ AWS instance metadata service (IMDS).
 
 #![deny(rust_2018_idioms)]
 
+use imdsclient::ImdsClient;
 use log::{debug, info, warn};
-use reqwest::blocking::Client;
 use serde::Serialize;
 use simplelog::{ColorChoice, Config as LogConfig, LevelFilter, TermLogger, TerminalMode};
 use snafu::{OptionExt, ResultExt};
 use std::str::FromStr;
 use std::{env, process};
-
-// Instance Meta Data Service.
-//
-// Currently only able to get fetch session tokens from `latest`
-// FIXME Pin to a date version that supports IMDSv2 once such a date version is available.
-const IMDS_PUBLIC_KEY_BASE_URI: &str = "http://169.254.169.254/latest/meta-data/public-keys";
-const IMDS_SESSION_TOKEN_URI: &str = "http://169.254.169.254/latest/api/token";
 
 #[derive(Serialize)]
 struct UserData {
@@ -46,66 +39,48 @@ impl UserData {
     }
 }
 
-/// Helper to fetch an IMDSv2 session token that is valid for 60 seconds.
-fn fetch_imds_session_token(client: &Client) -> Result<String> {
-    let uri = IMDS_SESSION_TOKEN_URI;
-    let imds_session_token = client
-        .put(uri)
-        .header("X-aws-ec2-metadata-token-ttl-seconds", "60")
-        .send()
-        .context(error::ImdsRequest { method: "PUT", uri })?
-        .error_for_status()
-        .context(error::ImdsResponse { uri })?
-        .text()
-        .context(error::ImdsText { uri })?;
-    Ok(imds_session_token)
-}
-
-/// Helper to fetch data from IMDS. Inspired by pluto.
-fn fetch_from_imds(client: &Client, uri: &str, session_token: &str) -> Result<Option<String>> {
-    let response = client
-        .get(uri)
-        .header("X-aws-ec2-metadata-token", session_token)
-        .send()
-        .context(error::ImdsRequest { method: "GET", uri })?;
-    if response.status().as_u16() == 404 {
-        return Ok(None);
-    }
-    Ok(Some(
-        response
-            .error_for_status()
-            .context(error::ImdsResponse { uri })?
-            .text()
-            .context(error::ImdsText { uri })?,
-    ))
-}
-
 /// Returns a list of public keys.
-fn fetch_public_keys_from_imds() -> Result<Vec<String>> {
-    info!("Fetching IMDS session token");
-    let client = Client::new();
-    let imds_session_token = fetch_imds_session_token(&client)?;
-
+async fn fetch_public_keys_from_imds() -> Result<Vec<String>> {
+    info!("Connecting to IMDS");
+    let mut client = ImdsClient::new().await.context(error::ImdsClient)?;
     info!("Fetching list of available public keys from IMDS");
     // Returns a list of available public keys as '0=my-public-key'
-    let public_key_list = if let Some(public_key_list) =
-        fetch_from_imds(&client, IMDS_PUBLIC_KEY_BASE_URI, &imds_session_token)?
+    let public_key_list = match client
+        .fetch_metadata("public-keys", "public keys list")
+        .await
+        .context(error::ImdsRequest)?
     {
-        debug!("available public keys '{}'", &public_key_list);
-        public_key_list
-    } else {
-        debug!("no available public keys");
-        return Ok(Vec::new());
+        Some(public_key_list) => {
+            debug!("available public keys '{}'", &public_key_list);
+            public_key_list
+        }
+        None => {
+            debug!("no available public keys");
+            return Ok(Vec::new());
+        }
     };
 
-    info!("Generating uris to fetch text of available public keys");
-    let public_key_uris = build_public_key_uris(&public_key_list);
+    info!("Generating targets to fetch text of available public keys");
+    let public_key_targets = build_public_key_targets(&public_key_list);
 
     info!("Fetching public keys from IMDS");
     let mut public_keys = Vec::new();
-    for uri in public_key_uris {
-        let public_key_text = fetch_from_imds(&client, &uri, &imds_session_token)?
-            .context(error::KeyNotFound { uri })?;
+    let target_count: u32 = 0;
+    for target in &public_key_targets {
+        let target_count = target_count + 1;
+        let description = format!(
+            "public key ({}/{})",
+            target_count,
+            &public_key_targets.len()
+        );
+        let public_key_text = client
+            .fetch_metadata(&target, &description)
+            .await
+            .context(error::ImdsRequest)?
+            .context(error::ImdsData {
+                target,
+                target_type: "meta-data",
+            })?;
         let public_key = public_key_text.trim_end();
         // Simple check to see if the text is probably an ssh key.
         if public_key.starts_with("ssh") {
@@ -114,7 +89,7 @@ fn fetch_public_keys_from_imds() -> Result<Vec<String>> {
         } else {
             warn!(
                 "'{}' does not appear to be a valid key. Skipping...",
-                &public_key_text
+                &public_key
             );
             continue;
         }
@@ -125,17 +100,16 @@ fn fetch_public_keys_from_imds() -> Result<Vec<String>> {
     Ok(public_keys)
 }
 
-/// Returns a list of public key uris strings for the public keys in IMDS. Since IMDS returns the
-/// list of available public keys as '0=my-public-key', we need to strip the index from the list and
-/// insert it into the key uri.
-fn build_public_key_uris(public_key_list: &str) -> Vec<String> {
-    let mut public_key_uris = Vec::new();
+/// Returns a list of public keys available in IMDS. Since IMDS returns the list of keys as
+/// '0=my-public-key', we need to strip the index and insert it into the public key target.
+fn build_public_key_targets(public_key_list: &str) -> Vec<String> {
+    let mut public_key_targets = Vec::new();
     for available_key in public_key_list.lines() {
         let f: Vec<&str> = available_key.split('=').collect();
         // If f[0] isn't a number, then it isn't a valid index.
         if f[0].parse::<u32>().is_ok() {
-            let public_key_uri = format!("{}/{}/openssh-key", IMDS_PUBLIC_KEY_BASE_URI, f[0]);
-            public_key_uris.push(public_key_uri);
+            let public_key_target = format!("public-keys/{}/openssh-key", f[0]);
+            public_key_targets.push(public_key_target);
         } else {
             warn!(
                 "'{}' does not appear to be a valid index. Skipping...",
@@ -144,10 +118,10 @@ fn build_public_key_uris(public_key_list: &str) -> Vec<String> {
             continue;
         }
     }
-    if public_key_uris.is_empty() {
-        warn!("No valid key uris found");
+    if public_key_targets.is_empty() {
+        warn!("No valid key targets found");
     }
-    public_key_uris
+    public_key_targets
 }
 
 /// Store the args we receive on the command line.
@@ -192,11 +166,11 @@ fn parse_args(args: env::Args) -> Result<Args> {
     }
 
     Ok(Args {
-        log_level: log_level.unwrap_or_else(|| LevelFilter::Info),
+        log_level: log_level.unwrap_or(LevelFilter::Info),
     })
 }
 
-fn run() -> Result<()> {
+async fn run() -> Result<()> {
     let args = parse_args(env::args())?;
 
     // TerminalMode::Stderr will send all logs to stderr, as sundog only expects the json output of
@@ -211,7 +185,7 @@ fn run() -> Result<()> {
 
     info!("shibaken started");
 
-    let public_keys = fetch_public_keys_from_imds()?;
+    let public_keys = fetch_public_keys_from_imds().await?;
 
     let user_data = UserData::new(public_keys);
 
@@ -239,8 +213,9 @@ fn run() -> Result<()> {
 // Returning a Result from main makes it print a Debug representation of the error, but with Snafu
 // we have nice Display representations of the error, so we wrap "main" (run) and print any error.
 // https://github.com/shepmaster/snafu/issues/110
-fn main() {
-    if let Err(e) = run() {
+#[tokio::main]
+async fn main() {
+    if let Err(e) = run().await {
         match e {
             error::Error::Usage { .. } => {
                 eprintln!("{}", e);
@@ -259,33 +234,22 @@ fn main() {
 
 mod error {
     use snafu::Snafu;
-    fn code(source: &reqwest::Error) -> String {
-        source
-            .status()
-            .as_ref()
-            .map(|i| i.as_str())
-            .unwrap_or("Unknown")
-            .to_string()
-    }
 
     #[derive(Debug, Snafu)]
     #[snafu(visibility = "pub(super)")]
     pub(super) enum Error {
-        #[snafu(display("Error {}ing '{}': {}", method, uri, source))]
-        ImdsRequest {
-            method: String,
-            uri: String,
-            source: reqwest::Error,
-        },
+        #[snafu(display("IMDS request failed: {}", source))]
+        ImdsRequest { source: imdsclient::Error },
 
-        #[snafu(display("Error '{}' from '{}': {}", code(&source), uri, source))]
-        ImdsResponse { uri: String, source: reqwest::Error },
+        #[snafu(display("IMDS client failed: {}", source))]
+        ImdsClient { source: imdsclient::Error },
 
-        #[snafu(display("Error getting text response from {}: {}", uri, source))]
-        ImdsText { uri: String, source: reqwest::Error },
-
-        #[snafu(display("Error retrieving key from {}", uri))]
-        KeyNotFound { uri: String },
+        #[snafu(display(
+            "IMDS client failed: Response '404' while fetching '{}' from '{}'",
+            target,
+            target_type,
+        ))]
+        ImdsData { target: String, target_type: String },
 
         #[snafu(display("Logger setup error: {}", source))]
         Logger { source: log::SetLoggerError },
