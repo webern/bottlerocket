@@ -14,7 +14,7 @@ use reqwest::Client;
 use snafu::{ensure, ResultExt};
 
 const IMDS_BASE_URI: &str = "http://169.254.169.254";
-const IMDS_PINNED_DATE: &str = "2021-01-03";
+const IMDS_SCHEMA_VERSION: &str = "2021-01-03";
 
 // Currently only able to get fetch session tokens from `latest`
 const IMDS_SESSION_TARGET: &str = "latest/api/token";
@@ -42,7 +42,9 @@ impl ImdsClient {
         })
     }
 
-    /// Helper to fetch `dynamic` targets from IMDS, preferring an override file if present.
+    /// Helper to fetch `dynamic` targets from IMDS.
+    /// - `end_target` is the uri path relative to `dynamic`.
+    /// - `description` is used in debugging and error statements.
     pub async fn fetch_dynamic<S1, S2>(
         &mut self,
         end_target: S1,
@@ -53,11 +55,13 @@ impl ImdsClient {
         S2: AsRef<str>,
     {
         let dynamic_target = format!("dynamic/{}", end_target.as_ref());
-        self.fetch_imds(IMDS_PINNED_DATE, &dynamic_target, description.as_ref())
+        self.fetch_imds(IMDS_SCHEMA_VERSION, &dynamic_target, description.as_ref())
             .await
     }
 
-    /// Helper to fetch `meta-data` targets from IMDS, preferring an override file if present.
+    /// Helper to fetch `meta-data` targets from IMDS.
+    /// - `end_target` is the uri path relative to `meta-data`.
+    /// - `description` is used in debugging and error statements.
     pub async fn fetch_metadata<S1, S2>(
         &mut self,
         end_target: S1,
@@ -69,7 +73,7 @@ impl ImdsClient {
     {
         let metadata_target = format!("meta-data/{}", end_target.as_ref());
         match self
-            .fetch_imds(IMDS_PINNED_DATE, &metadata_target, description.as_ref())
+            .fetch_imds(IMDS_SCHEMA_VERSION, &metadata_target, description.as_ref())
             .await?
         {
             Some(metadata_body) => Ok(Some(
@@ -79,13 +83,13 @@ impl ImdsClient {
         }
     }
 
-    /// Helper to fetch `user-data` from IMDS, preferring an override file if present.
+    /// Helper to fetch `user-data` from IMDS.
     pub async fn fetch_userdata(&mut self) -> Result<Option<Vec<u8>>> {
-        self.fetch_imds(IMDS_PINNED_DATE, "user-data", "user-data")
+        self.fetch_imds(IMDS_SCHEMA_VERSION, "user-data", "user-data")
             .await
     }
 
-    /// Fetch data from IMDS, preferring an override file if present.
+    /// Fetch data from IMDS.
     pub async fn fetch_imds<S1, S2, S3>(
         &mut self,
         schema_version: S1,
@@ -104,8 +108,8 @@ impl ImdsClient {
             target.as_ref()
         );
         debug!("Requesting {} from {}", description.as_ref(), &uri);
-        let mut attempt: u8 = 0;
-        let max_attempts: u8 = 2;
+        let mut attempt: u8 = 1;
+        let max_attempts: u8 = 3;
         loop {
             attempt += 1;
             ensure!(attempt <= max_attempts, error::FailedFetch { attempt });
@@ -121,21 +125,6 @@ impl ImdsClient {
                 })?;
             trace!("IMDS response: {:?}", &response);
 
-            // IMDS data can be larger than we'd want to log (50k+ compressed) so we don't necessarily
-            // want to show the whole thing, and don't want to show binary data.
-            fn response_string(response: &[u8]) -> String {
-                // arbitrary max len; would be nice to print the start of the data if it's
-                // uncompressed, but we'd need to break slice at a safe point for UTF-8, and without
-                // reading in the whole thing like String::from_utf8.
-                if response.len() > 2048 {
-                    "<very long>".to_string()
-                } else if let Ok(s) = String::from_utf8(response.into()) {
-                    s
-                } else {
-                    "<binary>".to_string()
-                }
-            }
-
             match response.status() {
                 code @ StatusCode::OK => {
                     info!("Received {}", description.as_ref());
@@ -149,7 +138,7 @@ impl ImdsClient {
                         })?
                         .to_vec();
 
-                    let response_str = response_string(&response_body);
+                    let response_str = printable_string(&response_body);
                     trace!("Response: {:?}", response_str);
 
                     return Ok(Some(response_body));
@@ -177,7 +166,7 @@ impl ImdsClient {
                         })?
                         .to_vec();
 
-                    let response_str = response_string(&response_body);
+                    let response_str = printable_string(&response_body);
 
                     trace!("Response: {:?}", response_str);
 
@@ -197,6 +186,20 @@ impl ImdsClient {
     pub async fn refresh_token(&mut self) -> Result<()> {
         self.session_token = fetch_token(&self.client, &self.imds_base_uri).await?;
         Ok(())
+    }
+}
+
+/// Converts `bytes` to a `String` if it is a UTF-8 encoded string. Truncates the string if it is
+/// too long for printing.
+fn printable_string(bytes: &[u8]) -> String {
+    if let Ok(s) = String::from_utf8(bytes.into()) {
+        if s.len() < 2048 {
+            s
+        } else {
+            format!("{}<truncated...>", &s[0..2034])
+        }
+    } else {
+        "<binary>".to_string()
     }
 }
 
@@ -288,7 +291,8 @@ pub type Result<T> = std::result::Result<T, Error>;
 
 #[cfg(test)]
 mod test {
-    use super::{ImdsClient, IMDS_PINNED_DATE};
+    use super::{ImdsClient, IMDS_SCHEMA_VERSION};
+    use crate::printable_string;
     use httptest::{matchers::*, responders::*, Expectation, Server};
 
     #[tokio::test]
@@ -481,7 +485,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/meta-data/{}", IMDS_PINNED_DATE, end_target),
+                format!("/{}/meta-data/{}", IMDS_SCHEMA_VERSION, end_target),
             ))
             .times(1)
             .respond_with(
@@ -520,7 +524,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/dynamic/{}", IMDS_PINNED_DATE, end_target),
+                format!("/{}/dynamic/{}", IMDS_SCHEMA_VERSION, end_target),
             ))
             .times(1)
             .respond_with(
@@ -557,7 +561,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/user-data", IMDS_PINNED_DATE),
+                format!("/{}/user-data", IMDS_SCHEMA_VERSION),
             ))
             .times(1)
             .respond_with(
@@ -569,5 +573,47 @@ mod test {
         let mut imds_client = ImdsClient::new_impl(base_uri).await.unwrap();
         let imds_data = imds_client.fetch_userdata().await.unwrap();
         assert_eq!(imds_data, Some(response_body.as_bytes().to_vec()));
+    }
+
+    #[test]
+    fn printable_string_short() {
+        let input = "Hello".as_bytes();
+        let expected = "Hello".to_string();
+        let actual = printable_string(input);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn printable_string_binary() {
+        let input: [u8; 5] = [0, 254, 1, 0, 4];
+        let expected = "<binary>".to_string();
+        let actual = printable_string(&input);
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn printable_string_untruncated() {
+        let mut input = String::new();
+        for _ in 0..2047 {
+            input.push('.');
+        }
+        let expected = input.clone();
+        let actual = printable_string(input.as_bytes());
+        assert_eq!(expected, actual);
+    }
+
+    #[test]
+    fn printable_string_truncated() {
+        let mut input = String::new();
+        for _ in 0..2048 {
+            input.push('.');
+        }
+        let mut expected = String::new();
+        for _ in 0..2034 {
+            expected.push('.');
+        }
+        expected.push_str("<truncated...>");
+        let actual = printable_string(input.as_bytes());
+        assert_eq!(expected, actual);
     }
 }
