@@ -16,7 +16,7 @@ use snafu::{ensure, ResultExt};
 
 const BASE_URI: &str = "http://169.254.169.254";
 const SCHEMA_VERSION: &str = "2021-01-03";
-const IDENTITY_DOCUMENT_TARGET: &'static str = "instance-identity/document";
+const IDENTITY_DOCUMENT_TARGET: &'static str = "dynamic/instance-identity/document";
 
 // Currently only able to get fetch session tokens from `latest`
 const IMDS_SESSION_TARGET: &str = "latest/api/token";
@@ -72,7 +72,7 @@ impl ImdsClient {
     /// Returns the 'identity document' with fields like region and instance_type.
     pub async fn fetch_identity_document(&mut self) -> Result<IdentityDocument> {
         let response = self
-            .fetch_dynamic(IDENTITY_DOCUMENT_TARGET, "fetch_identity_document")
+            .fetch_bytes(IDENTITY_DOCUMENT_TARGET, "fetch_identity_document")
             .await?;
         let identity_document: IdentityDocument =
             serde_json::from_slice(&response).context(error::Serde)?;
@@ -81,26 +81,28 @@ impl ImdsClient {
 
     /// Returns the list of network interface mac addresses.
     pub async fn fetch_mac_addresses(&mut self) -> Result<Vec<String>> {
-        let macs_target = "network/interfaces/macs";
-        let macs = self.fetch_metadata(&macs_target, "MAC addresses").await?;
+        let macs_target = "meta-data/network/interfaces/macs";
+        let macs = self.fetch_string(&macs_target, "MAC addresses").await?;
         Ok(macs.split('\n').map(|s| s.to_string()).collect())
     }
 
     /// Gets the list of CIDR blocks for a given network interface `mac` address.
     pub async fn fetch_cidr_blocks_for_mac(&mut self, mac: &str) -> Result<Vec<String>> {
         // Infer the cluster DNS based on our CIDR blocks.
-        let mac_cidr_blocks_target =
-            format!("network/interfaces/macs/{}/vpc-ipv4-cidr-blocks", mac);
+        let mac_cidr_blocks_target = format!(
+            "meta-data/network/interfaces/macs/{}/vpc-ipv4-cidr-blocks",
+            mac
+        );
         let cidr_blocks = self
-            .fetch_metadata(&mac_cidr_blocks_target, "MAC CIDR blocks")
+            .fetch_string(&mac_cidr_blocks_target, "MAC CIDR blocks")
             .await?;
         Ok(cidr_blocks.split('\n').map(|s| s.to_string()).collect())
     }
 
     /// Gets the local IPV4 address from instance metadata.
     pub async fn fetch_local_ipv4_address(&mut self) -> Result<String> {
-        let node_ip_target = "local-ipv4";
-        self.fetch_metadata(&node_ip_target, "node IPv4 address")
+        let node_ip_target = "meta-data/local-ipv4";
+        self.fetch_string(&node_ip_target, "node IPv4 address")
             .await
     }
 
@@ -108,7 +110,10 @@ impl ImdsClient {
     pub async fn fetch_public_ssh_keys(&mut self) -> Result<Vec<String>> {
         info!("Fetching list of available public keys from IMDS");
         // Returns a list of available public keys as '0=my-public-key'
-        let public_key_list = match self.fetch_metadata("public-keys", "public keys list").await {
+        let public_key_list = match self
+            .fetch_string("meta-data/public-keys", "public keys list")
+            .await
+        {
             Err(error::Error::NotFound { what: _ }) => {
                 // this is OK, it just means there are no keys
                 debug!("no available public keys");
@@ -135,7 +140,7 @@ impl ImdsClient {
                 &public_key_targets.len()
             );
 
-            let public_key_text = self.fetch_metadata(&target, &description).await?;
+            let public_key_text = self.fetch_string(&target, &description).await?;
             let public_key = public_key_text.trim_end();
             // Simple check to see if the text is probably an ssh key.
             if public_key.starts_with("ssh") {
@@ -155,30 +160,28 @@ impl ImdsClient {
         Ok(public_keys)
     }
 
-    /// Helper to fetch `dynamic` targets from IMDS.
+    /// Helper to fetch bytes from IMDS using the pinned schema date.
     /// - `end_target` is the uri path relative to `dynamic`.
     /// - `description` is used in debugging and error statements.
-    async fn fetch_dynamic<S1, S2>(&mut self, end_target: S1, description: S2) -> Result<Vec<u8>>
+    async fn fetch_bytes<S1, S2>(&mut self, end_target: S1, description: S2) -> Result<Vec<u8>>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
     {
-        let dynamic_target = format!("dynamic/{}", end_target.as_ref());
-        self.fetch_imds(SCHEMA_VERSION, &dynamic_target, description.as_ref())
+        self.fetch_imds(SCHEMA_VERSION, end_target.as_ref(), description.as_ref())
             .await
     }
 
-    /// Helper to fetch `meta-data` targets from IMDS.
+    /// Helper to fetch a string from IMDS using the pinned schema date.
     /// - `end_target` is the uri path relative to `meta-data`.
     /// - `description` is used in debugging and error statements.
-    async fn fetch_metadata<S1, S2>(&mut self, end_target: S1, description: S2) -> Result<String>
+    async fn fetch_string<S1, S2>(&mut self, end_target: S1, description: S2) -> Result<String>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
     {
-        let metadata_target = format!("meta-data/{}", end_target.as_ref());
         let response_body = self
-            .fetch_imds(SCHEMA_VERSION, &metadata_target, description.as_ref())
+            .fetch_imds(SCHEMA_VERSION, end_target, description.as_ref())
             .await?;
         Ok(String::from_utf8(response_body).context(error::NonUtf8Response)?)
     }
@@ -309,7 +312,7 @@ fn build_public_key_targets(public_key_list: &str) -> Vec<String> {
         let f: Vec<&str> = available_key.split('=').collect();
         // If f[0] isn't a number, then it isn't a valid index.
         if f[0].parse::<u32>().is_ok() {
-            let public_key_target = format!("public-keys/{}/openssh-key", f[0]);
+            let public_key_target = format!("meta-data/public-keys/{}/openssh-key", f[0]);
             public_key_targets.push(public_key_target);
         } else {
             warn!(
@@ -611,7 +614,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/meta-data/{}", SCHEMA_VERSION, end_target),
+                format!("/{}/{}", SCHEMA_VERSION, end_target),
             ))
             .times(1)
             .respond_with(
@@ -622,19 +625,19 @@ mod test {
         );
         let mut imds_client = ImdsClient::new_impl(base_uri).await.unwrap();
         let imds_data = imds_client
-            .fetch_metadata(end_target, description)
+            .fetch_string(end_target, description)
             .await
             .unwrap();
         assert_eq!(imds_data, response_body.to_string());
     }
 
     #[tokio::test]
-    async fn fetch_dynamic() {
+    async fn fetch_bytes() {
         let server = Server::run();
         let port = server.addr().port();
         let base_uri = format!("http://localhost:{}", port);
         let token = "some+token";
-        let end_target = "instance-identity/document";
+        let end_target = "dynamic/instance-identity/document";
         let description = "instance identity document";
         let response_code = 200;
         let response_body = r#"{"region" : "us-west-2"}"#;
@@ -650,7 +653,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/dynamic/{}", SCHEMA_VERSION, end_target),
+                format!("/{}/{}", SCHEMA_VERSION, end_target),
             ))
             .times(1)
             .respond_with(
@@ -661,7 +664,7 @@ mod test {
         );
         let mut imds_client = ImdsClient::new_impl(base_uri).await.unwrap();
         let imds_data = imds_client
-            .fetch_dynamic(end_target, description)
+            .fetch_bytes(end_target, description)
             .await
             .unwrap();
         assert_eq!(imds_data, response_body.as_bytes().to_vec());
@@ -750,8 +753,17 @@ mod test {
 2=two"#;
         let parsed_list = build_public_key_targets(list);
         assert_eq!(3, parsed_list.len());
-        assert_eq!("public-keys/0/openssh-key", parsed_list.get(0).unwrap());
-        assert_eq!("public-keys/1/openssh-key", parsed_list.get(1).unwrap());
-        assert_eq!("public-keys/2/openssh-key", parsed_list.get(2).unwrap());
+        assert_eq!(
+            "meta-data/public-keys/0/openssh-key",
+            parsed_list.get(0).unwrap()
+        );
+        assert_eq!(
+            "meta-data/public-keys/1/openssh-key",
+            parsed_list.get(1).unwrap()
+        );
+        assert_eq!(
+            "meta-data/public-keys/2/openssh-key",
+            parsed_list.get(2).unwrap()
+        );
     }
 }
