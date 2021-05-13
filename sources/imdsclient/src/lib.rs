@@ -118,8 +118,8 @@ impl ImdsClient {
             .context(error::Empty { what: "local-ipv4" })
     }
 
-    /// Returns a list of public keys.
-    pub async fn fetch_public_keys(&mut self) -> Result<Vec<String>> {
+    /// Returns a list of public ssh keys skipping any keys that do not start with 'ssh'.
+    pub async fn fetch_public_ssh_keys(&mut self) -> Result<Vec<String>> {
         info!("Fetching list of available public keys from IMDS");
         // Returns a list of available public keys as '0=my-public-key'
         let public_key_list = match self
