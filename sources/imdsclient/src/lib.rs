@@ -15,11 +15,10 @@ use serde::{Deserialize, Serialize};
 use snafu::{ensure, ResultExt};
 
 const BASE_URI: &str = "http://169.254.169.254";
-const SCHEMA_VERSION: &str = "2021-01-03";
-const IDENTITY_DOCUMENT_TARGET: &'static str = "dynamic/instance-identity/document";
+const PINNED_DATE: &str = "2021-01-03";
 
 // Currently only able to get fetch session tokens from `latest`
-const IMDS_SESSION_TARGET: &str = "latest/api/token";
+const SESSION_TARGET: &str = "latest/api/token";
 
 /// A client for making IMDSv2 queries.
 /// It obtains a session token when it is first instantiated and is reused between helper functions.
@@ -65,12 +64,13 @@ impl ImdsClient {
 
     /// Gets `user-data` from IMDS. The user-data may be either a UTF-8 string or compressed bytes.
     pub async fn fetch_userdata(&mut self) -> Result<Vec<u8>> {
-        self.fetch_imds(SCHEMA_VERSION, "user-data").await
+        self.fetch_imds(PINNED_DATE, "user-data").await
     }
 
     /// Returns the 'identity document' with fields like region and instance_type.
     pub async fn fetch_identity_document(&mut self) -> Result<IdentityDocument> {
-        let response = self.fetch_bytes(IDENTITY_DOCUMENT_TARGET).await?;
+        let target = "dynamic/instance-identity/document";
+        let response = self.fetch_bytes(target).await?;
         let identity_document: IdentityDocument =
             serde_json::from_slice(&response).context(error::Serde)?;
         Ok(identity_document)
@@ -155,7 +155,7 @@ impl ImdsClient {
     where
         S: AsRef<str>,
     {
-        self.fetch_imds(SCHEMA_VERSION, end_target.as_ref()).await
+        self.fetch_imds(PINNED_DATE, end_target.as_ref()).await
     }
 
     /// Helper to fetch a string from IMDS using the pinned schema date.
@@ -163,7 +163,7 @@ impl ImdsClient {
     where
         S: AsRef<str>,
     {
-        let response_body = self.fetch_imds(SCHEMA_VERSION, end_target).await?;
+        let response_body = self.fetch_imds(PINNED_DATE, end_target).await?;
         Ok(String::from_utf8(response_body).context(error::NonUtf8Response)?)
     }
 
@@ -301,7 +301,7 @@ fn build_public_key_targets(public_key_list: &str) -> Vec<String> {
 
 /// Helper to fetch an IMDSv2 session token that is valid for 60 seconds.
 async fn fetch_token(client: &Client, imds_base_uri: &str) -> Result<String> {
-    let uri = format!("{}/{}", imds_base_uri, IMDS_SESSION_TARGET);
+    let uri = format!("{}/{}", imds_base_uri, SESSION_TARGET);
     let response = client
         .put(&uri)
         .header("X-aws-ec2-metadata-token-ttl-seconds", "60")
@@ -578,7 +578,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/{}", SCHEMA_VERSION, end_target),
+                format!("/{}/{}", PINNED_DATE, end_target),
             ))
             .times(1)
             .respond_with(
@@ -613,7 +613,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/{}", SCHEMA_VERSION, end_target),
+                format!("/{}/{}", PINNED_DATE, end_target),
             ))
             .times(1)
             .respond_with(
@@ -647,7 +647,7 @@ mod test {
         server.expect(
             Expectation::matching(request::method_path(
                 "GET",
-                format!("/{}/user-data", SCHEMA_VERSION),
+                format!("/{}/user-data", PINNED_DATE),
             ))
             .times(1)
             .respond_with(
