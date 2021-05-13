@@ -12,7 +12,7 @@ use http::StatusCode;
 use log::{debug, info, trace, warn};
 use reqwest::Client;
 use serde::{Deserialize, Serialize};
-use snafu::{ensure, OptionExt, ResultExt};
+use snafu::{ensure, ResultExt};
 
 const BASE_URI: &str = "http://169.254.169.254";
 const SCHEMA_VERSION: &str = "2021-01-03";
@@ -64,7 +64,7 @@ impl ImdsClient {
     }
 
     /// Gets `user-data` from IMDS. The user-data may be either a UTF-8 string or compressed bytes.
-    pub async fn fetch_userdata(&mut self) -> Result<Option<Vec<u8>>> {
+    pub async fn fetch_userdata(&mut self) -> Result<Vec<u8>> {
         self.fetch_imds(SCHEMA_VERSION, "user-data", "user-data")
             .await
     }
@@ -73,10 +73,7 @@ impl ImdsClient {
     pub async fn fetch_identity_document(&mut self) -> Result<IdentityDocument> {
         let response = self
             .fetch_dynamic(IDENTITY_DOCUMENT_TARGET, "fetch_identity_document")
-            .await?
-            .context(error::Empty {
-                what: "identity document",
-            })?;
+            .await?;
         let identity_document: IdentityDocument =
             serde_json::from_slice(&response).context(error::Serde)?;
         Ok(identity_document)
@@ -85,13 +82,7 @@ impl ImdsClient {
     /// Returns the list of network interface mac addresses.
     pub async fn fetch_mac_addresses(&mut self) -> Result<Vec<String>> {
         let macs_target = "network/interfaces/macs";
-        let macs = self
-            .fetch_metadata(&macs_target, "MAC addresses")
-            .await?
-            .context(error::Empty {
-                what: "list of mac addresses",
-            })?;
-
+        let macs = self.fetch_metadata(&macs_target, "MAC addresses").await?;
         Ok(macs.split('\n').map(|s| s.to_string()).collect())
     }
 
@@ -102,11 +93,7 @@ impl ImdsClient {
             format!("network/interfaces/macs/{}/vpc-ipv4-cidr-blocks", mac);
         let cidr_blocks = self
             .fetch_metadata(&mac_cidr_blocks_target, "MAC CIDR blocks")
-            .await?
-            .context(error::Empty {
-                what: "list of CIDR blocks",
-            })?;
-
+            .await?;
         Ok(cidr_blocks.split('\n').map(|s| s.to_string()).collect())
     }
 
@@ -114,28 +101,26 @@ impl ImdsClient {
     pub async fn fetch_local_ipv4_address(&mut self) -> Result<String> {
         let node_ip_target = "local-ipv4";
         self.fetch_metadata(&node_ip_target, "node IPv4 address")
-            .await?
-            .context(error::Empty { what: "local-ipv4" })
+            .await
     }
 
     /// Returns a list of public ssh keys skipping any keys that do not start with 'ssh'.
     pub async fn fetch_public_ssh_keys(&mut self) -> Result<Vec<String>> {
         info!("Fetching list of available public keys from IMDS");
         // Returns a list of available public keys as '0=my-public-key'
-        let public_key_list = match self
-            .fetch_metadata("public-keys", "public keys list")
-            .await?
-        {
-            Some(public_key_list) => {
-                debug!("available public keys '{}'", &public_key_list);
-                public_key_list
-            }
-            None => {
+        let public_key_list = match self.fetch_metadata("public-keys", "public keys list").await {
+            Err(error::Error::NotFound { what: _ }) => {
+                // this is OK, it just means there are no keys
                 debug!("no available public keys");
                 return Ok(Vec::new());
             }
+            Err(e) => {
+                return Err(e);
+            }
+            Ok(value) => value,
         };
 
+        debug!("available public keys '{}'", &public_key_list);
         info!("Generating targets to fetch text of available public keys");
         let public_key_targets = build_public_key_targets(&public_key_list);
 
@@ -150,10 +135,7 @@ impl ImdsClient {
                 &public_key_targets.len()
             );
 
-            let public_key_text = self
-                .fetch_metadata(&target, &description)
-                .await?
-                .context(error::Empty { what: "public key" })?;
+            let public_key_text = self.fetch_metadata(&target, &description).await?;
             let public_key = public_key_text.trim_end();
             // Simple check to see if the text is probably an ssh key.
             if public_key.starts_with("ssh") {
@@ -176,11 +158,7 @@ impl ImdsClient {
     /// Helper to fetch `dynamic` targets from IMDS.
     /// - `end_target` is the uri path relative to `dynamic`.
     /// - `description` is used in debugging and error statements.
-    async fn fetch_dynamic<S1, S2>(
-        &mut self,
-        end_target: S1,
-        description: S2,
-    ) -> Result<Option<Vec<u8>>>
+    async fn fetch_dynamic<S1, S2>(&mut self, end_target: S1, description: S2) -> Result<Vec<u8>>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
@@ -193,25 +171,16 @@ impl ImdsClient {
     /// Helper to fetch `meta-data` targets from IMDS.
     /// - `end_target` is the uri path relative to `meta-data`.
     /// - `description` is used in debugging and error statements.
-    async fn fetch_metadata<S1, S2>(
-        &mut self,
-        end_target: S1,
-        description: S2,
-    ) -> Result<Option<String>>
+    async fn fetch_metadata<S1, S2>(&mut self, end_target: S1, description: S2) -> Result<String>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
     {
         let metadata_target = format!("meta-data/{}", end_target.as_ref());
-        match self
+        let response_body = self
             .fetch_imds(SCHEMA_VERSION, &metadata_target, description.as_ref())
-            .await?
-        {
-            Some(metadata_body) => Ok(Some(
-                String::from_utf8(metadata_body).context(error::NonUtf8Response)?,
-            )),
-            None => Ok(None),
-        }
+            .await?;
+        Ok(String::from_utf8(response_body).context(error::NonUtf8Response)?)
     }
 
     /// Fetch data from IMDS.
@@ -220,7 +189,7 @@ impl ImdsClient {
         schema_version: S1,
         target: S2,
         description: S3,
-    ) -> Result<Option<Vec<u8>>>
+    ) -> Result<Vec<u8>>
     where
         S1: AsRef<str>,
         S2: AsRef<str>,
@@ -266,11 +235,15 @@ impl ImdsClient {
                     let response_str = printable_string(&response_body);
                     trace!("Response: {:?}", response_str);
 
-                    return Ok(Some(response_body));
+                    return Ok(response_body);
                 }
 
                 // IMDS returns 404 if no user data is given, or if IMDS is disabled
-                StatusCode::NOT_FOUND => return Ok(None),
+                StatusCode::NOT_FOUND => {
+                    return Err(error::Error::NotFound {
+                        what: description.as_ref().to_owned(),
+                    })
+                }
 
                 // IMDS returns 401 if the session token is expired or invalid
                 StatusCode::UNAUTHORIZED => {
@@ -395,9 +368,6 @@ mod error {
         #[snafu(display("Response '{}' from '{}': {}", get_status_code(&source), uri, source))]
         BadResponse { uri: String, source: reqwest::Error },
 
-        #[snafu(display("404 retrieving {}", what))]
-        Empty { what: String },
-
         #[snafu(display("IMDS fetch failed after {} attempts", attempt))]
         FailedFetch { attempt: u8 },
 
@@ -406,6 +376,9 @@ mod error {
 
         #[snafu(display("Response was not UTF-8: {}", source))]
         NonUtf8Response { source: std::string::FromUtf8Error },
+
+        #[snafu(display("404 file not found fetching {}", what))]
+        NotFound { what: String },
 
         #[snafu(display("Error {}ing '{}': {}", method, uri, source))]
         Request {
@@ -505,7 +478,7 @@ mod test {
             .fetch_imds(schema_version, target, description)
             .await
             .unwrap();
-        assert_eq!(imds_data, Some(response_body.as_bytes().to_vec()));
+        assert_eq!(imds_data, response_body.as_bytes().to_vec());
     }
 
     #[tokio::test]
@@ -538,11 +511,10 @@ mod test {
             ),
         );
         let mut imds_client = ImdsClient::new_impl(base_uri).await.unwrap();
-        let imds_data = imds_client
+        let result = imds_client
             .fetch_imds(schema_version, target, description)
-            .await
-            .unwrap();
-        assert_eq!(imds_data, None);
+            .await;
+        assert!(matches!(result, Err(error::Error::NotFound { .. })));
     }
 
     #[tokio::test]
@@ -653,7 +625,7 @@ mod test {
             .fetch_metadata(end_target, description)
             .await
             .unwrap();
-        assert_eq!(imds_data, Some(response_body.to_string()));
+        assert_eq!(imds_data, response_body.to_string());
     }
 
     #[tokio::test]
@@ -692,7 +664,7 @@ mod test {
             .fetch_dynamic(end_target, description)
             .await
             .unwrap();
-        assert_eq!(imds_data, Some(response_body.as_bytes().to_vec()));
+        assert_eq!(imds_data, response_body.as_bytes().to_vec());
     }
 
     #[tokio::test]
@@ -726,7 +698,7 @@ mod test {
         );
         let mut imds_client = ImdsClient::new_impl(base_uri).await.unwrap();
         let imds_data = imds_client.fetch_userdata().await.unwrap();
-        assert_eq!(imds_data, Some(response_body.as_bytes().to_vec()));
+        assert_eq!(imds_data, response_body.as_bytes().to_vec());
     }
 
     #[test]
