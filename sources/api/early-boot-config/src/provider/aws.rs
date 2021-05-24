@@ -18,7 +18,10 @@ impl AwsDataProvider {
     /// Fetches user data, which is expected to be in TOML form and contain a `[settings]` section,
     /// returning a SettingsJson representing the inside of that section.
     async fn user_data(client: &mut ImdsClient) -> Result<Option<SettingsJson>> {
-        let user_data_raw = client.fetch_userdata().await.context(error::ImdsRequest)?;
+        let user_data_raw = match client.fetch_userdata().await.context(error::ImdsRequest)? {
+            Some(data) => data,
+            None => return Ok(None),
+        };
         let user_data_str = expand_slice_maybe(&user_data_raw)
             .context(error::Decompression { what: "user data" })?;
         trace!("Received user data: {}", user_data_str);

@@ -65,8 +65,13 @@ impl ImdsClient {
     }
 
     /// Gets `user-data` from IMDS. The user-data may be either a UTF-8 string or compressed bytes.
-    pub async fn fetch_userdata(&mut self) -> Result<Vec<u8>> {
-        self.fetch_imds(PINNED_SCHEMA, "user-data").await
+    pub async fn fetch_userdata(&mut self) -> Result<Option<Vec<u8>>> {
+        let result = self.fetch_imds(PINNED_SCHEMA, "user-data").await;
+        if matches!(result, Err(error::Error::NotFound { .. })) {
+            // return None if we got a 404 indicating that there is no userdata
+            return Ok(None);
+        }
+        Ok(Some(result?))
     }
 
     /// Returns the 'identity document' with fields like region and instance_type.
@@ -667,8 +672,42 @@ mod test {
             ),
         );
         let mut imds_client = ImdsClient::new_impl(base_uri).await.unwrap();
-        let imds_data = imds_client.fetch_userdata().await.unwrap();
+        let imds_data = imds_client.fetch_userdata().await.unwrap().unwrap();
         assert_eq!(imds_data, response_body.as_bytes().to_vec());
+    }
+
+    #[tokio::test]
+    async fn fetch_userdata_none() {
+        let server = Server::run();
+        let port = server.addr().port();
+        let base_uri = format!("http://localhost:{}", port);
+        let token = "some+token";
+        let response_code = 404;
+        let response_body = "There is no user-data!";
+        server.expect(
+            Expectation::matching(request::method_path("PUT", "/latest/api/token"))
+                .times(1)
+                .respond_with(
+                    status_code(200)
+                        .append_header("X-aws-ec2-metadata-token-ttl-seconds", "60")
+                        .body(token),
+                ),
+        );
+        server.expect(
+            Expectation::matching(request::method_path(
+                "GET",
+                format!("/{}/user-data", PINNED_SCHEMA),
+            ))
+            .times(1)
+            .respond_with(
+                status_code(response_code)
+                    .append_header("X-aws-ec2-metadata-token", token)
+                    .body(response_body),
+            ),
+        );
+        let mut imds_client = ImdsClient::new_impl(base_uri).await.unwrap();
+        let imds_data = imds_client.fetch_userdata().await.unwrap();
+        assert!(imds_data.is_none());
     }
 
     #[test]
